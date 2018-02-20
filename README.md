@@ -3,6 +3,9 @@
 Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
+It uses the [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
+the waveform representation.
+
 ### Legal
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
@@ -34,3 +37,6 @@ DNN pipeline
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
+
+
+### Working versions
