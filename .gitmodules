@@ -1,0 +1,6 @@
+[submodule "external/pulsemodel"]
+	path = external/pulsemodel
+	url = https://github.com/gillesdegottex/pulsemodel.git
+[submodule "external/Lasagne"]
+	path = external/Lasagne
+	url = https://github.com/Lasagne/Lasagne.git
