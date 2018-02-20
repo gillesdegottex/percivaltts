@@ -10,6 +10,7 @@ the waveform representation.
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
 The code in this repository is released under the Apache License, Version 2.0. Please see LICENSE.md file for more details.
+
 All source files of any kind (code source and any ressources), except
 the content of the 'external' directory, are under the same license.
 Please refer to the content of the 'external' directory for the legal issues
@@ -31,20 +32,23 @@ Improved training for Wasserstein GAN [article](https://arxiv.org/abs/1704.00028
 
 Least Square mixing [article](https://arxiv.org/abs/1611.07004)
 
-Other DNN pipelines
-
-    [Merlin](https://github.com/CSTR-Edinburgh/merlin)
-
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
 
 
-### Working versions
+### Dependencies and Working versions
 
-Dealing with the numerous dependencies between the libraries and tools can be
+Percival is _not_ a standalone pipeline for TTS. It only trains an acoustic model.
+Thus, current limitations are:
+* It is dependent on a text-to-audio alignment system, which usually provides
+context input labels (e.g. in HTS format; label_state_align in Merlin).
+* It is dependent on the [Merlin](https://github.com/CSTR-Edinburgh/merlin) TTS
+pipeline for generating the binary labels (e.g. binary_label_601 in Merlin) from
+the context input labels using a set of questions (e.g. label_state_align and questions.hed in Merlin).
+
+Dealing with the numerous dependencies between the libraries and tools can also be
 a nightmare. I strongly suggest to use a package manager [conda](https://conda.io/docs/) or [miniconda](https://conda.io/miniconda.html)
 on top of the OS package manager.
-
 Here are versions the are known to work using miniconda
 ```
 libffi                    3.2.1                h4deb6c0_3  
@@ -56,4 +60,9 @@ pygpu                     0.6.2                    py27_0
 python                    2.7.13              hfff3488_13  
 scipy                     0.19.1              np112py27_0  
 theano                    0.9.0                    py27_0  
+```
+And other version numbers
+```
+CUDA                      9.0
+NVidia Drivers            384.111
 ```
