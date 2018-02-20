@@ -33,7 +33,7 @@ Least Square mixing [article](https://arxiv.org/abs/1611.07004)
 
 Other DNN pipelines
 
-    [Merlin][https://github.com/CSTR-Edinburgh/merlin)
+    [Merlin](https://github.com/CSTR-Edinburgh/merlin)
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
@@ -46,6 +46,7 @@ a nightmare. I strongly suggest to use a package manager [conda](https://conda.i
 on top of the OS package manager.
 
 Here are versions the are known to work using miniconda
+```
 libffi                    3.2.1                h4deb6c0_3  
 libgcc-ng                 7.2.0                hcbc56d2_1  
 libgpuarray               0.6.2                         0  
@@ -55,3 +56,4 @@ pygpu                     0.6.2                    py27_0
 python                    2.7.13              hfff3488_13  
 scipy                     0.19.1              np112py27_0  
 theano                    0.9.0                    py27_0  
+```
