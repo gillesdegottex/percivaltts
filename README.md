@@ -17,26 +17,41 @@ related to those code source.
 
 ### Inspired by
 
-[Improved training for Wasserstein GAN](https://arxiv.org/abs/1704.00028)
-
-    https://github.com/tjwei/GANotebooks/blob/master/wgan2-lasagne.ipynb
-    https://github.com/ririw/ririw.github.io/blob/master/assets/conditional-wasserstein-gans/Improved.ipynb
-
-[Wasserstein GAN](https://arxiv.org/abs/1701.07875)
+Wasserstein GAN [article](https://arxiv.org/abs/1701.07875)
 
     https://gist.github.com/f0k/f3190ebba6c53887d598d03119ca2066
     https://github.com/martinarjovsky/WassersteinGAN
     https://github.com/fairytale0011/Conditional-WassersteinGAN
     http://blog.richardweiss.org/2017/07/21/conditional-wasserstein-gan.html
 
-[Least Square mixing](https://arxiv.org/abs/1611.07004)
+Improved training for Wasserstein GAN [article](https://arxiv.org/abs/1704.00028)
 
-DNN pipeline
+    https://github.com/tjwei/GANotebooks/blob/master/wgan2-lasagne.ipynb
+    https://github.com/ririw/ririw.github.io/blob/master/assets/conditional-wasserstein-gans/Improved.ipynb
 
-    https://github.com/CSTR-Edinburgh/merlin
+Least Square mixing [article](https://arxiv.org/abs/1611.07004)
+
+Other DNN pipelines
+
+    [Merlin][https://github.com/CSTR-Edinburgh/merlin)
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
 
 
 ### Working versions
+
+Dealing with the numerous dependencies between the libraries and tools can be
+a nightmare. I strongly suggest to use a package manager [conda](https://conda.io/docs/) or [miniconda](https://conda.io/miniconda.html)
+on top of the OS package manager.
+
+Here are versions the are known to work using miniconda
+libffi                    3.2.1                h4deb6c0_3  
+libgcc-ng                 7.2.0                hcbc56d2_1  
+libgpuarray               0.6.2                         0  
+libstdcxx-ng              7.2.0                h24385c6_1  
+numpy                     1.12.1                   py27_0  
+pygpu                     0.6.2                    py27_0  
+python                    2.7.13              hfff3488_13  
+scipy                     0.19.1              np112py27_0  
+theano                    0.9.0                    py27_0  
