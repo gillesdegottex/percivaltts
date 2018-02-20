@@ -32,9 +32,17 @@ Improved training for Wasserstein GAN [article](https://arxiv.org/abs/1704.00028
 
 Least Square mixing [article](https://arxiv.org/abs/1611.07004)
 
-### Author/Contributor
-Gilles Degottex <gad27@cam.ac.uk>
+### Results
 
+From preliminary tests, current results are not as good as the good old stacked
+BLSTM. By using CNN-GAN, the amplitude spectrum is clearly more convincing
+(visually) than any LS optimised network. i.e. it is able to generate spectral
+shapes that are completely oversmoothed by the LS solution.
+It does also sound different with a presence in the voice that is lacking
+through the LS solution. However, it seems the generation sounds still too much
+noisy. So, as a conlusion, this pipeline is a working CNN-GAN, technically
+speaking, but it still needs tunning and correction in order to take advantage
+of the GAN approach while avoiding the generation of extra artifacts.
 
 ### Dependencies and Working versions
 
@@ -66,3 +74,16 @@ And other version numbers
 CUDA                      9.0
 NVidia Drivers            384.111
 ```
+
+### Install/Demo
+
+In the root directory, run first:
+```
+$ make
+```
+
+### Author/Contributor
+Gilles Degottex <gad27@cam.ac.uk>
+
+### Contact
+Please use the [issue managment](https://github.com/gillesdegottex/percival/issues) only to raise questions, suggestions, etc.
