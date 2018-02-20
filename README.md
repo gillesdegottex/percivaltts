@@ -28,7 +28,9 @@ related to those code source.
 
 [Least Square mixing](https://arxiv.org/abs/1611.07004)
 
-https://github.com/CSTR-Edinburgh/merlin
+DNN pipeline
+
+    https://github.com/CSTR-Edinburgh/merlin
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
