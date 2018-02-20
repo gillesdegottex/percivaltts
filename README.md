@@ -13,13 +13,14 @@ Please refer to the content of the 'external' directory for the legal issues
 related to those code source.
 
 ### Inspired by
-https://github.com/CSTR-Edinburgh/merlin
 
 [Improved training for Wasserstein GAN](https://arxiv.org/abs/1704.00028)
+
     https://github.com/tjwei/GANotebooks/blob/master/wgan2-lasagne.ipynb
     https://github.com/ririw/ririw.github.io/blob/master/assets/conditional-wasserstein-gans/Improved.ipynb
 
 [Wasserstein GAN](https://arxiv.org/abs/1701.07875)
+
     https://gist.github.com/f0k/f3190ebba6c53887d598d03119ca2066
     https://github.com/martinarjovsky/WassersteinGAN
     https://github.com/fairytale0011/Conditional-WassersteinGAN
@@ -27,6 +28,7 @@ https://github.com/CSTR-Edinburgh/merlin
 
 [Least Square mixing](https://arxiv.org/abs/1611.07004)
 
+https://github.com/CSTR-Edinburgh/merlin
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
