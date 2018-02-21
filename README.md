@@ -5,6 +5,7 @@ regularization to optimise 2D convolutional layers.
 
 It uses the [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
 the waveform representation.
+Note that there is currrently no post-processing in the spectral amplitudes.
 
 ### Legal
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
@@ -15,6 +16,7 @@ All source files of any kind (code source and any ressources), except
 the content of the 'external' directory, are under the same license.
 Please refer to the content of the 'external' directory for the legal issues
 related to those code source.
+
 
 ### Inspired by
 
@@ -32,17 +34,6 @@ Improved training for Wasserstein GAN [article](https://arxiv.org/abs/1704.00028
 
 Least Square mixing [article](https://arxiv.org/abs/1611.07004)
 
-### Results
-
-From preliminary tests, current results are not as good as the good old stacked
-BLSTM. By using CNN-GAN, the amplitude spectrum is clearly more convincing
-(visually) than any LS optimised network. i.e. it is able to generate spectral
-shapes that are completely oversmoothed by the LS solution.
-It does also sound different with a presence in the voice that is lacking
-through the LS solution. However, it seems the generation sounds still too much
-noisy. So, as a conlusion, this pipeline is a working CNN-GAN, technically
-speaking, but it still needs tunning and correction in order to take advantage
-of the GAN approach while avoiding the generation of extra artifacts.
 
 ### Dependencies and Working versions
 
@@ -81,6 +72,7 @@ In the root directory, run first:
 ```
 $ make
 ```
+
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
