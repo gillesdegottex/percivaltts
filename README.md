@@ -74,6 +74,8 @@ In the root directory, run first:
 $ make
 ```
 
+Edit the `setenv.sh` file according to your theano/CUDA installation (see above).
+
 Then make an experiment directory somewhere (preferably outside of the source code directory):
 ```
 $ mkdir ../exp
