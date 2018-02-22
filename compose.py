@@ -20,6 +20,7 @@ import os
 import sys
 import glob
 import datetime
+import re
 
 import numpy as np
 
@@ -232,6 +233,10 @@ def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, 
     wins: default values are wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]] (as in Merlin)
     '''
     print('Compose data (id_valid_start={})'.format(id_valid_start))
+
+    outfilepath = re.sub(r':[^:]+$', "", outfilepath)   # ignore any shape suffix in the output path
+    if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
+
     if wins is not None: import scipy.signal
     basesize = None
     size = None
@@ -243,8 +248,6 @@ def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, 
         lines = f.readlines()
         lines = [x for x in map(str.strip, lines) if x]
         fids = filter(None, lines)
-
-        if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
 
         Ys = list()
         for nf, fid in enumerate(fids):
@@ -400,6 +403,7 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
 
     def mag2db(a): return 20.0*np.log10(np.abs(a))
 
+    outfilepath = re.sub(r':[^:]+$', "", outfilepath)   # ignore any shape suffix in the output path
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
 
     with open(fileidspath) as f:
