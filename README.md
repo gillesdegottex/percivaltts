@@ -69,19 +69,18 @@ NVidia Drivers            384.111
 
 ### Install/Demo
 
-In the root directory, run first:
+In the root directory of the source code, run first:
 ```
 $ make
 ```
+Then, edit the `setenv.sh` file according to your CUDA/Theano installation (see above).
 
-Edit the `setenv.sh` file according to your theano/CUDA installation (see above).
-
-Then make an experiment directory somewhere (preferably outside of the source code directory):
+Make an experiment directory somewhere (preferably outside of the source code directory):
 ```
 $ mkdir ../exp
 $ cd ../exp
 ```
-And run the demo!
+and run the demo!
 ```
 $ bash ../percival/setenv.sh ../percival/run.py
 ```
