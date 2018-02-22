@@ -1,4 +1,4 @@
-## Percival: CNN-GAN acoustic model for speech synthesis
+## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
 Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
