@@ -36,7 +36,7 @@ print_log('Global configurations')
 cfg = configuration() # Init structure
 
 # Corpus/Voice(s) related options
-cp = '../SLT32/' # The main directory where the data of the voice is stored
+cp = '../SLT32demo/' # The main directory where the data of the voice is stored
 cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 1030
 cfg.id_valid_nb = 50
@@ -55,7 +55,7 @@ spec_size = 129
 nm_size = 33
 out_size = 1+spec_size+nm_size
 cfg.shift = 0.005
-wav_dir = 'usedwav'
+wav_dir = 'wav'
 wav_path = cp+wav_dir+'/*.wav'
 f0_path = cp+wav_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
