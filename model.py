@@ -263,8 +263,6 @@ class Model:
             X_test = data.load(cfg.indir, fid_lst_gen, verbose=1)
             #(X_test), M_test = data.maskify([X_test])
 
-        # import model_generative
-        # mod = model_generative.ModelGAN(X_test[0].shape[1], len(Ymean))    # Build the model
         self.loadAllParams(params_savefile)              # Load the model's parameters
 
         import generate_pp
