@@ -8,6 +8,7 @@ the waveform representation.
 Note that there is currrently no post-processing in the spectral amplitudes.
 
 ### Legal
+
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
 The code in this repository is released under the Apache License, Version 2.0. Please see LICENSE.md file for more details.
@@ -72,6 +73,30 @@ In the root directory, run first:
 ```
 $ make
 ```
+
+### Formats
+
+The are a few assumptions across the code about data format
+
+Float values saved on disc are always in `float32` format.
+
+#### Data set
+The basenames of the corpus files are listed in a file (e.g. file_id_list.scp).
+This list is then split into [traning; validation; test] sets, always in this order.
+The validation start starts at `id_valid_start` and contains `id_valid_nb` files.
+The test set directly follows the validation set and contains `id_test_nb`.
+
+Because the size of the training set is always an interger multiple of the batch size, the training set might have less than `id_valid_start` files.
+The `id_valid_start-1` last files right before `id_valid_start` might thus be completely ignored by the training process.
+
+A last set exists, the demo set, which is a subset of the test set. This is convenient for generating and listening quickly to a few known sentences after a training. By default it is the first 10 sentences of the test set.
+`id_test_demostart` can be used to select the starting index (relative to the test set) in order to chose where the demo set starts within the test set.
+
+#### File access and shapes
+To represent multiple files in a directory, file paths are usually defined with a wildcard (e.g. `waveforms/*.wav`).
+Because input and output data of the network (lab and cmp files) are saved in raw `float32` format, without header, it is not possible to know the actual dimensions of the data
+inside each file.
+In Percival, the trick is to specify the shape of the data as a suffix of the file path, e.g. `spectrum/*.spec:(-1,129)`. this suffix will be used, as is, to reshape the numpy array using `np.reshape(.)`.
 
 
 ### Author/Contributor
