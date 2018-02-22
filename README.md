@@ -74,6 +74,16 @@ In the root directory, run first:
 $ make
 ```
 
+Then make an experiment directory somewhere (preferably outside of the source code directory):
+```
+$ mkdir ../exp
+$ cd ../exp
+```
+And run the demo!
+```
+$ bash ../percival/setenv.sh ../percival/run.py
+```
+
 ### Formats
 
 The are a few assumptions across the code about data format
