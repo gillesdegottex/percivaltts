@@ -38,9 +38,9 @@ cfg = configuration() # Init structure
 # Corpus/Voice(s) related options
 cp = '../SLT32demo/' # The main directory where the data of the voice is stored
 cfg.fileids = cp+'/file_id_list.scp'
-cfg.id_valid_start = 1030
-cfg.id_valid_nb = 50
-cfg.id_test_nb = 50
+cfg.id_valid_start = 180
+cfg.id_valid_nb = 20
+cfg.id_test_nb = 20
 
 # Text labels
 in_size = 601
