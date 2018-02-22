@@ -38,18 +38,20 @@ Least Square mixing [article](https://arxiv.org/abs/1611.07004)
 
 ### Dependencies and Working versions
 
-Percival is _not_ a standalone pipeline for TTS. It only trains an acoustic model.
-Thus, current limitations are:
-* It is dependent on a text-to-audio alignment system, which usually provides
-context input labels (e.g. in HTS format; label_state_align in Merlin).
-* It is dependent on the [Merlin](https://github.com/CSTR-Edinburgh/merlin) TTS
-pipeline for generating the binary labels (e.g. binary_label_601 in Merlin) from
-the context input labels using a set of questions (e.g. label_state_align and questions.hed in Merlin).
+Percival is _not_ a standalone pipeline for TTS. It only trains an acoustic
+model. Technically, it is dependent on a text-to-audio alignment system, which
+usually provides context input labels (e.g. in HTS format; label_state_align in
+Merlin). It is currently dependent on the
+[Merlin](https://github.com/CSTR-Edinburgh/merlin) TTS pipeline for generating
+the binary labels (e.g. binary_label_601 in Merlin) from the context input
+labels using a set of questions (e.g. label_state_align and questions.hed in
+Merlin).
 
-Dealing with the numerous dependencies between the libraries and tools can also be
-a nightmare. I strongly suggest to use a package manager [conda](https://conda.io/docs/) or [miniconda](https://conda.io/miniconda.html)
-on top of the OS package manager.
-Here are versions the are known to work using miniconda
+Dealing with the numerous dependencies between the libraries and tools can also
+be a nightmare. I strongly suggest to use a package manager
+[conda](https://conda.io/docs/) or [miniconda](https://conda.io/miniconda.html)
+on top of the OS package manager. Here are versions the are known to work using
+miniconda:
 ```
 libffi                    3.2.1                h4deb6c0_3  
 libgcc-ng                 7.2.0                hcbc56d2_1  
@@ -104,7 +106,7 @@ $ bash ../percival/setenv.sh ../percival/run.py
 
 The are a few assumptions across the code about data formats.
 
-First, floating point precision values saved on disc are always in `float32` format.
+First, floating point precision values are always saved on disc using the `float32` format.
 
 #### Data set
 The basenames of the corpus files are listed in a file (e.g. file_id_list.scp).
