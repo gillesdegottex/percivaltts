@@ -51,7 +51,7 @@ from collections import defaultdict
 class ModelGAN(model.Model):
 
     # Options
-    _usegan = None # 'WGAN' # None for LSE
+    _usegan = 'WGAN' # None for LSE
 
     # lasagne.nonlinearities.rectify, lasagne.nonlinearities.leaky_rectify, lasagne.nonlinearities.very_leaky_rectify, lasagne.nonlinearities.elu, lasagne.nonlinearities.softplus, lasagne.nonlinearities.tanh, networks.nonlin_softsign
     _nonlinearity = lasagne.nonlinearities.very_leaky_rectify
@@ -87,11 +87,11 @@ class ModelGAN(model.Model):
         # Build the network ----------------------------------------------------
         # Select your favorite one or just fill self.net_out and self.updates with whatever you want
 
-        self.net_out, self.updates = networks_basic.LA_NxFC(self.input_values, self._fchidsize, self.insize, self.specsize, self.nmsize, nblayers=6, nonlinearity=self._nonlinearity)
+        # self.net_out, self.updates = networks_basic.LA_NxFC(self.input_values, self._fchidsize, self.insize, self.specsize, self.nmsize, nblayers=6, nonlinearity=self._nonlinearity)
         # self.net_out, self.updates = networks_basic.LA_NxBGRU(self.input_values, self._fchidsize, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=3, nonlinearity=self._nonlinearity)
         # self.net_out, self.updates = networks_basic.LA_NxBLSTM(self.input_values, self._fchidsize, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=3, nonlinearity=self._nonlinearity)
 
-        # self.net_out, self.updates = networks_cnn.LA_3xFC_splitfeats_2xGC2D_C2D(self.input_values, self._fchidsize, self.insize, self.specsize, self.nmsize, nonlinearity=self._nonlinearity)
+        self.net_out, self.updates = networks_cnn.LA_3xFC_splitfeats_2xGC2D_C2D(self.input_values, self._fchidsize, self.insize, self.specsize, self.nmsize, nonlinearity=self._nonlinearity)
 
         # End network building -------------------------------------------------
 
