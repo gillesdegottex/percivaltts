@@ -90,7 +90,7 @@ Then, you will need the three following elements from any corpus:
 
     The same file that you find in Merlin, which contains the basenames of each file in `binary_label_601` and `wav`.    
 
-Put this somehwere in the same directory and point the `cp` variable in the `run.py` file to this directory.
+Put this somehwere in a common directory and point the `cp` variable in the `run.py` file to this directory.
 
 Finally, make an experiment directory somewhere (preferably outside of the source code directory):
 ```
