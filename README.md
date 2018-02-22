@@ -35,6 +35,10 @@ Improved training for Wasserstein GAN [article](https://arxiv.org/abs/1704.00028
 
 Least Square mixing [article](https://arxiv.org/abs/1611.07004)
 
+PixelCNN [article](https://arxiv.org/abs/1606.05328)
+
+    https://arxiv.org/pdf/1704.03809.pdf
+    http://www.dtic.upf.edu/~mblaauw/MdM_NIPS_seminar/
 
 ### Dependencies and Working versions
 
