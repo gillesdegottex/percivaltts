@@ -55,7 +55,7 @@ spec_size = 129
 nm_size = 33
 out_size = 1+spec_size+nm_size
 cfg.shift = 0.005
-wav_dir = 'wav'
+wav_dir = 'usedwav'
 wav_path = cp+wav_dir+'/*.wav'
 f0_path = cp+wav_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
@@ -81,7 +81,7 @@ def features_extraction():
         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
         for fid in fids:
             print('Extracting features from: '+fid)
-            pulsemodel.analysisf(wavpath.replace('*',fid), f0_min=f0_min, f0_max=f0_max, f0_file=f0_path.replace('*',fid), f0_log=True,
+            pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, f0_file=f0_path.replace('*',fid), f0_log=True,
             spec_file=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, nm_file=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 
