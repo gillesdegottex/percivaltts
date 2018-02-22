@@ -73,9 +73,22 @@ In the root directory of the source code, run first:
 ```
 $ make
 ```
-Then, edit the `setenv.sh` file according to your CUDA/Theano installation (see above).
+Edit the `setenv.sh` file according to your CUDA/Theano installation (see above).
 
-Make an experiment directory somewhere (preferably outside of the source code directory):
+Then, you will need the three following elements from any corpus:
+* `binary_label_601`
+
+    The same directory that you will find in Merlin, which is created by the NORMLAB Process.
+
+* `wav`
+
+    The waveforms directory aligned with the labels above
+
+* `file_id_list.scp`
+
+    The same file that you find in Merlin, which contains the basenames of each file in `binary_label_601` and `wav`.    
+
+Finally, make an experiment directory somewhere (preferably outside of the source code directory):
 ```
 $ mkdir ../exp
 $ cd ../exp
@@ -87,9 +100,9 @@ $ bash ../percival/setenv.sh ../percival/run.py
 
 ### Formats
 
-The are a few assumptions across the code about data format
+The are a few assumptions across the code about data formats.
 
-Float values saved on disc are always in `float32` format.
+First, floating point precision values saved on disc are always in `float32` format.
 
 #### Data set
 The basenames of the corpus files are listed in a file (e.g. file_id_list.scp).
