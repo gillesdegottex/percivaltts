@@ -4,8 +4,9 @@ Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
 It uses the [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
-the waveform representation.
-Note that there is currrently no post-processing in the spectral amplitudes.
+the waveform representation and [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input labels preparation.
+
+![spec_sample](doc/spec_sample.png)
 
 ### Legal
 
@@ -130,6 +131,8 @@ Because input and output data of the network (lab and cmp files) are saved in ra
 inside each file.
 In Percival, the trick is to specify the shape of the data as a suffix of the file path, e.g. `spectrum/*.spec:(-1,129)`. this suffix will be used, as is, to reshape the numpy array using `np.reshape(.)`.
 
+### Notes
+There is currrently no post-processing of the generated spectral amplitudes before the waveform synthesis.
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
