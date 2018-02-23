@@ -1,0 +1,31 @@
+language: python
+
+os:
+    - linux
+
+branches:
+    only:
+    - master
+
+before_install:
+    - echo "before_install..."
+    - git submodule update --init --recursive
+    - git fetch --tags
+    - sleep 1
+    - git checkout $TRAVIS_BRANCH
+    - export PROJECTGITVERSION=`git describe --tags --always |sed 's/^v//'`
+    - echo $PROJECTGITVERSION
+    - echo $TRAVIS_OS_NAME
+    - echo $TRAVIS_COMMIT
+    - echo $TRAVIS_TAG
+    - export TRAVIS_TAG=`git describe --tags --exact-match HEAD 2>/dev/null`
+    - echo $TRAVIS_TAG
+
+    - sudo apt-get -qq update
+    - sudo apt-get install -y cython python-numpy python-scipy
+
+install:
+    - echo "install..."
+
+script:
+    - make test
