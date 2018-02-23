@@ -7,7 +7,7 @@
 Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
-It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input labels preparation and the [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
+It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input labels preparation and [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
 the waveform synthesis.
 
 <br/><br/>
