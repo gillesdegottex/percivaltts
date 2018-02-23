@@ -137,7 +137,6 @@ class Model:
         # All kwargs arguments are specific configuration values
         # First, fill a struct with the default configuration values ...
         cfg = configuration() # Init structure
-        cfg.train_batchsize = 5         # [potential hyper-parameter]
 
         # LSE
         cfg.train_learningrate_log10 = -3.39794       # (10**-3.39794=0.0004 confirmed on 2xBGRU256_bn20) [potential hyper-parameter] Merlin:0.001 (or 0.002, or 0.004)
@@ -155,6 +154,7 @@ class Model:
         cfg.train_LScoef = 0.25               # [potential hyper-parameter]
 
         cfg.train_max_nbepochs = 100
+        cfg.train_batchsize = 5               # [potential hyper-parameter]
         cfg.train_batch_padtype = 'randshift' # See load_inoutset(..., maskpadtype)
         cfg.train_batch_length = None # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
         cfg.train_batch_lengthmax = None # Maximum duration [frames] of each batch
