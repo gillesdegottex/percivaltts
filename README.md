@@ -1,24 +1,16 @@
 ## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
+<img style="width: 300px;float: right; margin-left: 10px;" src="./doc/spec_sample.png">
+
+<br/><br/>
+
 Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
-It uses the [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
-the waveform representation and [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input labels preparation.
+It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input labels preparation and the [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
+the waveform synthesis.
 
-![spec_sample](./doc/spec_sample.png =400x)
-
-### Legal
-
-Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
-
-The code in this repository is released under the Apache License, Version 2.0. Please see LICENSE.md file for more details.
-
-All source files of any kind (code source and any ressources), except
-the content of the 'external' directory, are under the same license.
-Please refer to the content of the 'external' directory for the legal issues
-related to those code source.
-
+<br/><br/>
 
 ### Inspired by
 
@@ -40,6 +32,20 @@ PixelCNN [article](https://arxiv.org/abs/1606.05328)
 
     https://arxiv.org/pdf/1704.03809.pdf
     http://www.dtic.upf.edu/~mblaauw/MdM_NIPS_seminar/
+
+<br/><br/>
+
+### Legal
+
+Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
+
+The code in this repository is released under the Apache License, Version 2.0. Please see LICENSE.md file for more details.
+
+All source files of any kind (code source and any ressources), except
+the content of the 'external' directory, are under the same license.
+Please refer to the content of the 'external' directory for the legal issues
+related to those code source.
+
 
 ### Dependencies and Working versions
 
