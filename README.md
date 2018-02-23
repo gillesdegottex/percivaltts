@@ -137,6 +137,10 @@ Because input and output data of the network (lab and cmp files) are saved in ra
 inside each file.
 In Percival, the trick is to specify the shape of the data as a suffix of the file path, e.g. `spectrum/*.spec:(-1,129)`. this suffix will be used, as is, to reshape the numpy array using `np.reshape(.)`.
 
+#### Batches
+
+A batch has a shape: [size, length, features_dim]. Because Theano/Lasagne needs a "channel" dimension (as in pictures), batches' shape often become temporarily [size, 1, length, features_dim] so that the last two dimenions define a picture of size [length, features_dim].
+
 ### Notes
 There is currrently no post-processing of the generated spectral amplitudes before the waveform synthesis.
 
