@@ -6,7 +6,7 @@ regularization to optimise 2D convolutional layers.
 It uses the [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
 the waveform representation and [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input labels preparation.
 
-![spec_sample](doc/spec_sample.png)
+![spec_sample](./doc/spec_sample.png =400x)
 
 ### Legal
 
