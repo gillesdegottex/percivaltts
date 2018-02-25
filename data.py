@@ -47,16 +47,16 @@ def getpathandshape(path, shape=None):
     if len(matches)>0:
         path = matches[0][0]
         shapesstrs = matches[0][1].split(',')
-        shapeselector = []
+        shapeselector = ()
         for shapesstr in shapesstrs:
             if is_int(shapesstr):
                 # The shape selector is a simple integer
-                shapeselector.append(int(shapesstr))
+                shapeselector = shapeselector + (int(shapesstr),)
             else:
                 # The shape selector seems to be a file name
                 # so take the size from the first dimension of the file's dimension
                 X = np.fromfile(os.path.join(os.path.dirname(matches[0][0]), shapesstr), dtype=np.float32)
-                shapeselector.append(X.shape[0])
+                shapeselector = shapeselector + (X.shape[0],)
         if not shape is None:
             print('WARNING: shape has been set both as argument ({}) of the getpathandshape(.) function and in the file selector ({}) (at the end of path); The one set as argument will be used: {}'.format(shape, shapeselector, shape))
         else:
