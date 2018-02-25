@@ -5,11 +5,11 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import unittest
 
-import utils
+cptest = 'test/slttest/'
 
-class TestUtils(unittest.TestCase):
-
+class TestSmoke(unittest.TestCase):
     def test_utils(self):
+        import utils
         cfg = utils.configuration()
         utils.print_log('print_log')
         utils.print_tty('print_tty', end='\n')
@@ -22,10 +22,45 @@ class TestUtils(unittest.TestCase):
         print(memres)
         self.assertNotEqual(memres, -1)
         utils.print_sysinfo()
-        # utils.print_sysinfo_theano()
-        # utils.log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_discri=[])
-        # utils.log_plot_costs(costs, worst_val, fname, epochs_modelssaved)
-        # utils.log_plot_samples()
+        # utils.print_sysinfo_theano() TODO
+        # utils.log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_discri=[]) TODO
+        # utils.log_plot_costs(costs, worst_val, fname, epochs_modelssaved) TODO
+        # utils.log_plot_samples() TODO
+
+    def test_data(self):
+        import data
+
+        lines = data.loadids(cptest+'file_id_list.scp')
+
+        path, shape = data.getpathandshape('dummy.fwspec')
+        self.assertTrue(path=='dummy.fwspec')
+        self.assertTrue(shape==None)
+        path, shape = data.getpathandshape('dummy.fwspec:(-1,129)')
+        self.assertTrue(path=='dummy.fwspec')
+        self.assertTrue(shape==[-1,129])
+        path, shape = data.getpathandshape('dummy.fwspec:(-1,129)', [-1,12])
+        self.assertTrue(path=='dummy.fwspec')
+        self.assertTrue(shape==[-1,12])
+        path, shape = data.getpathandshape('dummy.fwspec', [-1,12])
+        self.assertTrue(path=='dummy.fwspec')
+        self.assertTrue(shape==[-1,12])
+        dim = data.getlastdim('dummy.fwspec')
+        self.assertTrue(dim==1)
+        dim = data.getlastdim('dummy.fwspec:(-1,129)')
+        self.assertTrue(dim==129)
+
+        # data.load TODO
+        # data.gettotallen TODO
+        # data.cropsize TODO
+        # data.cropsilences TODO
+        # data.vstack_masked TODO
+        # data.maskify TODO
+        # data.addstop TODO
+        # data.load_inoutset TODO
+        # data.cost_0pred_rmse TODO
+        # data.cost_model TODO
+        # data.cost_model_prediction_rmse TODO
+        # data.prediction_std TODO
 
 if __name__ == '__main__':
     unittest.main()
