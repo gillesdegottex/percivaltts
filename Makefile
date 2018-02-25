@@ -75,5 +75,9 @@ generate:
 
 # Testing ----------------------------------------------------------------------
 #test: build # TODO
-test:
+
+test/slttest: test/slttest.tar.gz
+	tar xvf test/slttest.tar.gz -C test/
+
+test: test/slttest
 	python test/test_smoke.py
