@@ -16,9 +16,9 @@
 #
 
 FILETORUN=run.py
-# SETENVSCRIPT=setenv.sh
-SETENVSCRIPT=setenv_home.sh
-# SETENVSCRIPT=setenv_cued.sh
+SETENVSCRIPT=setenv.sh
+#SETENVSCRIPT=setenv_home.sh
+#SETENVSCRIPT=setenv_cued.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 # QSUBCMD="qsubcudagad.sh"
 
@@ -46,16 +46,16 @@ distclean:
 # Run targets ------------------------------------------------------------------
 
 run:
-	cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	mkdir ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
 
 run_continue:
-	cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	mkdir ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
 
 run_grid:
-	cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	mkdir ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
 
 run_grid_continue:
-	cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	mkdir ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
 
 clone:
 	@test "$(DEST)"
