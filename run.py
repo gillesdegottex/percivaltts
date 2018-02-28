@@ -33,26 +33,26 @@ from utils import *
 print_sysinfo()
 
 print_log('Global configurations')
-cfg = configuration() # Init structure
+cfg = configuration() # Init configuration structure
 
-# Corpus/Voice(s) related options
-cp = '../../SLT32demo/' # The main directory where the data of the voice is stored
+# Corpus/Voice(s) options
+cp = 'test/slttest/' # The main directory where the data of the voice is stored
 cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 160
 cfg.id_valid_nb = 20
 cfg.id_test_nb = 20
 
-# Text labels
+# Input text labels
 in_size = 601
 label_dir = 'binary_label_'+str(in_size)
 label_path = cp+label_dir+'/*.lab'
 cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
 
-# Features
+# Output features
 cfg.fs = 32000
 f0_min, f0_max = 60, 600
-spec_size = 129
-nm_size = 33
+spec_size = 65
+nm_size = 17
 out_size = 1+spec_size+nm_size
 cfg.shift = 0.005
 wav_dir = 'wav'
