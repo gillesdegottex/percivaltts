@@ -32,6 +32,8 @@ install:
     - echo "install..."
     - pip install cython
     # - pip install -q numpy cython
+    - pip install numpy
+    - pip install scipy
 
 script:
     - make test
