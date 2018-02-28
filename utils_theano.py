@@ -47,13 +47,19 @@ def nvidia_smi_current_gpu():
     return -1
 
 def nvidia_smi_proc_memused():
-    # Returns MiB
-    xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
-    root = ET.fromstring(xml)
-    for gpu in root.findall('gpu'):
-        for proc in gpu.find('processes').findall('process_info'):
-            if int(proc.find('pid').text) == os.getpid():
-                return int(proc.find('used_memory').text.split(' ')[0])
+
+    if theano.config.device=='cpu': return -2
+
+    try:
+        # Returns MiB
+        xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
+        root = ET.fromstring(xml)
+        for gpu in root.findall('gpu'):
+            for proc in gpu.find('processes').findall('process_info'):
+                if int(proc.find('pid').text) == os.getpid():
+                    return int(proc.find('used_memory').text.split(' ')[0])
+    except:
+        return -1
     return -1
 
 def th_print(msg, op):
