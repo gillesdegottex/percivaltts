@@ -49,20 +49,35 @@ class TestSmoke(unittest.TestCase):
         dim = data.getlastdim('dummy.fwspec:(-1,129)')
         self.assertTrue(dim==129)
 
-        Xs = data.load(cptest+'binary_label_601/*.lab:(-1,601)', fbases, shape=None, frameshift=0.005, verbose=1, label='testload ')
+        indir = cptest+'binary_label_601_norm_minmaxm11/*.lab:(-1,601)'
+        Xs = data.load(indir, fbases, shape=None, frameshift=0.005, verbose=1, label='Xs: ')
         self.assertTrue(len(Xs)==10)
         self.assertTrue(Xs[0].shape==(666, 601))
 
         self.assertTrue(data.gettotallen(Xs)==5688)
 
-        Xs, Xs = data.cropsize([Xs, Xs]) # TODO Crop against features
+        outdir = cptest+'wav_cmp_lf0_fwspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
+        Ys = data.load(outdir, fbases, shape=None, frameshift=0.005, verbose=1, label='Ys: ')
+        self.assertTrue(len(Ys)==10)
+        self.assertTrue(Ys[0].shape==(664, 83))
 
-        # data.cropsilences TODO
+        wdir = cptest+'wav_fwspec65_weights/*.w:(-1,1)'
+        Ws = data.load(wdir, fbases, shape=None, frameshift=0.005, verbose=1, label='Ws: ')
+        self.assertTrue(len(Ws)==10)
+
+        Xs, Ys, Ws = data.cropsize([Xs, Ys, Ws]) # TODO Crop against features
+
+        [Xs, Ys], Ws = data.cropsilences([Xs, Ys], Ws, thresh=0.5)
+
         # data.vstack_masked TODO
         # data.maskify TODO
         # data.addstop TODO
         # data.load_inoutset TODO
-        # data.cost_0pred_rmse TODO
+
+        X_full, MX_full, Y_full, MY_full = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift')
+
+        worst_val = data.cost_0pred_rmse(Ys)
+        print('worst_val={}'.format(worst_val))
         # data.cost_model TODO
         # data.cost_model_prediction_rmse TODO
         # data.prediction_std TODO
