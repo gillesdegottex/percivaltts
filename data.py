@@ -226,7 +226,7 @@ def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=No
         [Y_val], W_val = cropsilences([Y_val], W_val)
         Y_val = addstop(Y_val)
 
-    # Maskify the validation data according to the batchsize
+    # Maskify the validation data according to the batchsize TODO rm
     if inouttimesync:
         [X_val, Y_val], MX_val = maskify([X_val, Y_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
         MY_val = MX_val
@@ -256,7 +256,7 @@ def cost_model(fn, Xs):
     cost = 0.0
     if isinstance(Xs[0], list):
         nbel = 0
-        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory bcs the batch size would be too big
+        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory bcs the batch size would be too big TODO still even a single one might be too big
 
             ins = []
             for inp in Xs:

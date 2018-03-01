@@ -65,22 +65,31 @@ class TestSmoke(unittest.TestCase):
         Ws = data.load(wdir, fbases, shape=None, frameshift=0.005, verbose=1, label='Ws: ')
         self.assertTrue(len(Ws)==10)
 
-        Xs, Ys, Ws = data.cropsize([Xs, Ys, Ws]) # TODO Crop against features
+        Xs, Ys, Ws = data.cropsize([Xs, Ys, Ws])
 
         [Xs, Ys], Ws = data.cropsilences([Xs, Ys], Ws, thresh=0.5)
 
-        # data.vstack_masked TODO
-        # data.maskify TODO
-        # data.addstop TODO
-        # data.load_inoutset TODO
+        Xs_w_stop = data.addstop(Xs)
 
         X_full, MX_full, Y_full, MY_full = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift')
 
         worst_val = data.cost_0pred_rmse(Ys)
         print('worst_val={}'.format(worst_val))
-        # data.cost_model TODO
-        # data.cost_model_prediction_rmse TODO
-        # data.prediction_std TODO
+
+        def data_cost_model(Xs, Ys):
+            return np.std(Ys) # TODO More usefull
+        cost = data.cost_model(data_cost_model, [X_full, Y_full])
+        print(cost)
+
+        class SmokyModel:
+            def predict(Xs):
+                return 0    # TODO More usefull
+        mod = SmokyModel()
+        cost = data.cost_model_prediction_rmse(mod, Xs, Ys)
+        print(cost)
+
+        std = data.prediction_std(mod, Xs)
+        print(std)
 
 if __name__ == '__main__':
     unittest.main()
