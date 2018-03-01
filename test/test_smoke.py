@@ -65,7 +65,7 @@ class TestSmoke(unittest.TestCase):
         Ws = data.load(wdir, fbases, shape=None, frameshift=0.005, verbose=1, label='Ws: ')
         self.assertTrue(len(Ws)==10)
 
-        Xs, Ys, Ws = data.cropsize([Xs, Ys, Ws]) # TODO Crop against features
+        Xs, Ys, Ws = data.cropsize([Xs, Ys, Ws])
 
         [Xs, Ys], Ws = data.cropsilences([Xs, Ys], Ws, thresh=0.5)
 
