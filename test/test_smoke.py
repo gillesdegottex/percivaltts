@@ -72,7 +72,6 @@ class TestSmoke(unittest.TestCase):
         # data.vstack_masked TODO
         # data.maskify TODO
         # data.addstop TODO
-        # data.load_inoutset TODO
 
         X_full, MX_full, Y_full, MY_full = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift')
 
