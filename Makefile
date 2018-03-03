@@ -49,13 +49,13 @@ run:
 	mkdir -p ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
 
 run_continue:
-	mkdir -p ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
 
 run_grid:
 	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
 
 run_grid_continue:
-	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
 
 clone:
 	@test "$(DEST)"
