@@ -51,6 +51,8 @@ class TestSmokeTheano(unittest.TestCase):
     def test_utils_theano(self):
         import utils_theano
 
+        import theano.tensor as T
+
         # TODO Test if CUDA is available and test the following if yes:
         # print(utils_theano.th_memfree()) # Can't test it because needs CUDA
         # print(utils_theano.nvidia_smi_current_gpu())  # Can't test it because needs CUDA
