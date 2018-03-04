@@ -18,6 +18,10 @@ branches:
     - dev
 
 
+addons:
+  apt:
+    packages:
+      - nvidia-cuda-toolkit
 
 before_install:
     - echo "before_install..."
@@ -55,6 +59,7 @@ install:
     # - pip install numpy
     # - pip install scipy
     - conda install --yes cython=0.26.1 libffi=3.2.1 libgcc-ng=7.2.0 libstdcxx-ng=7.2.0 numpy=1.12.1 scipy=0.19.1 libgpuarray=0.6.2 pygpu=0.6.2 mako=1.0.6 theano=0.9.0
+    - conda info -a
 
 script:
     - make test
