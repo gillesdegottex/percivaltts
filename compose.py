@@ -339,9 +339,10 @@ def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, 
         if dropzerovardims:
             keepidx = np.setdiff1d(np.arange(len(means)), zerovaridx)
             size = len(keepidx)
+            keepidx.astype('int32').tofile(os.path.dirname(outfilepath)+'/keepidx.dat')
             print('Dropped dimensions with zero variance. Remains {} dims'.format(size))
 
-        if normfn is not None:
+        if normfn is not None: # TODO This shouldn't be called within compose, it should come afterwards
             normfn(outfilepath, fids, featurepaths=featurepaths, keepidx=keepidx)
 
         print('{} files'.format(len(fids)))
@@ -398,7 +399,13 @@ def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, 
 
 def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen=4096, spec_type='fwspec'):
     '''
-    thresh : [dB] signal threshold to cut the
+    This function creates a one-column vector with one weight value per frame.
+    E.g. The weight is here below computed as a silence coefficient. During
+    training, silent segments at the very begining or very end of the sample
+    will be dropped (i.e. dropped if weight<0.5).
+
+    thresh : [dB] The weight of the frames whose energy < threshold are set
+             weight = 0, and 1 otherwise.
     '''
 
     def mag2db(a): return 20.0*np.log10(np.abs(a))
@@ -445,5 +452,3 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
                 from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
         print('\r                                                                                 \r'),
-
-    print('    Finished')
