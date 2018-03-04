@@ -24,7 +24,7 @@ QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 
 # Maintenance targets ----------------------------------------------------------
 
-.PHONY: test
+.PHONY: test test_clean
 
 all: build
 
@@ -39,10 +39,9 @@ build_pulsemodel: submodule_init
 describe:
 	@git describe
 
-distclean:
+distclean: test_clean
 	cd external/pulsemodel; $(MAKE) distclean
 	find . -name '*.pyc' -delete
-	rm -fr test/slttest
 
 # Run targets ------------------------------------------------------------------
 
@@ -83,3 +82,7 @@ test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
 	# python test/test_run.py
+
+test_clean:
+	rm -fr test/slttest
+	rm -fr test/test_made__*
