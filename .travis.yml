@@ -1,3 +1,11 @@
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/.theano
+    - $HOME/download # Sufficient to add miniconda.sh to TRAVIS cache.
+    - $HOME/miniconda
+
+
 language: python
 python:
     - "2.7"
@@ -28,11 +36,13 @@ before_install:
 
     - sudo apt-get -qq update
     # - sudo apt-get install -y cython
-    - sudo apt-get install -y python-numpy
-    - sudo apt-get install -y python-scipy
+    # - sudo apt-get install -y python-numpy
+    # - sudo apt-get install -y python-scipy
 
-    - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
-    - bash miniconda.sh -b -p $HOME/miniconda
+    - if test ! -e $HOME/miniconda/bin; then
+        wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O $HOME/download/miniconda.sh
+      fi
+    - bash $HOME/download/miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - conda update --yes conda
     - conda info -a
@@ -40,11 +50,11 @@ before_install:
 
 install:
     - echo "install..."
-    - pip install cython
+    # - pip install cython
     # - pip install -q numpy cython
     # - pip install numpy
     # - pip install scipy
-    - conda install cython=0.26.1 libffi=3.2.1 libgcc-ng=7.2.0 libstdcxx-ng=7.2.0 numpy=1.12.1 scipy=0.19.1 libgpuarray=0.6.2 pygpu=0.6.2 mako=1.0.6 theano=0.9.0
+    - conda install --yes cython=0.26.1 libffi=3.2.1 libgcc-ng=7.2.0 libstdcxx-ng=7.2.0 numpy=1.12.1 scipy=0.19.1 libgpuarray=0.6.2 pygpu=0.6.2 mako=1.0.6 theano=0.9.0
 
 script:
     - make test
