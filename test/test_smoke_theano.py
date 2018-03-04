@@ -65,13 +65,13 @@ class TestSmokeTheano(unittest.TestCase):
 
         x = T.ftensor3('x')
 
-        y = nonlin_tanh_saturated(x, coef=1.01)
-        y = nonlin_tanh_bysigmoid(x)
-        y = nonlin_tanhcm11(x)
-        y = nonlin_saturatedsigmoid(x, coef=1.01)
-        y = nonlin_sigmoidbinary(x)
-        y = nonlin_softsign(x)
-        y = nonlin_sigmoidparm(x, c=0.0, f=1.0)
+        y = utils_theano.nonlin_tanh_saturated(x, coef=1.01)
+        y = utils_theano.utils_theano.nonlin_tanh_bysigmoid(x)
+        y = utils_theano.nonlin_tanhcm11(x)
+        y = utils_theano.nonlin_saturatedsigmoid(x, coef=1.01)
+        y = utils_theano.nonlin_sigmoidbinary(x)
+        y = utils_theano.nonlin_softsign(x)
+        y = utils_theano.nonlin_sigmoidparm(x, c=0.0, f=1.0)
 
 
 if __name__ == '__main__':
