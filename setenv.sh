@@ -4,7 +4,7 @@
 
 CUDAPATH=/usr/local/cuda-9.0
 
-CONDAPATH=/opt/miniconda2
+CONDAPATH=$HOME/miniconda
 export PYTHONPATH=$CONDAPATH/lib/python2.7/site-packages:$PYTHONPATH
 export PATH=$CUDAPATH/bin:$PATH
 export LD_LIBRARY_PATH=$CUDAPATH/lib64:$CONDAPATH/lib:$LD_LIBRARY_PATH
