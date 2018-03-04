@@ -19,6 +19,7 @@ FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
 #SETENVSCRIPT=setenv_home.sh
 #SETENVSCRIPT=setenv_cued.sh
+# TODO Detect TRAVIS and use setenv_travis.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 # QSUBCMD="qsubcudagad.sh"
 
@@ -81,7 +82,7 @@ test/slttest: test/slttest.tar.gz
 test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
-	bash setenv_test.sh test/test_smoke_theano.py
+	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
 	# python test/test_run.py
 
 test_clean:
