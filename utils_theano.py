@@ -58,9 +58,9 @@ def nvidia_smi_proc_memused():
         return -1
     return -1
 
-def th_memfree():
-    meminfo = theano.sandbox.cuda.basic_ops.cuda_ndarray.cuda_ndarray.mem_info()
-    return '{}MB mem free'.format(meminfo[0]/(1024*1024))
+# def th_memfree():
+#     meminfo = theano.sandbox.cuda.basic_ops.cuda_ndarray.cuda_ndarray.mem_info()
+#     return '{}MB mem free'.format(meminfo[0]/(1024*1024))
 
 def th_print(msg, op):
     print_shape = theano.printing.Print(msg, attrs = [ 'shape' ])
