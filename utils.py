@@ -102,7 +102,16 @@ def is_int(v):
     v = str(v).strip()
     return v=='0' or (v if v.find('..') > -1 else v.lstrip('-+').rstrip('0').rstrip('.')).isdigit()
 
-
+def weights_normal_ortho(insiz, outsiz, std, rng, dtype):
+    '''
+    dtype : theano.config.floatX
+    '''
+    # Preserve std!
+    a = rng.normal(0.0, std, size=(insiz, outsiz))
+    u, s, v = np.linalg.svd(a, full_matrices=0)
+    if u.shape!=(insiz, outsiz): u=v
+    u = u.reshape((insiz, outsiz))
+    return np.asarray(u, dtype=dtype)
 
 def proc_memresident():
     # retuned unit in MiB
