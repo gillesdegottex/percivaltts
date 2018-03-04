@@ -22,6 +22,8 @@ addons:
   apt:
     packages:
       - nvidia-cuda-toolkit
+      - nvidia-cuda-dev
+      - nvidia-profiler
 
 before_install:
     - echo "before_install..."
