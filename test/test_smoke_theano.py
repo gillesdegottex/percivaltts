@@ -39,7 +39,9 @@ class TestSmokeTheano(unittest.TestCase):
         #         , pp_spec_extrapfreq=-1
         #         ) # TODO
 
-        modgan = ModelGAN(601, 65, 17)
+        import model_gan
+
+        modgan = model_gan.ModelGAN(601, 65, 17)
 
         # cfg = configuration() # Init configuration structure
         # cfg.print_content()
