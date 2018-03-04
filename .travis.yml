@@ -35,7 +35,8 @@ before_install:
 
     - sudo apt-get -qq update
 
-    - if test ! -e $HOME/miniconda/bin; then
+    - if [ ! -e "$HOME/miniconda/bin" ]; then
+        echo "Install Miniconda";
         mkdir -p $HOME/download;
         wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O $HOME/download/miniconda.sh;
         bash $HOME/download/miniconda.sh -u -b -p $HOME/miniconda;
