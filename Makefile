@@ -81,7 +81,7 @@ test/slttest: test/slttest.tar.gz
 test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
-	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
+	bash setenv_test.sh test/test_smoke_theano.py
 	# python test/test_run.py
 
 test_clean:
