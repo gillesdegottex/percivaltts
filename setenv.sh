@@ -13,7 +13,8 @@ export CPATH="$CUDAPATH/include:$CONDAPATH/include:$CPATH"
 
 
 # Use default Ubuntu CUDA install
-export THEANO_FLAGS="cuda.root=$CUDAPATH,floatX=float32,on_unused_input=ignore,"
+# export THEANO_FLAGS="cuda.root=$CUDAPATH,floatX=float32,on_unused_input=ignore,"
+export THEANO_FLAGS="floatX=float32,on_unused_input=ignore,"
 
 #export THEANO_FLAGS="optimizer_including=cudnn:local_ultra_fast_sigmoid,"$THEANO_FLAGS #local_ultra_fast_sigmoid seems to block training
 # Force use of cuDNN
@@ -23,7 +24,8 @@ export THEANO_FLAGS="cuda.root=$CUDAPATH,floatX=float32,on_unused_input=ignore,"
 # export THEANO_FLAGS="lib.cnmem=1,"$THEANO_FLAGS
 
 
-export THEANO_FLAGS="mode=FAST_RUN,device=cuda,"$THEANO_FLAGS
+# export THEANO_FLAGS="mode=FAST_RUN,device=cuda,"$THEANO_FLAGS
+export THEANO_FLAGS="mode=FAST_RUN,"$THEANO_FLAGS
 # For debugging, uncomment below and comment above
 # export THEANO_FLAGS="device=cpu,exception_verbosity=high,optimizer=None,"$THEANO_FLAGS
 
