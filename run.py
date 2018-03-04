@@ -4,7 +4,10 @@ This script coordinates the overall pipeline execution:
 * Data composition/preparation (e.g. output composition, normalisation)
 * Training
 * Generation
-If you want to skip a step, it's very complicate: comment the lines concerned.
+If you want to skip a step, it's very complicate: comment the lines concerned at
+the very end of this script.
+
+This file is meant to be widely modified depending on the experiment you run.
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 

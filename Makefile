@@ -42,6 +42,7 @@ describe:
 distclean:
 	cd external/pulsemodel; $(MAKE) distclean
 	find . -name '*.pyc' -delete
+	rm -fr test/slttest
 
 # Run targets ------------------------------------------------------------------
 
@@ -49,13 +50,13 @@ run:
 	mkdir -p ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
 
 run_continue:
-	mkdir -p ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
 
 run_grid:
 	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
 
 run_grid_continue:
-	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
 
 clone:
 	@test "$(DEST)"
@@ -81,3 +82,4 @@ test/slttest: test/slttest.tar.gz
 test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
+	# python test/test_run.py
