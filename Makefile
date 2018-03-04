@@ -42,6 +42,7 @@ describe:
 distclean:
 	cd external/pulsemodel; $(MAKE) distclean
 	find . -name '*.pyc' -delete
+	rm -fr test/slttest
 
 # Run targets ------------------------------------------------------------------
 
@@ -81,3 +82,4 @@ test/slttest: test/slttest.tar.gz
 test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
+	# python test/test_run.py
