@@ -80,6 +80,10 @@ test/slttest: test/slttest.tar.gz
 	tar xvf test/slttest.tar.gz -C test/
 
 test: build test/slttest
+ifeq ($(TRAVIS),"true")
+    export SETENVSCRIPT=setenv_travis.sh
+endif
+	echo "SETENVSCRIPT=$(SETENVSCRIPT)"
 	python test/test_base.py
 	python test/test_smoke.py
 	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
