@@ -66,7 +66,7 @@ class TestSmokeTheano(unittest.TestCase):
         x = T.ftensor3('x')
 
         y = utils_theano.nonlin_tanh_saturated(x, coef=1.01)
-        y = utils_theano.utils_theano.nonlin_tanh_bysigmoid(x)
+        y = utils_theano.nonlin_tanh_bysigmoid(x)
         y = utils_theano.nonlin_tanhcm11(x)
         y = utils_theano.nonlin_saturatedsigmoid(x, coef=1.01)
         y = utils_theano.nonlin_sigmoidbinary(x)
