@@ -38,7 +38,7 @@ f0_path = cp+wav_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
 nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
 cfg.outdir = cp+wav_dir+'_cmp_lf0_fwspec'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')'
-cfg.outwdir = cp+wav_dir+'_fwspec'+str(spec_size)+'_weights/*.w:(-1,1)'
+cfg.wdir = cp+wav_dir+'_fwspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 cfg.print_content()
 
@@ -65,7 +65,7 @@ class TestBase(unittest.TestCase):
 
         # Create time weights (column vector in [0,1]). The frames at begining or end of
         # each file whose weights are smaller than 0.5 will be ignored by the training
-        compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.outwdir)
+        compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir)
 
 
 if __name__ == '__main__':
