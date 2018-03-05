@@ -55,7 +55,7 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
 class ModelCNN(model.Model):
     def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbprelayers=2, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=[0,1], dropout_p=-1.0):
         outsize = 1+specsize+nmsize
-        model.Model.__init__(self, insize, outsize, specsize, nmsize)
+        model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
         _winlen = int(0.5*windur/0.005)*2+1
 
@@ -105,7 +105,7 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, nbpostlayers=4, windur=0.100, bn_axes=[0,1], dropout_p=-1.0, use_bn=False):
+def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, nbpostlayers=4, windur=0.100, bn_axes=[0,1], dropout_p=-1.0, use_bn=False):
     layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var)
 
     _use_LSweighting = True
