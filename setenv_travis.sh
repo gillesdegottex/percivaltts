@@ -17,4 +17,6 @@ export THEANO_FLAGS="device=cpu,exception_verbosity=high,optimizer=None,"$THEANO
 
 unset LD_PRELOAD
 
-python $@
+$@
+
+# python $@
