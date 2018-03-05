@@ -41,6 +41,7 @@ import theano
 import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
 
 # import networks_basic
 # import networks_cnn
@@ -185,8 +186,6 @@ class Model:
 
         self.loadAllParams(params_savefile)              # Load the model's parameters
 
-        import generate_pp
-
         def decomposition(CMP, outsize_wodeltas, do_mlpg=False, pp_mcep=True, f0clipmin=-1, f0clipmax=-1):
 
             # Denormalise
@@ -211,6 +210,7 @@ class Model:
                 SPEC = np.exp(sp.fwbnd2linbnd(mcep, cfg.fs, dftlen, smooth=True))
 
             elif spec_comp=='mcep':
+                import generate_pp
                 if pp_mcep: mcep=generate_pp.mcep_postproc_sptk(mcep, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(mcep, sp.bark_alpha(cfg.fs), dftlen=dftlen)
 
