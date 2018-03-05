@@ -26,11 +26,19 @@ import time
 import socket
 import subprocess
 import runpy
+import xml.etree.ElementTree as ET
 
 import numpy as np
 
 
 class configuration(object):
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def id_train_nb(self):
         # Number of samples used for training, equal or slightly lower than self.id_valid_start
         return self.train_batchsize* int(np.floor(self.id_valid_start/self.train_batchsize))
@@ -147,10 +155,6 @@ def print_sysinfo():
     import numpy
     print('  Numpy: {} {}'.format(numpy.version.version, numpy.__file__))
 
-    #logger.info('  Theano version: '+theano.version.version)
-    #logger.info('    THEANO_FLAGS: '+os.getenv('THEANO_FLAGS'))
-    #logger.info('    device: '+theano.config.device)
-
     # Check for the presence of git
     codedir = os.path.dirname(os.path.realpath(__file__))
     diropts = ['--git-dir={}/.git'.format(codedir), '--work-tree={}'.format(codedir)]
@@ -181,18 +185,38 @@ def print_sysinfo():
 
     print('')
 
-def print_sysinfo_theano():
-    import theano
-    import utils_theano
-    print('    Theano: {} {}'.format(theano.__version__, theano.config.floatX, theano.__file__))
-    print('    THEANO_FLAGS: '+str(os.getenv('THEANO_FLAGS')))
-    print('    floatX={}'.format(theano.config.floatX))
-    print('    device={}'.format(theano.config.device))
-    print('    GID={}'.format(utils_theano.nvidia_smi_current_gpu()))
-    print('    base_compiledir={}'.format(theano.config.base_compiledir))
-    print('    cuDNN={}'.format(theano.config.dnn.enabled))
-    print('    CUDA {}'.format(theano.config.cuda.root))
-    print('')
+def nvidia_smi_current_gpu():
+
+    # if theano.config.device=='cpu': return -2
+
+    try:
+        xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
+        root = ET.fromstring(xml)
+        for gpu in root.findall('gpu'):
+            for proc in gpu.find('processes').findall('process_info'):
+                if int(proc.find('pid').text) == os.getpid():
+                    return int(gpu.find('minor_number').text)
+    except:
+        return -1
+    return -1
+
+def nvidia_smi_gpu_memused():
+    '''
+        return : [MiB]
+    '''
+
+    # if theano.config.device=='cpu': return -2
+
+    try:
+        xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
+        root = ET.fromstring(xml)
+        for gpu in root.findall('gpu'):
+            for proc in gpu.find('processes').findall('process_info'):
+                if int(proc.find('pid').text) == os.getpid():
+                    return int(proc.find('used_memory').text.split(' ')[0])
+    except:
+        return -1
+    return -1
 
 # Logging plot functions -------------------------------------------------------
 

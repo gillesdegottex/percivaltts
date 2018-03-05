@@ -22,6 +22,7 @@ from __future__ import print_function
 
 import sys
 import os
+import copy
 
 import time
 import random
@@ -34,15 +35,88 @@ from utils import *
 import data
 
 print('\nLoading Theano')
+from utils_theano import *
+print_sysinfo_theano()
 import theano
 import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
-print_sysinfo_theano()
 
-from utils_theano import *
+# import networks_basic
+# import networks_cnn
 
 class Model:
+
+    # lasagne.nonlinearities.rectify, lasagne.nonlinearities.leaky_rectify, lasagne.nonlinearities.very_leaky_rectify, lasagne.nonlinearities.elu, lasagne.nonlinearities.softplus, lasagne.nonlinearities.tanh, networks.nonlin_softsign
+    _nonlinearity = lasagne.nonlinearities.very_leaky_rectify
+
+    # Network and Prediction variables
+
+    insize = -1
+    _input_values = None # Input contextual values (e.g. text, labels)
+    inputs = None   # All the inputs of prediction function
+
+    params_all = None # All possible parameters, including non trainable, running averages of batch normalisation, etc.
+    params_trainable = None # Trainable parameters
+    updates = []
+
+    outsize = -1
+    net_out = None  # Network output
+    outputs = None  # Outputs of prediction function
+
+    predict = None  # Prection function
+
+    def __init__(self, insize, outsize, specsize, nmsize):
+        # Force additional random inputs is using anyform of GAN
+        print("Building the model")
+
+        self.insize = insize
+
+        self.specsize = specsize
+        self.nmsize = nmsize
+        self.outsize = outsize
+
+        self._input_values = T.ftensor3('input_values')
+
+        # self._hidfcwidth = 512 # width of the intermediate hidden fully-connected layers
+
+        # Build the network ----------------------------------------------------
+        # self.build(insize, outsize, specsize, nmsize)
+
+        # Select your favorite one or just fill self.net_out and self.updates with whatever you want
+
+        # self.net_out, self.updates = networks_basic.LA_NxFC(self._input_values, self._hidfcwidth, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=6, nonlinearity=self._nonlinearity) # TODO TODO TODO
+
+        # self.net_out, self.updates = networks_basic.LA_NxFC(self._input_values, self._hidfcwidth, self.insize, self.specsize, self.nmsize, nblayers=6, nonlinearity=self._nonlinearity)
+        # self.net_out, self.updates = networks_basic.LA_NxBGRU(self._input_values, self._hidfcwidth, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=3, nonlinearity=self._nonlinearity)
+        # self.net_out, self.updates = networks_basic.LA_NxBLSTM(self._input_values, self._hidfcwidth, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=3, nonlinearity=self._nonlinearity)
+
+        # self.net_out, self.updates = networks_cnn.LA_3xFC_splitfeats_2xGC2D_C2D(self._input_values, self._hidfcwidth, self.insize, self.specsize, self.nmsize, nonlinearity=self._nonlinearity)
+
+        # End network building -------------------------------------------------
+
+    def init_finish(self, net_out):
+
+        self.net_out = net_out
+
+        print('    architecture:')
+        for l in lasagne.layers.get_all_layers(self.net_out):
+            print('        {}:{}'.format(l.name, l.output_shape))
+
+        self.params_all = lasagne.layers.get_all_params(self.net_out)
+        self.params_trainable = lasagne.layers.get_all_params(self.net_out, trainable=True)
+
+        print('    params={}'.format(self.params_all))
+
+        print('    compiling prediction function ...')
+        self.inputs = [self._input_values]
+
+        predicted_values = lasagne.layers.get_output(self.net_out, deterministic=True)
+        self.outputs = predicted_values
+        self.predict = theano.function(self.inputs, self.outputs, updates=self.updates)
+
+        print('')
+
 
     def nbParams(self):
         return paramss_count(self.params_all)
@@ -65,164 +139,7 @@ class Model:
         for p, v in zip(self.params_all, DATA[0]): p.set_value(v[1])
         print(' done')
         sys.stdout.flush()
-
-    def saveTrainingState(self, fstate, cfg=None, extras=dict(), printfn=print):
-        # https://github.com/Lasagne/Lasagne/issues/159
-        printfn('    saving training state in {} ...'.format(fstate), end='')
-        sys.stdout.flush()
-
-        paramsvalues = [(str(p), p.get_value()) for p in self.params_all] # The network parameters
-
-        ovs = []
-        for ov in self.optim_updates:
-            ovs.append([p.get_value() for p in ov.keys()]) # The optim algo state
-
-        DATA = [paramsvalues, ovs, cfg, extras]
-        cPickle.dump(DATA, open(fstate, 'wb'))
-
-        print(' done')
-        sys.stdout.flush()
-
-    def loadTrainingState(self, fstate, cfg, printfn=print):
-        # https://github.com/Lasagne/Lasagne/issues/159
-        printfn('    reloading parameters from {} ...'.format(fstate), end='')
-        sys.stdout.flush()
-
-        DATA = cPickle.load(open(fstate, 'rb'))
-        for p, v in zip(self.params_all, DATA[0]): p.set_value(v[1])    # The network parameters
-
-        for ov, da in zip(self.optim_updates, DATA[1]):
-            for p, value in zip(ov.keys(), da): p.set_value(value)      # The optim algo state
-
-        print(' done')
-        sys.stdout.flush()
-
-        if cfg.__dict__!=DATA[2].__dict__:
-            printfn('        configurations are not the same !')
-            for attr in cfg.__dict__:
-                if attr in DATA[2].__dict__:
-                    print('            attribute {}: new state {}, saved state {}'.format(attr, cfg.__dict__[attr], DATA[2].__dict__[attr]))
-                else:
-                    print('            attribute {}:{} is not in the saved state'.format(attr, cfg.__dict__[attr]))
-            for attr in DATA[2].__dict__:
-                if attr not in cfg.__dict__:
-                    print('            attribute {}:{} is not in the new state'.format(attr, cfg.__dict__[attr]))
-
-
-        return DATA[3]
-
-    # Training =================================================================
-
-    def train(self, params, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
-        raise ValueError('You need to implement train(.)')
-
-    def randomize_hyper(self, cfg):
-        # Randomized the hyper parameters
-        if len(cfg.hypers)<1: return ''
-
-        hyperstr = ''
-        for hyper in cfg.hypers:
-            if type(hyper[1]) is int and type(hyper[2]) is int:
-                setattr(cfg, hyper[0], np.random.randint(hyper[1],hyper[2]))
-            else:
-                setattr(cfg, hyper[0], np.random.uniform(hyper[1],hyper[2]))
-            hyperstr += hyper[0]+'='+str(getattr(cfg, hyper[0]))+','
-        hyperstr = hyperstr[:-1]
-
-        return cfg, hyperstr
-
-    def train_multipletrials(self, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, params, params_savefile, cfgtomerge=None, cont=None, **kwargs):
-        # Hyp: always uses batches
-
-        # All kwargs arguments are specific configuration values
-        # First, fill a struct with the default configuration values ...
-        cfg = configuration() # Init structure
-
-        # LSE
-        cfg.train_learningrate_log10 = -3.39794       # (10**-3.39794=0.0004 confirmed on 2xBGRU256_bn20) [potential hyper-parameter] Merlin:0.001 (or 0.002, or 0.004)
-        cfg.train_adam_beta1 = 0.98           # [potential hyper-parameter]
-        cfg.train_adam_beta2 = 0.999          # [potential hyper-parameter]
-        cfg.train_adam_epsilon_log10 = -8     # [potential hyper-parameter]
-        # WGAN
-        cfg.train_D_learningrate = 0.0001     # [potential hyper-parameter]
-        cfg.train_D_adam_beta1 = 0.0          # [potential hyper-parameter]
-        cfg.train_D_adam_beta2 = 0.9          # [potential hyper-parameter]
-        cfg.train_G_learningrate = 0.001      # [potential hyper-parameter]
-        cfg.train_G_adam_beta1 = 0.0          # [potential hyper-parameter]
-        cfg.train_G_adam_beta2 = 0.9          # [potential hyper-parameter]
-        cfg.train_pg_lambda = 10              # [potential hyper-parameter]
-        cfg.train_LScoef = 0.25               # [potential hyper-parameter]
-
-        cfg.train_max_nbepochs = 100
-        cfg.train_batchsize = 5               # [potential hyper-parameter]
-        cfg.train_batch_padtype = 'randshift' # See load_inoutset(..., maskpadtype)
-        cfg.train_batch_length = None # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
-        cfg.train_batch_lengthmax = None # Maximum duration [frames] of each batch
-        cfg.train_cancel_validthresh = 10.0 # Cancel train if valid err is more than N times higher than the 0-pred valid err
-        cfg.train_cancel_nodecepochs = 50
-        cfg.train_nbtrials = 1
-        cfg.train_hypers=[]
-        #cfg.hypers = [('learningrate_log10', -6.0, -2.0), ('adam_beta1', 0.8, 1.0)] # For ADAM
-        ##cfg.train_hyper = [('train_learningrate', 0.0001, 0.1), ('train_adam_beta1', 0.8, 1.0), ('train_adam_beta2', 0.995, 1.0), ('train_adam_epsilon_log10', -10.0, -6.0), ('train_batchsize', 1, 200)] # For ADAM
-        cfg.train_log_plot=True
-        # ... add/overwrite configuration from cfgtomerge ...
-        if not cfgtomerge is None: cfg.merge(cfgtomerge)
-        # ... and add/overwrite specific configuration from the generic arguments
-        for kwarg in kwargs.keys(): setattr(cfg, kwarg, kwargs[kwarg])
-
-        print('Training configuration')
-        cfg.print_content()
-
-        print('Loading all validation data at once ...')
-        # from IPython.core.debugger import  Pdb; Pdb().set_trace()
-        # X_val, Y_val = data.load_inoutset(indir, outdir, outwdir, fid_lst_val, verbose=1)
-        X_vals = data.load(indir, fid_lst_val, verbose=1, label='Context labels: ')
-        Y_vals = data.load(outdir, fid_lst_val, verbose=1, label='Output features: ')
-        X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
-
-        if cfg.train_nbtrials>1:
-            self.saveAllParams(params_savefile+'.init', cfg=cfg, printfn=print_log)
-            # self.saveTrainingState(params_savefile+'.trainingstate-init', cfg=cfg, printfn=print_log)
-
-        try:
-            trials = []
-            for triali in xrange(1,1+cfg.train_nbtrials):  # Run multiple trials with different hyper-parameters
-                print('\nStart trial {} ...'.format(triali))
-
-                try:
-                    trialstr = 'trial'+str(triali)
-                    if len(cfg.train_hypers)>0:
-                        cfg, hyperstr = self.randomize_hyper(cfg)
-                        trialstr += ','+hyperstr
-                        print('    randomized hyper-parameters: '+trialstr)
-                    if cfg.train_nbtrials>1:
-                        self.loadAllParams(params_savefile+'.init')
-                        # self.loadTrainingState(params_savefile+'.trainingstate-init')
-
-                    timewholetrainstart = time.time()
-                    train_rets = self.train(params, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr=trialstr, cont=cont)
-                    cont = None
-                    print_log('Total trial run time: {}s'.format(time2str(time.time()-timewholetrainstart)))
-
-                except KeyboardInterrupt:
-                    raise KeyboardInterrupt
-                except:
-                    if len(cfg.train_hypers)>0: print_log('WARNING: Training crashed!')
-                    else:                       print_log('ERROR: Training crashed!')
-                    import traceback
-                    traceback.print_exc()
-                    pass
-
-                if cfg.train_nbtrials>1:
-                    trials.append([triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]+[train_rets[key] for key in sorted(train_rets.keys())])
-                    # Save results of each trial
-                    np.savetxt(params_savefile+'.trials', np.vstack(trials), header=('trials '+' '.join([field[0] for field in cfg.train_hypers]+sorted(train_rets.keys()))))
-
-        except KeyboardInterrupt:
-            print_log('WARNING: Training interrupted by user!')
-            pass
-
-        print_log('Finished')
+        return DATA[1:]
 
 
     def generate(self, params_savefile, outsuffix, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None
