@@ -11,8 +11,8 @@ class TestRun(unittest.TestCase):
         import run
         run.features_extraction()
         run.composition()
-        run.training(cont=False)
-        run.generate_wavs()
+        # run.training(cont=False)
+        # run.generate_wavs()
 
 if __name__ == '__main__':
     unittest.main()
