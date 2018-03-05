@@ -224,7 +224,7 @@ class ModelGAN(model.Model):
         epochstart = 1
         if cont:
             print('    reloading previous training state ...')
-            extras = self.loadTrainingState("trainingstate.pkl.last", cfg)
+            _, extras = self.loadTrainingState("trainingstate.pkl.last", cfg)
             cost_val = extras['cost_val']
             best_val = extras['best_val']
             # Restoring some local variables
