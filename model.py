@@ -22,6 +22,7 @@ from __future__ import print_function
 
 import sys
 import os
+import copy
 
 import time
 import random
@@ -34,13 +35,12 @@ from utils import *
 import data
 
 print('\nLoading Theano')
+from utils_theano import *
+print_sysinfo_theano()
 import theano
 import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
-print_sysinfo_theano()
-
-from utils_theano import *
 
 class Model:
 
@@ -65,6 +65,7 @@ class Model:
         for p, v in zip(self.params_all, DATA[0]): p.set_value(v[1])
         print(' done')
         sys.stdout.flush()
+        return DATA[1:]
 
     def saveTrainingState(self, fstate, cfg=None, extras=dict(), printfn=print):
         # https://github.com/Lasagne/Lasagne/issues/159
@@ -108,8 +109,7 @@ class Model:
                 if attr not in cfg.__dict__:
                     print('            attribute {}:{} is not in the new state'.format(attr, cfg.__dict__[attr]))
 
-
-        return DATA[3]
+        return DATA[2:]
 
     # Training =================================================================
 
@@ -117,11 +117,13 @@ class Model:
         raise ValueError('You need to implement train(.)')
 
     def randomize_hyper(self, cfg):
+        cfg = copy.copy(cfg) # Create a new one instead of updating the object passed as argument
+
         # Randomized the hyper parameters
-        if len(cfg.hypers)<1: return ''
+        if len(cfg.train_hypers)<1: return cfg, ''
 
         hyperstr = ''
-        for hyper in cfg.hypers:
+        for hyper in cfg.train_hypers:
             if type(hyper[1]) is int and type(hyper[2]) is int:
                 setattr(cfg, hyper[0], np.random.randint(hyper[1],hyper[2]))
             else:

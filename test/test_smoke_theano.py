@@ -5,27 +5,56 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import unittest
 
+from utils import *
+
+
 class TestSmokeTheano(unittest.TestCase):
     def test_model(self):
+        makedirs('test/test_made__smoke_theano_model')
 
         import model
         class ModelSmoke(model.Model):
             def train(self, params, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
                 raise ValueError('That\'s a smoky model that doesn\'t train anything')
-
         mod = ModelSmoke()
 
-        # def nbParams(self) # TODO
 
-        # def saveAllParams(self, fmodel, cfg=None, extras=dict(), printfn=print) # TODO
+        import model_gan
+        modgan = model_gan.ModelGAN(601, 65, 17)
 
-        # def loadAllParams(self, fmodel, printfn=print) # TODO
+        print("modgan.nbParams={}".format(modgan.nbParams()))
 
-        # def saveTrainingState(self, fstate, cfg=None, extras=dict(), printfn=print) # TODO
+        cfg = configuration() # Init configuration structure
+        cfg.smokyconfiguration = 64
+        cfg.train_hypers = []
+        cost_val = 67.43
+        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
+        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
 
-        # def loadTrainingState(self, fstate, cfg, printfn=print) # TODO
+        cfg_loaded, extras_loaded = modgan.loadAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
+        self.assertEqual(cfg, cfg_loaded)
+        self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
-        # def randomize_hyper(self, cfg) # TODO
+
+        modgan.saveTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg, extras={'cost_val':cost_val})
+
+        cfg_loaded, extras_loaded = modgan.loadTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg)
+        self.assertEqual(cfg, cfg_loaded)
+        self.assertEqual({'cost_val':cost_val}, extras_loaded)
+
+        cfg, hyperstr = modgan.randomize_hyper(cfg)
+        print('randomize_hyper: hyperstr='+hyperstr)
+        cfg.print_content()
+
+        cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0)] # For ADAM
+        cfg_hyprnd1, hyperstr1 = modgan.randomize_hyper(cfg)
+        print('randomize_hyper: hyperstr1='+hyperstr1)
+        cfg_hyprnd1.print_content()
+        cfg_hyprnd2, hyperstr2 = modgan.randomize_hyper(cfg)
+        print('randomize_hyper: hyperstr2='+hyperstr2)
+        cfg_hyprnd2.print_content()
+        self.assertNotEqual(cfg_hyprnd1, cfg_hyprnd2)
 
         # def train_multipletrials(self, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, params, params_savefile, cfgtomerge=None, cont=None, **kwargs) # TODO
 
@@ -39,10 +68,6 @@ class TestSmokeTheano(unittest.TestCase):
         #         , pp_spec_extrapfreq=-1
         #         ) # TODO
 
-        import model_gan
-
-        modgan = model_gan.ModelGAN(601, 65, 17)
-
         # cfg = configuration() # Init configuration structure
         # cfg.print_content()
         # modgan.train_multipletrials(cfg.indir, cfg.outdir, cfg.outwdir, fid_lst_tra, fid_lst_val, mod.params_trainable, 'smokymodelparams.pkl', cfgtomerge=cfg, cont=cont) # TODO
@@ -53,10 +78,11 @@ class TestSmokeTheano(unittest.TestCase):
 
         import theano.tensor as T
 
-        # TODO Test if CUDA is available and test the following if yes:
-        # print(utils_theano.th_memfree()) # Can't test it because needs CUDA
-        # print(utils_theano.nvidia_smi_current_gpu())  # Can't test it because needs CUDA
-        # print(utils_theano.nvidia_smi_proc_memused()) # Can't test it because needs CUDA
+        # Test the following if CUDA is available: (won't be tested on travis anyway since no GPU are available on travis)
+        if utils_theano.th_cuda_available():
+            print('th_cuda_memfree={}'.format(utils_theano.th_cuda_memfree())) # Can't test it because needs CUDA
+            print('nvidia_smi_current_gpu={}'.format(nvidia_smi_current_gpu()))  # Can't test it because needs CUDA
+            print('nvidia_smi_gpu_memused={}'.format(nvidia_smi_gpu_memused())) # Can't test it because needs CUDA
 
         # th_print(msg, op) # TODO
         # paramss_count(paramss) # TODO
