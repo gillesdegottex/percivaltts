@@ -26,6 +26,7 @@ import time
 import socket
 import subprocess
 import runpy
+import xml.etree.ElementTree as ET
 
 import numpy as np
 
@@ -186,7 +187,7 @@ def print_sysinfo():
 
 def nvidia_smi_current_gpu():
 
-    if theano.config.device=='cpu': return -2
+    # if theano.config.device=='cpu': return -2
 
     try:
         xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
@@ -204,7 +205,7 @@ def nvidia_smi_gpu_memused():
         return : [MiB]
     '''
 
-    if theano.config.device=='cpu': return -2
+    # if theano.config.device=='cpu': return -2
 
     try:
         xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]

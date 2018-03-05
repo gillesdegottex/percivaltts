@@ -20,11 +20,12 @@ Author
 
 import os
 import subprocess
-import xml.etree.ElementTree as ET
 
 import numpy as np
 import theano
 import theano.tensor as T
+
+import utils
 
 def print_sysinfo_theano():
     print('    Theano: {} {}'.format(theano.__version__, theano.__file__))
@@ -34,7 +35,7 @@ def print_sysinfo_theano():
     print('    device={}'.format(theano.config.device))
     print('    CUDAPATH={}'.format(theano.config.cuda.root))
     print('    cuDNN={}'.format(theano.config.dnn.enabled))
-    print('    GID={}'.format(nvidia_smi_current_gpu()))
+    print('    GID={}'.format(utils.nvidia_smi_current_gpu()))
     print('')
 
 def th_cuda_available():
