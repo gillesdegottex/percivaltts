@@ -55,9 +55,9 @@ install:
 script:
     - make
     - tar xvf test/slttest.tar.gz -C test/
-    - coverage run --source=. --omit=test/ test/test_base.py
-    - coverage run --source=. --omit=test/ test/test_smoke.py
-    - bash setenv_travis.sh coverage run --source=. --omit=test/ test/test_smoke_theano.py
+    - coverage run --source=. --omit=test/,external/ test/test_base.py
+    - coverage run -a --source=. --omit=test/,external/ test/test_smoke.py
+    - bash setenv_travis.sh coverage run -a --source=. --omit=test/,external/ test/test_smoke_theano.py
 
 after_success:
     - coveralls
