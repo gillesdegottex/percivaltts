@@ -2,7 +2,8 @@
 
 # Set the environment variables before calling the python code
 
-CONDAPATH=$HOME/miniconda
+# CONDAPATH=$HOME/miniconda
+CONDAPATH=/home/degottex/Research/tools/miniconda2
 
 export PYTHONPATH=$CONDAPATH/lib/python2.7/site-packages:$PYTHONPATH
 export PATH=$CONDAPATH/bin:$PATH
@@ -17,6 +18,8 @@ export THEANO_FLAGS="device=cpu,exception_verbosity=high,optimizer=None,"$THEANO
 
 unset LD_PRELOAD
 
-$@
-
-# python $@
+if [ "$1" == "coverage" ] ; then
+    $@
+else
+    python $@
+fi
