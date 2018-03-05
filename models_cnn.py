@@ -105,18 +105,12 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-def build_discri_split(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize, dropout_p=-1.0, use_bn=False):
+def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, nbpostlayers=4, windur=0.100, bn_axes=[0,1], dropout_p=-1.0, use_bn=False):
     layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var)
 
-    _nonlinearity = lasagne.nonlinearities.very_leaky_rectify
-    _bn_axes = [0,1]
-    nbcnnlayers = 4
-    _nbfilters = 8
-    _gen_intermfc_nblayers = 4
     _use_LSweighting = True
 
-    _windur = 0.100 #[s]
-    _winlen = int(0.5*_windur/0.005)*2+1
+    _winlen = int(0.5*windur/0.005)*2+1
 
     layerstoconcats = []
 
@@ -129,8 +123,8 @@ def build_discri_split(discri_input_var, condition_var, specsize, nmsize, ctxsiz
         if use_bn: layer=lasagne.layers.batch_norm(layer)
         if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
         for _ in xrange(nbcnnlayers):
-            layer = layer_GatedConv2DLayer(layer, _nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=_nonlinearity)
-            # layer = layer_GatedResConv2DLayer(layer, _nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=_nonlinearity)
+            layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
+            # layer = layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
             if use_bn: layer=lasagne.layers.batch_norm(layer)
             if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
         layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
@@ -149,13 +143,13 @@ def build_discri_split(discri_input_var, condition_var, specsize, nmsize, ctxsiz
 
     layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
     stride_init = 1 # TODO
-    layer = lasagne.layers.Conv2DLayer(layer, stride_init*_nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
+    layer = lasagne.layers.Conv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
     if use_bn: layer=lasagne.layers.batch_norm(layer)
     if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
     for _ in xrange(nbcnnlayers):
-        layer = layer_GatedConv2DLayer(layer, stride_init*_nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=_nonlinearity)
+        layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity)
         if use_bn: layer=lasagne.layers.batch_norm(layer)
-        # layer = lasagne.layers.batch_norm(layer_GatedResConv2DLayer(layer, _nbfilters, [_winlen,freqlen], stride=1, pad='same', nonlinearity=_nonlinearity))
+        # layer = lasagne.layers.batch_norm(layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,freqlen], stride=1, pad='same', nonlinearity=nonlinearity))
         if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
     layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
     layer_spec = lasagne.layers.flatten(layer, outdim=3)
@@ -178,9 +172,9 @@ def build_discri_split(discri_input_var, condition_var, specsize, nmsize, ctxsiz
         if use_bn: layer=lasagne.layers.batch_norm(layer)
         if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
         for _ in xrange(nbcnnlayers):
-            layer = layer_GatedConv2DLayer(layer, _nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=_nonlinearity)
+            layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=nonlinearity)
             if use_bn: layer=lasagne.layers.batch_norm(layer)
-            # layer = lasagne.layers.batch_norm(layer_GatedResConv2DLayer(layer, _nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=_nonlinearity))
+            # layer = lasagne.layers.batch_norm(layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=nonlinearity))
             if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
         layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
         layer_bndnm = lasagne.layers.flatten(layer, outdim=3)
@@ -193,8 +187,8 @@ def build_discri_split(discri_input_var, condition_var, specsize, nmsize, ctxsiz
     layer = lasagne.layers.ConcatLayer(layerstoconcats, axis=2)
 
     # finalize with a common FC network
-    for _ in xrange(_gen_intermfc_nblayers):
-        layer = lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=_nonlinearity, num_leading_axes=2)
+    for _ in xrange(nbpostlayers):
+        layer = lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2)
         if use_bn: layer=lasagne.layers.batch_norm(layer, axes=_bn_axes)
         # if dropout_p>0.0: layer = lasagne.layers.dropout(layer, p=dropout_p) # Bad for FC
 
