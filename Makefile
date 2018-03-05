@@ -19,8 +19,7 @@ FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
 # SETENVSCRIPT=setenv_home.sh
 #SETENVSCRIPT=setenv_cued.sh
-# TODO Detect TRAVIS and use setenv_travis.sh
-ifeq ($(TRAVIS),"true")
+ifeq ($(TRAVIS),true)
     SETENVSCRIPT=setenv_travis.sh
 endif
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
@@ -83,7 +82,6 @@ test/slttest: test/slttest.tar.gz
 	tar xvf test/slttest.tar.gz -C test/
 
 test: build test/slttest
-	echo "TRAVIS=$(TRAVIS)"
 	echo "SETENVSCRIPT=$(SETENVSCRIPT)"
 	python test/test_base.py
 	python test/test_smoke.py
