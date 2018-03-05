@@ -1,8 +1,8 @@
 cache:
   directories:
     - $HOME/.cache/pip
-    - $HOME/.theano
     - $HOME/miniconda
+    # - $HOME/.theano
 
 
 language: python
