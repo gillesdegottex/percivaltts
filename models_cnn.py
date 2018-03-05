@@ -21,12 +21,14 @@ Author
 from __future__ import print_function
 
 import sys
+import os
 
 import numpy as np
 rng = np.random.RandomState(123) # As in Merlin
 
 import theano
 import theano.tensor as T
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
 
 from utils_theano import *
