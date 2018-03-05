@@ -113,7 +113,7 @@ class Model:
 
     # Training =================================================================
 
-    def train(self, params, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
+    def train(self, params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
         raise ValueError('You need to implement train(.)')
 
     def randomize_hyper(self, cfg):
@@ -133,7 +133,7 @@ class Model:
 
         return cfg, hyperstr
 
-    def train_multipletrials(self, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, params, params_savefile, cfgtomerge=None, cont=None, **kwargs):
+    def train_multipletrials(self, indir, outdir, wdir, fid_lst_tra, fid_lst_val, params, params_savefile, cfgtomerge=None, cont=None, **kwargs):
         # Hyp: always uses batches
 
         # All kwargs arguments are specific configuration values
@@ -177,7 +177,7 @@ class Model:
 
         print('Loading all validation data at once ...')
         # from IPython.core.debugger import  Pdb; Pdb().set_trace()
-        # X_val, Y_val = data.load_inoutset(indir, outdir, outwdir, fid_lst_val, verbose=1)
+        # X_val, Y_val = data.load_inoutset(indir, outdir, wdir, fid_lst_val, verbose=1)
         X_vals = data.load(indir, fid_lst_val, verbose=1, label='Context labels: ')
         Y_vals = data.load(outdir, fid_lst_val, verbose=1, label='Output features: ')
         X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
@@ -202,7 +202,7 @@ class Model:
                         # self.loadTrainingState(params_savefile+'.trainingstate-init')
 
                     timewholetrainstart = time.time()
-                    train_rets = self.train(params, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr=trialstr, cont=cont)
+                    train_rets = self.train(params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr=trialstr, cont=cont)
                     cont = None
                     print_log('Total trial run time: {}s'.format(time2str(time.time()-timewholetrainstart)))
 
