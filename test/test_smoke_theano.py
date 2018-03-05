@@ -28,49 +28,45 @@ fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
 
 
 class TestSmokeTheano(unittest.TestCase):
-    def test_smokymodel(self):
-        import model
-        class ModelSmoke(model.Model):
-            def train(self, params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
-                raise ValueError('That\'s a smoky model that doesn\'t train anything')
-        mod = ModelSmoke()
-
     def test_model(self):
         makedirs('test/test_made__smoke_theano_model')
 
-        import model_gan
-        modgan = model_gan.ModelGAN(601, 65, 17)
+        import models_basic
+        modcnn = models_basic.ModelFC(601, 1+65+17, 65, 17, hiddensize=16, nblayers=2)
 
-        print("modgan.nbParams={}".format(modgan.nbParams()))
+        print("modgan.nbParams={}".format(modcnn.nbParams()))
 
         global cfg
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
         cost_val = 67.43
-        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
-        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
-        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        modcnn.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
+        modcnn.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        modcnn.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
 
-        cfg_loaded, extras_loaded = modgan.loadAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
+        cfg_loaded, extras_loaded = modcnn.loadAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
         self.assertEqual(cfg, cfg_loaded)
         self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
 
-        modgan.saveTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        import optimizer
+        optigan = optimizer.Optimizer(modcnn, errtype=None) # TODO TODO TODO
 
-        cfg_loaded, extras_loaded = modgan.loadTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg)
+        optigan.saveTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg, extras={'cost_val':cost_val})
+
+        cfg_loaded, extras_loaded = optigan.loadTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg)
         self.assertEqual(cfg, cfg_loaded)
         self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
-        cfg, hyperstr = modgan.randomize_hyper(cfg)
+        cfg, hyperstr = optigan.randomize_hyper(cfg)
         print('randomize_hyper: hyperstr='+hyperstr)
         cfg.print_content()
 
         cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0)] # For ADAM
-        cfg_hyprnd1, hyperstr1 = modgan.randomize_hyper(cfg)
+        cfg_hyprnd1, hyperstr1 = optigan.randomize_hyper(cfg)
         print('randomize_hyper: hyperstr1='+hyperstr1)
         cfg_hyprnd1.print_content()
-        cfg_hyprnd2, hyperstr2 = modgan.randomize_hyper(cfg)
+        cfg_hyprnd2, hyperstr2 = optigan.randomize_hyper(cfg)
         print('randomize_hyper: hyperstr2='+hyperstr2)
         cfg_hyprnd2.print_content()
         self.assertNotEqual(cfg_hyprnd1, cfg_hyprnd2)
@@ -80,7 +76,7 @@ class TestSmokeTheano(unittest.TestCase):
         cfg.train_max_nbepochs = 10
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
-        modgan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modgan.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modcnn.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
 
 
         # def generate(self, params_savefile, outsuffix, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None
