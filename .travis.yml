@@ -52,12 +52,11 @@ install:
     - conda install --yes matplotlib=2.0.2 # Has to be done separately otherwise conda crashes
     - conda info -a
 
-# script:
-    # - make test
-
 script:
     - make
     - coverage run --source=. test/test_base.py
+    - coverage run --source=. test/test_smoke.py
+    - bash setenv_travis.sh test/test_smoke_theano.py
 
 after_success:
     - coveralls
