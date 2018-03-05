@@ -20,6 +20,9 @@ SETENVSCRIPT=setenv.sh
 #SETENVSCRIPT=setenv_home.sh
 #SETENVSCRIPT=setenv_cued.sh
 # TODO Detect TRAVIS and use setenv_travis.sh
+# ifeq ($(TRAVIS),"true")
+    # export SETENVSCRIPT=setenv_travis.sh
+# endif
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 # QSUBCMD="qsubcudagad.sh"
 
@@ -80,9 +83,7 @@ test/slttest: test/slttest.tar.gz
 	tar xvf test/slttest.tar.gz -C test/
 
 test: build test/slttest
-ifeq ($(TRAVIS),"true")
-    export SETENVSCRIPT=setenv_travis.sh
-endif
+	echo "TRAVIS=$(TRAVIS)"
 	echo "SETENVSCRIPT=$(SETENVSCRIPT)"
 	python test/test_base.py
 	python test/test_smoke.py
