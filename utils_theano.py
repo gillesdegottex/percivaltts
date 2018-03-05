@@ -27,10 +27,6 @@ import os
 import subprocess
 import xml.etree.ElementTree as ET
 
-def th_memfree():
-    meminfo = theano.sandbox.cuda.basic_ops.cuda_ndarray.cuda_ndarray.mem_info()
-    return '{}MB mem free'.format(meminfo[0]/(1024*1024))
-
 def nvidia_smi_current_gpu():
 
     if theano.config.device=='cpu': return -2
@@ -62,6 +58,10 @@ def nvidia_smi_proc_memused():
         return -1
     return -1
 
+# def th_memfree():
+#     meminfo = theano.sandbox.cuda.basic_ops.cuda_ndarray.cuda_ndarray.mem_info()
+#     return '{}MB mem free'.format(meminfo[0]/(1024*1024))
+
 def th_print(msg, op):
     print_shape = theano.printing.Print(msg, attrs = [ 'shape' ])
     print_val = theano.printing.Print(msg)
@@ -69,6 +69,9 @@ def th_print(msg, op):
     return op
 
 def paramss_count(paramss):
+    '''
+        TODO Check bcs returned value looks really wrong.
+    '''
     nbparams = 0
     for p in paramss:
         shap = p.get_value().shape
@@ -76,25 +79,25 @@ def paramss_count(paramss):
         else:            nbparams += np.prod(shap)
     return nbparams
 
-def linear_and_bndnmoutput_deltas_tanh(x, specsize, nmsize):
+# def linear_and_bndnmoutput_deltas_tanh(x, specsize, nmsize):
+#
+#     #coef = 1.01*(1.0/(2.0*0.288675135))
+#     coef = 1.01*1.0
+#
+#     y = T.set_subtensor(x[:,:,1+specsize:1+specsize+nmsize], coef*T.tanh(x[:,:,1+specsize:1+specsize+nmsize])) # TODO sigmoid
+#     y = T.set_subtensor(y[:,:,85+61:85+61+24], coef*T.tanh(y[:,:,85+61:85+61+24]))
+#     y = T.set_subtensor(y[:,:,2*85+61:2*85+61+24], coef*T.tanh(y[:,:,2*85+61:2*85+61+24]))
+#
+#     return y
 
-    #coef = 1.01*(1.0/(2.0*0.288675135))
-    coef = 1.01*1.0
-
-    y = T.set_subtensor(x[:,:,1+specsize:1+specsize+nmsize], coef*T.tanh(x[:,:,1+specsize:1+specsize+nmsize])) # TODO sigmoid
-    y = T.set_subtensor(y[:,:,85+61:85+61+24], coef*T.tanh(y[:,:,85+61:85+61+24]))
-    y = T.set_subtensor(y[:,:,2*85+61:2*85+61+24], coef*T.tanh(y[:,:,2*85+61:2*85+61+24]))
-
-    return y
-
-def linear_nmsigmoid(x, specsize, nmsize):
-
-    #coef = 1.01*(1.0/(2.0*0.288675135))
-    coef = 1.01*1.0
-
-    y = T.set_subtensor(x[:,:,1+specsize:1+specsize+nmsize], coef*T.nnet.nnet.sigmoid(x[:,:,1+specsize:1+specsize+nmsize]))
-
-    return y
+# def linear_nmsigmoid(x, specsize, nmsize):
+#
+#     #coef = 1.01*(1.0/(2.0*0.288675135))
+#     coef = 1.01*1.0
+#
+#     y = T.set_subtensor(x[:,:,1+specsize:1+specsize+nmsize], coef*T.nnet.nnet.sigmoid(x[:,:,1+specsize:1+specsize+nmsize]))
+#
+#     return y
 
 def nonlin_tanh_saturated(x, coef=1.01):
     return coef*T.tanh(x)
@@ -123,13 +126,5 @@ def nonlin_sigmoidbinary(x):
 def nonlin_softsign(x):
     return x / (1.0+abs(x))
 
-def nonlin_sigmoidparm(x, c=0.0, f=1.0):
+def nonlin_sigmoidparm(x, c=0.0, f=1.0): # TODO TODO TODO np ?!?
   return 1.0 / (1.0 + np.exp(-(x-c)*f))
-
-def weights_normal_ortho(insiz, outsiz, std, rng):
-    # Preserve std!
-    a = rng.normal(0.0, std, size=(insiz, outsiz))
-    u, s, v = np.linalg.svd(a, full_matrices=0)
-    if u.shape!=(insiz, outsiz): u=v
-    u = u.reshape((insiz, outsiz))
-    return np.asarray(u, dtype=theano.config.floatX)

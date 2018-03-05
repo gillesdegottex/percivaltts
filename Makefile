@@ -17,14 +17,14 @@
 
 FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
-#SETENVSCRIPT=setenv_home.sh
-#SETENVSCRIPT=setenv_cued.sh
+ifeq ($(TRAVIS),true)
+    SETENVSCRIPT=setenv_travis.sh
+endif
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
-# QSUBCMD="qsubcudagad.sh"
 
 # Maintenance targets ----------------------------------------------------------
 
-.PHONY: test
+.PHONY: test test_clean
 
 all: build
 
@@ -39,10 +39,9 @@ build_pulsemodel: submodule_init
 describe:
 	@git describe
 
-distclean:
+distclean: test_clean
 	cd external/pulsemodel; $(MAKE) distclean
 	find . -name '*.pyc' -delete
-	rm -fr test/slttest
 
 # Run targets ------------------------------------------------------------------
 
@@ -82,4 +81,9 @@ test/slttest: test/slttest.tar.gz
 test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
+	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
 	# python test/test_run.py
+
+test_clean:
+	rm -fr test/slttest
+	rm -fr test/test_made__*

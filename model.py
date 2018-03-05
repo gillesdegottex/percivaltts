@@ -234,6 +234,9 @@ class Model:
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
             ):
+        '''
+            TODO Make fn to generate one arbitrary sample
+        '''
 
         # Options dependent on features composition
         outsize_wodeltas = 1+spec_size+nm_size    # 1+: logf0

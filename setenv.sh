@@ -2,9 +2,10 @@
 
 # Set the environment variables before calling the python code
 
+# You might want to change these two paths according to your CONDA/CUDA install.
+CONDAPATH=$HOME/miniconda
 CUDAPATH=/usr/local/cuda-9.0
 
-CONDAPATH=/opt/miniconda2
 export PYTHONPATH=$CONDAPATH/lib/python2.7/site-packages:$PYTHONPATH
 export PATH=$CUDAPATH/bin:$PATH
 export LD_LIBRARY_PATH=$CUDAPATH/lib64:$CONDAPATH/lib:$LD_LIBRARY_PATH
