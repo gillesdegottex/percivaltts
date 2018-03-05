@@ -58,6 +58,7 @@ script:
     - coverage run --source=. --omit="test/*","external/*" test/test_base.py
     - coverage run -a --source=. --omit="test/*","external/*" test/test_smoke.py
     - bash setenv_travis.sh coverage run -a --source=. --omit="test/*","external/*" test/test_smoke_theano.py
+    - bash setenv_travis.sh coverage run -a --source=. --omit="test/*","external/*" test/test_run.py
 
 after_success:
     - coveralls
