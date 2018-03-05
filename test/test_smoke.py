@@ -86,14 +86,21 @@ class TestSmoke(unittest.TestCase):
 
         Xs_w_stop = data.addstop(Xs)
 
-        X_full, MX_full, Y_full, MY_full = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift')
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift', inouttimesync=False)
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift')
 
         worst_val = data.cost_0pred_rmse(Ys)
         print('worst_val={}'.format(worst_val))
 
+        worst_val = data.cost_0pred_rmse(Ys[0])
+        print('worst_val={}'.format(worst_val))
+
         def data_cost_model(Xs, Ys):
             return np.std(Ys) # TODO More usefull
-        cost = data.cost_model(data_cost_model, [X_full, Y_full])
+        X_vals = data.load(indir, fbases)
+        Y_vals = data.load(outdir, fbases)
+        X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
+        cost = data.cost_model(data_cost_model, [X_vals, Y_vals])
         print(cost)
 
         class SmokyModel:
