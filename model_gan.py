@@ -51,7 +51,7 @@ from collections import defaultdict
 class ModelGAN(model.Model):
 
     # Options
-    _usegan = 'WGAN' # None for LSE
+    _usegan = None #'WGAN' # None for LSE
 
     # lasagne.nonlinearities.rectify, lasagne.nonlinearities.leaky_rectify, lasagne.nonlinearities.very_leaky_rectify, lasagne.nonlinearities.elu, lasagne.nonlinearities.softplus, lasagne.nonlinearities.tanh, networks.nonlin_softsign
     _nonlinearity = lasagne.nonlinearities.very_leaky_rectify
@@ -115,7 +115,7 @@ class ModelGAN(model.Model):
 
     # Training =================================================================
 
-    def train(self, params, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
+    def train(self, params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
 
         print('Model initial status before training')
         worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
@@ -224,7 +224,7 @@ class ModelGAN(model.Model):
         epochstart = 1
         if cont:
             print('    reloading previous training state ...')
-            _, extras = self.loadTrainingState("trainingstate.pkl.last", cfg)
+            _, extras = self.loadTrainingState(params_savefile+'.trainingstate.last', cfg)
             cost_val = extras['cost_val']
             best_val = extras['best_val']
             # Restoring some local variables
@@ -252,7 +252,7 @@ class ModelGAN(model.Model):
 
                 # Load training data online, because data is often too heavy to hold in memory
                 fid_lst_trab = [fid_lst_tra[bidx] for bidx in rndidxb[k]]
-                X_trab, MX_trab, Y_trab, MY_trab = data.load_inoutset(indir, outdir, outwdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype)
+                X_trab, MX_trab, Y_trab, MY_trab = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype)
 
                 if 0: # Plot batch
                     import matplotlib.pyplot as plt
@@ -332,16 +332,17 @@ class ModelGAN(model.Model):
 
             if cfg.train_log_plot:
                 print_log('    saving plots')
-                log_plot_costs(costs, worst_val, fname='fig_costs_'+trialstr+'.svg', epochs_modelssaved=epochs_modelssaved)
+                log_plot_costs(costs, worst_val, fname=params_savefile+'.fig_costs_'+trialstr+'.svg', epochs_modelssaved=epochs_modelssaved)
 
                 nbsamples = 2
+                nbsamples = min(nbsamples, len(X_vals))
                 Y_preds = []
                 for sampli in xrange(nbsamples): Y_preds.append(self.predict(np.reshape(X_vals[sampli],[1]+[s for s in X_vals[sampli].shape]))[0,])
 
                 plotsuffix = ''
                 if len(epochs_modelssaved)>0 and epochs_modelssaved[-1]==epoch: plotsuffix='_best'
                 else:                                                           plotsuffix='_last'
-                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname='fig_samples_'+trialstr+plotsuffix+'.png', title='epoch={}'.format(epoch), specsize=self.specsize)
+                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=params_savefile+'.fig_samples_'+trialstr+plotsuffix+'.png', title='epoch={}'.format(epoch), specsize=self.specsize)
 
             if len(costs['model_rmse_validation'])<2 or costs['model_rmse_validation'][-1]<min(costs['model_rmse_validation'][:-1]):
                 nbnodecepochs = 0
@@ -354,7 +355,7 @@ class ModelGAN(model.Model):
             epochs_durs.append(time.time()-timeepochstart)
             print_log('    epoch time: {}   max tot train ~time: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
 
-            self.saveTrainingState('trainingstate.pkl.last', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
+            self.saveTrainingState(params_savefile+'.trainingstate.last', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
 
-        return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1], 'best_val':best_val, 'best_val_percent':100*best_val/worst_val}
+        return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val}
