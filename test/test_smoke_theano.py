@@ -6,26 +6,45 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import unittest
 
 from utils import *
+import data
+
+global cfg
+cfg = configuration() # Init configuration structure
+
+cptest = 'test/slttest/' # The main directory where the data of the voice is stored
+cfg.fileids = cptest+'/file_id_list.scp'
+fid_lst = data.loadids(cfg.fileids)
+cfg.id_valid_start = 8
+cfg.id_valid_nb = 1
+cfg.id_test_nb = 1
+cfg.indir = cptest+'binary_label_601_norm_minmaxm11/*.lab:(-1,601)'
+cfg.outdir = cptest+'wav_cmp_lf0_fwspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
+cfg.wdir = cptest+'wav_fwspec65_weights/*.w:(-1,1)'
+
+cfg.train_batchsize = 2
+
+fid_lst_tra = fid_lst[:cfg.id_train_nb()]
+fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
 
 
 class TestSmokeTheano(unittest.TestCase):
-    def test_model(self):
-        makedirs('test/test_made__smoke_theano_model')
-
+    def test_smokymodel(self):
         import model
         class ModelSmoke(model.Model):
-            def train(self, params, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
+            def train(self, params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
                 raise ValueError('That\'s a smoky model that doesn\'t train anything')
         mod = ModelSmoke()
 
+    def test_model(self):
+        makedirs('test/test_made__smoke_theano_model')
 
         import model_gan
         modgan = model_gan.ModelGAN(601, 65, 17)
 
         print("modgan.nbParams={}".format(modgan.nbParams()))
 
-        cfg = configuration() # Init configuration structure
-        cfg.smokyconfiguration = 64
+        global cfg
+        cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
         cost_val = 67.43
         modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
@@ -56,7 +75,13 @@ class TestSmokeTheano(unittest.TestCase):
         cfg_hyprnd2.print_content()
         self.assertNotEqual(cfg_hyprnd1, cfg_hyprnd2)
 
-        # def train_multipletrials(self, indir, outdir, outwdir, fid_lst_tra, fid_lst_val, params, params_savefile, cfgtomerge=None, cont=None, **kwargs) # TODO
+
+        makedirs('test/test_made__smoke_theano_model_train')
+        cfg.train_max_nbepochs = 10
+        cfg.train_nbtrials = 1        # Just run one training only
+        cfg.train_hypers = []
+        modgan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modgan.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
 
         # def generate(self, params_savefile, outsuffix, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None
         #         , spec_comp='fwspec'
@@ -67,10 +92,6 @@ class TestSmokeTheano(unittest.TestCase):
         #         , pp_spec_pf_coef=-1 # Common value is 1.2
         #         , pp_spec_extrapfreq=-1
         #         ) # TODO
-
-        # cfg = configuration() # Init configuration structure
-        # cfg.print_content()
-        # modgan.train_multipletrials(cfg.indir, cfg.outdir, cfg.outwdir, fid_lst_tra, fid_lst_val, mod.params_trainable, 'smokymodelparams.pkl', cfgtomerge=cfg, cont=cont) # TODO
 
 
     def test_utils_theano(self):
@@ -84,12 +105,9 @@ class TestSmokeTheano(unittest.TestCase):
             print('nvidia_smi_current_gpu={}'.format(nvidia_smi_current_gpu()))  # Can't test it because needs CUDA
             print('nvidia_smi_gpu_memused={}'.format(nvidia_smi_gpu_memused())) # Can't test it because needs CUDA
 
-        # th_print(msg, op) # TODO
-        # paramss_count(paramss) # TODO
-        # linear_and_bndnmoutput_deltas_tanh(x, specsize, nmsize) # TODO
-        # linear_nmsigmoid(x, specsize, nmsize) # TODO
-
         x = T.ftensor3('x')
+
+        y = utils_theano.th_print('smoky debug message', x)
 
         y = utils_theano.nonlin_tanh_saturated(x, coef=1.01)
         y = utils_theano.nonlin_tanh_bysigmoid(x)
