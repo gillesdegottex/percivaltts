@@ -156,17 +156,10 @@ def cropsilences(xs, w, thresh=0.5):
     return xs, w
 
 
-def vstack_masked(X, M):
-    UX = []
-    for b in xrange(X.shape[0]):
-        seqlen = np.max(np.where(M[b,:]==1)[0])
-        UX.append(X[b,:seqlen+1,:])
-    return np.vstack(UX)
-
 def maskify(xs, length=None, lengthmax=None, padtype='padright'):
 
     if len(set([len(x) for x in xs]))>1:
-        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs]))
+        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
 
     if length is None:
         # Consider only the first var
@@ -249,7 +242,7 @@ def cost_0pred_rmse(Y_val):
         worst_val /= nbel
         worst_val = np.sqrt(worst_val)
     else:
-        worst_val = np.sqrt(np.mean(Y_val[k,]**2))
+        worst_val = np.sqrt(np.mean(Y_val**2))
     return worst_val
 
 def cost_model(fn, Xs):
