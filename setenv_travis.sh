@@ -2,8 +2,7 @@
 
 # Set the environment variables before calling the python code
 
-# CONDAPATH=$HOME/miniconda
-CONDAPATH=/home/degottex/Research/tools/miniconda2
+CONDAPATH=$HOME/miniconda
 
 export PYTHONPATH=$CONDAPATH/lib/python2.7/site-packages:$PYTHONPATH
 export PATH=$CONDAPATH/bin:$PATH
