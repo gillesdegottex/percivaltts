@@ -33,6 +33,8 @@ class TestSmokeTheano(unittest.TestCase):
 
         import models_basic
         model = models_basic.ModelFC(601, 1+65+17, 65, 17, hiddensize=4, nblayers=2)
+        modelwdeltas = models_basic.ModelFC(601, 3*(1+65+17), 65, 17, hiddensize=4, nblayers=2) # TODO Should train it too
+
 
         print("modgan.nbParams={}".format(model.nbParams()))
         # self.assertEqual(model.nbParams(), TODO) # TODO Check number of params. Should be known.
@@ -82,11 +84,13 @@ class TestSmokeTheano(unittest.TestCase):
         # model.generate # TODO TODO TODO
 
         model = models_basic.ModelBGRU(601, 1+65+17, 65, 17, hiddensize=4, nblayers=1)
+        modelwdeltas = models_basic.ModelBGRU(601, 3*(1+65+17), 65, 17, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype=None)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate # TODO TODO TODO
 
         model = models_basic.ModelBLSTM(601, 1+65+17, 65, 17, hiddensize=4, nblayers=1)
+        modelwdeltas = models_basic.ModelBLSTM(601, 3*(1+65+17), 65, 17, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype=None)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate # TODO TODO TODO
