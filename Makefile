@@ -17,12 +17,12 @@
 
 FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
-#SETENVSCRIPT=setenv_home.sh
+# SETENVSCRIPT=setenv_home.sh
 #SETENVSCRIPT=setenv_cued.sh
 # TODO Detect TRAVIS and use setenv_travis.sh
-# ifeq ($(TRAVIS),"true")
-    # export SETENVSCRIPT=setenv_travis.sh
-# endif
+ifeq ($(TRAVIS),"true")
+    SETENVSCRIPT=setenv_travis.sh
+endif
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 # QSUBCMD="qsubcudagad.sh"
 
