@@ -53,7 +53,7 @@ def getpathandshape(path, shape=None):
                 # The shape selector is a simple integer
                 shapeselector = shapeselector + (int(shapesstr),)
             else:
-                # The shape selector seems to be a file name
+                # The shape selector seems to be a file name in the same directory
                 # so take the size from the first dimension of the file's dimension
                 X = np.fromfile(os.path.join(os.path.dirname(matches[0][0]), shapesstr), dtype=np.float32)
                 shapeselector = shapeselector + (X.shape[0],)
@@ -82,7 +82,7 @@ def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
             print_tty('\r    {}Loading file {}/{} {}: ({:.2f}% done)        '.format(label, 1+n, len(fbases), fbase, 100*float(n)/len(fbases)))
 
         fX = dirpath.replace('*',fbase)
-        if not os.path.isfile(fX):
+        if not os.path.isfile(fX):                          # pragma: no cover
             print('fX={} does not exists'.format(fX))
             raise
 
