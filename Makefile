@@ -17,13 +17,10 @@
 
 FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
-# SETENVSCRIPT=setenv_home.sh
-#SETENVSCRIPT=setenv_cued.sh
 ifeq ($(TRAVIS),true)
     SETENVSCRIPT=setenv_travis.sh
 endif
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
-# QSUBCMD="qsubcudagad.sh"
 
 # Maintenance targets ----------------------------------------------------------
 
@@ -82,7 +79,6 @@ test/slttest: test/slttest.tar.gz
 	tar xvf test/slttest.tar.gz -C test/
 
 test: build test/slttest
-	echo "SETENVSCRIPT=$(SETENVSCRIPT)"
 	python test/test_base.py
 	python test/test_smoke.py
 	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
