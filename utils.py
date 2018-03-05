@@ -31,6 +31,13 @@ import numpy as np
 
 
 class configuration(object):
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def id_train_nb(self):
         # Number of samples used for training, equal or slightly lower than self.id_valid_start
         return self.train_batchsize* int(np.floor(self.id_valid_start/self.train_batchsize))
