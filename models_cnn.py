@@ -73,7 +73,7 @@ class ModelCNN(model.Model):
             layerstr = 'f0_l'+str(1+layi)
             layer_f0 = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_f0, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr+'_GC1D'))
             if dropout_p>0.0: layer_f0 = lasagne.layers.dropout(layer_f0, p=dropout_p)
-        layer_f0 = lasagne.layers.Conv2DLayer(layer_f0, 1, [_winlen,1], stride=1, pad='same', nonlinearity=None)
+        layer_f0 = lasagne.layers.Conv2DLayer(layer_f0, 1, [_winlen,1], stride=1, pad='same', nonlinearity=None, name='f0_lout_C1D')
         layer_f0 = lasagne.layers.dimshuffle(layer_f0, [0, 2, 3, 1])
         layer_f0 = lasagne.layers.flatten(layer_f0, outdim=3)
 
@@ -84,7 +84,7 @@ class ModelCNN(model.Model):
             layerstr = 'spec_l'+str(1+layi)
             layer_spec = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_spec, nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr+'_GC2D'))
             if dropout_p>0.0: layer_spec = lasagne.layers.dropout(layer_spec, p=dropout_p)
-        layer_spec = lasagne.layers.Conv2DLayer(layer_spec, 1, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=None)
+        layer_spec = lasagne.layers.Conv2DLayer(layer_spec, 1, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=None, name='spec_lout_C2D')
         layer_spec = lasagne.layers.dimshuffle(layer_spec, [0, 2, 3, 1])
         layer_spec = lasagne.layers.flatten(layer_spec, outdim=3)
 
@@ -96,11 +96,11 @@ class ModelCNN(model.Model):
             layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr+'_GC2D'))
             if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
         # layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=None)
-        layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=lasagne.nonlinearities.sigmoid) # Force the output to [0,1]
+        layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=lasagne.nonlinearities.sigmoid, name='nm_lout_C2D') # Force the output to [0,1]
         layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 2, 3, 1])
         layer_noise = lasagne.layers.flatten(layer_noise, outdim=3)
 
-        layer = lasagne.layers.ConcatLayer((layer_f0, layer_spec, layer_noise), axis=2)
+        layer = lasagne.layers.ConcatLayer((layer_f0, layer_spec, layer_noise), axis=2, name='lo_concatenation')
 
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
