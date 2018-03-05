@@ -42,8 +42,8 @@ import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
 
-import networks_basic
-import networks_cnn
+# import networks_basic
+# import networks_cnn
 
 class Model:
 
