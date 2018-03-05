@@ -316,7 +316,7 @@ class ModelGAN(model.Model):
 
             cost_val = costs['model_rmse_validation'][-1]
 
-            print_log("    epoch {} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}%)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_val/worst_val, nvidia_smi_proc_memused(), proc_memresident()))
+            print_log("    epoch {} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}%)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_val/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
             sys.stdout.flush()
 
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
