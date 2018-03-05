@@ -48,8 +48,8 @@ class configuration(object):
         for key in sorted(dir(self)):
             if callable(getattr(self, key)) or key.startswith("__"):
                 continue
-            if hasattr(self, 'hypers'):
-                if key in [hyper[0] for hyper in self.hypers]:
+            if hasattr(self, 'train_hypers'):
+                if key in [hyper[0] for hyper in self.train_hypers]:
                     print("    {:<30}{:}    (Attention! hyper-parameter optimized during multi-training)".format(key, getattr(self, key)))
                 else:
                     print("    {:<30}{:}".format(key, getattr(self, key)))
@@ -82,7 +82,7 @@ def print_log(txt, end='\n'):
 def print_tty(txt, end=''):
 
     if not sys.stdout.isatty():
-        return
+        return                                              # pragma: no cover
 
     print(txt, end=end)
     sys.stdout.flush()
@@ -103,7 +103,7 @@ def makedirs(path):
         os.makedirs(path)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
-            raise
+            raise                                           # pragma: no cover
 
 def is_int(v):
     # From https://stackoverflow.com/questions/1265665/python-check-if-a-string-represents-an-int-without-using-try-except
@@ -127,7 +127,7 @@ def proc_memresident():
     if len(PID_memsize)>0:
         return int(PID_memsize)/1024
 
-    return -1
+    return -1                                               # pragma: no cover
 
 def print_sysinfo():
     print_log('System information')
@@ -160,7 +160,7 @@ def print_sysinfo():
     diropts = ['--git-dir={}/.git'.format(codedir), '--work-tree={}'.format(codedir)]
     ret = os.system('git {} {} status > /dev/null 2>&1'.format(diropts[0], diropts[1]))
     if ret!=0:
-        print('  Git: No repository detected')
+        print('  Git: No repository detected')              # pragma: no cover
     else:
         import subprocess
         print('  Git is available in the working directory:')
@@ -171,7 +171,7 @@ def print_sysinfo():
         git_diff = subprocess.Popen(['git', diropts[0], diropts[1], 'diff'], stdout=subprocess.PIPE).communicate()[0] #, '--name-status'
         #git_diff = git_diff.replace('\t',' ').split('\n')
         if len(git_diff)==0:
-            print('    current diff: None')
+            print('    current diff: None')                 # pragma: no cover
         else:
             print('    current diff in git.diff file')
             ret = os.system('git {} {} diff > git.diff'.format(diropts[0], diropts[1]))
@@ -181,7 +181,7 @@ def print_sysinfo():
     print('  PID: '+str(os.getpid()))
     PBS_JOBID = os.getenv('PBS_JOBID')
     if PBS_JOBID:
-        print('  PBS_JOBID: '+PBS_JOBID)
+        print('  PBS_JOBID: '+PBS_JOBID)                    # pragma: no cover
 
     print('')
 
