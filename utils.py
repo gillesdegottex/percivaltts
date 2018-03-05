@@ -154,10 +154,6 @@ def print_sysinfo():
     import numpy
     print('  Numpy: {} {}'.format(numpy.version.version, numpy.__file__))
 
-    #logger.info('  Theano version: '+theano.version.version)
-    #logger.info('    THEANO_FLAGS: '+os.getenv('THEANO_FLAGS'))
-    #logger.info('    device: '+theano.config.device)
-
     # Check for the presence of git
     codedir = os.path.dirname(os.path.realpath(__file__))
     diropts = ['--git-dir={}/.git'.format(codedir), '--work-tree={}'.format(codedir)]
@@ -186,19 +182,6 @@ def print_sysinfo():
     if PBS_JOBID:
         print('  PBS_JOBID: '+PBS_JOBID)
 
-    print('')
-
-def print_sysinfo_theano():
-    import theano
-    import utils_theano
-    print('    Theano: {} {}'.format(theano.__version__, theano.config.floatX, theano.__file__))
-    print('    THEANO_FLAGS: '+str(os.getenv('THEANO_FLAGS')))
-    print('    floatX={}'.format(theano.config.floatX))
-    print('    device={}'.format(theano.config.device))
-    print('    GID={}'.format(utils_theano.nvidia_smi_current_gpu()))
-    print('    base_compiledir={}'.format(theano.config.base_compiledir))
-    print('    cuDNN={}'.format(theano.config.dnn.enabled))
-    print('    CUDA {}'.format(theano.config.cuda.root))
     print('')
 
 # Logging plot functions -------------------------------------------------------

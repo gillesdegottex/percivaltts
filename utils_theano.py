@@ -18,14 +18,26 @@ Author
     Gilles Degottex <gad27@cam.ac.uk>
 '''
 
+import os
+import subprocess
+import xml.etree.ElementTree as ET
+
 import numpy as np
 import theano
 import theano.tensor as T
 import theano.sandbox.cuda
 
-import os
-import subprocess
-import xml.etree.ElementTree as ET
+def print_sysinfo_theano():
+    print('    Theano: {} {}'.format(theano.__version__, theano.config.floatX, theano.__file__))
+    print('    THEANO_FLAGS: '+str(os.getenv('THEANO_FLAGS')))
+    print('    floatX={}'.format(theano.config.floatX))
+    print('    device={}'.format(theano.config.device))
+    print('    GID={}'.format(nvidia_smi_current_gpu()))
+    print('    base_compiledir={}'.format(theano.config.base_compiledir))
+    print('    cuDNN={}'.format(theano.config.dnn.enabled))
+    print('    CUDA {}'.format(theano.config.cuda.root))
+    print('')
+
 
 def nvidia_smi_current_gpu():
 
