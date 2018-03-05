@@ -116,9 +116,10 @@ def gettotallen(Xs, axis=0):
 def cropsize(xs, axis=0):
     # Attention! It modifies the argument
 
-    if axis>2: raise ValueError('Do not manage axis values bigger than 2')
+    if axis>2:
+        raise ValueError('Do not manage axis values bigger than 2') # pragma: no cover
     if len(set([len(x) for x in xs]))>1:
-        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs]))
+        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
 
     # ys = [[] for i in range(len(xs))]
     for ki in xrange(len(xs[0])):   # For each sample of the data set
@@ -136,7 +137,7 @@ def cropsize(xs, axis=0):
 def cropsilences(xs, w, thresh=0.5):
 
     if len(set([len(w)]+[len(x) for x in xs]))>1:
-        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs]))
+        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
 
     for ki in xrange(len(w)):   # For each sample of the data set
 
