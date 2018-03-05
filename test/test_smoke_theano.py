@@ -79,22 +79,27 @@ class TestSmokeTheano(unittest.TestCase):
         cfg.train_hypers = []
 
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        # model.generate # TODO TODO TODO
 
         model = models_basic.ModelBGRU(601, 1+65+17, 65, 17, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype=None)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        # model.generate # TODO TODO TODO
 
         model = models_basic.ModelBLSTM(601, 1+65+17, 65, 17, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype=None)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        # model.generate # TODO TODO TODO
 
         import models_cnn
         model = models_cnn.ModelCNN(601, 65, 17, nbprelayers=1, nbcnnlayers=1, nbfilters=2, spec_freqlen=3, nm_freqlen=3, windur=0.020)
         optigan = optimizer.Optimizer(model, errtype=None)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        # model.generate # TODO TODO TODO
 
-        # optigan = optimizer.Optimizer(model, errtype='WGAN') # TODO
+        # optigan = optimizer.Optimizer(model, errtype='WGAN') # TODO TODO TODO
         # optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        # model.generate # TODO TODO TODO
 
         # def generate(self, params_savefile, outsuffix, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None
         #         , spec_comp='fwspec'
