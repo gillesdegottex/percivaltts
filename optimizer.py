@@ -45,7 +45,7 @@ import lasagne
 
 import model
 
-import networks_cnn # For GAN discriminator
+import models_cnn # For GAN discriminator
 
 class Optimizer:
 

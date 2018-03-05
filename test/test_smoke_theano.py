@@ -32,25 +32,26 @@ class TestSmokeTheano(unittest.TestCase):
         makedirs('test/test_made__smoke_theano_model')
 
         import models_basic
-        modcnn = models_basic.ModelFC(601, 1+65+17, 65, 17, hiddensize=16, nblayers=2)
+        model = models_basic.ModelFC(601, 1+65+17, 65, 17, hiddensize=4, nblayers=2)
 
-        print("modgan.nbParams={}".format(modcnn.nbParams()))
+        print("modgan.nbParams={}".format(model.nbParams()))
+        # self.assertEqual(model.nbParams(), TODO) # TODO Check number of params. Should be known.
 
         global cfg
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
         cost_val = 67.43
-        modcnn.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
-        modcnn.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
-        modcnn.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        model.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
+        model.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        model.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
 
-        cfg_loaded, extras_loaded = modcnn.loadAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
+        cfg_loaded, extras_loaded = model.loadAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
         self.assertEqual(cfg, cfg_loaded)
         self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
 
         import optimizer
-        optigan = optimizer.Optimizer(modcnn, errtype=None) # TODO TODO TODO
+        optigan = optimizer.Optimizer(model, errtype=None)
 
         optigan.saveTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg, extras={'cost_val':cost_val})
 
@@ -76,8 +77,24 @@ class TestSmokeTheano(unittest.TestCase):
         cfg.train_max_nbepochs = 10
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modcnn.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
 
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+        model = models_basic.ModelBGRU(601, 1+65+17, 65, 17, hiddensize=4, nblayers=1)
+        optigan = optimizer.Optimizer(model, errtype=None)
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+        model = models_basic.ModelBLSTM(601, 1+65+17, 65, 17, hiddensize=4, nblayers=1)
+        optigan = optimizer.Optimizer(model, errtype=None)
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+        import models_cnn
+        model = models_cnn.ModelCNN(601, 65, 17, nbprelayers=1, nbcnnlayers=1, nbfilters=2, spec_freqlen=3, nm_freqlen=3, windur=0.020)
+        optigan = optimizer.Optimizer(model, errtype=None)
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+        # optigan = optimizer.Optimizer(model, errtype='WGAN') # TODO
+        # optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
 
         # def generate(self, params_savefile, outsuffix, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None
         #         , spec_comp='fwspec'
