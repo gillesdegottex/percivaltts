@@ -10,6 +10,7 @@ from utils import *
 
 class TestSmokeTheano(unittest.TestCase):
     def test_model(self):
+        makedirs('test/test_made__smoke_theano_model')
 
         import model
         class ModelSmoke(model.Model):
@@ -27,18 +28,18 @@ class TestSmokeTheano(unittest.TestCase):
         cfg.smokyconfiguration = 64
         cfg.train_hypers = []
         cost_val = 67.43
-        modgan.saveAllParams('smokymodelparams.pkl')
-        modgan.saveAllParams('smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
-        modgan.saveAllParams('smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
+        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        modgan.saveAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
 
-        cfg_loaded, extras_loaded = modgan.loadAllParams('smokymodelparams.pkl')
+        cfg_loaded, extras_loaded = modgan.loadAllParams('test/test_made__smoke_theano_model/smokymodelparams.pkl')
         self.assertEqual(cfg, cfg_loaded)
         self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
 
-        modgan.saveTrainingState('smokytrainingstate.pkl', cfg=cfg, extras={'cost_val':cost_val})
+        modgan.saveTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg, extras={'cost_val':cost_val})
 
-        cfg_loaded, extras_loaded = modgan.loadTrainingState('smokytrainingstate.pkl', cfg=cfg)
+        cfg_loaded, extras_loaded = modgan.loadTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg)
         self.assertEqual(cfg, cfg_loaded)
         self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
