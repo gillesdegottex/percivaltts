@@ -39,7 +39,7 @@ print_log('Global configurations')
 cfg = configuration() # Init configuration structure
 
 # Corpus/Voice(s) options
-cp = 'test/slttest/' # The main directory where the data of the voice is stored
+cp = 'test/slttest/' # The main directory where the data of the voice is stored # TODO Use demo data
 cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 160
 cfg.id_valid_nb = 20
