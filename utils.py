@@ -184,6 +184,39 @@ def print_sysinfo():
 
     print('')
 
+def nvidia_smi_current_gpu():
+
+    if theano.config.device=='cpu': return -2
+
+    try:
+        xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
+        root = ET.fromstring(xml)
+        for gpu in root.findall('gpu'):
+            for proc in gpu.find('processes').findall('process_info'):
+                if int(proc.find('pid').text) == os.getpid():
+                    return int(gpu.find('minor_number').text)
+    except:
+        return -1
+    return -1
+
+def nvidia_smi_gpu_memused():
+    '''
+        return : [MiB]
+    '''
+
+    if theano.config.device=='cpu': return -2
+
+    try:
+        xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
+        root = ET.fromstring(xml)
+        for gpu in root.findall('gpu'):
+            for proc in gpu.find('processes').findall('process_info'):
+                if int(proc.find('pid').text) == os.getpid():
+                    return int(proc.find('used_memory').text.split(' ')[0])
+    except:
+        return -1
+    return -1
+
 # Logging plot functions -------------------------------------------------------
 
 def log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_discri=[]):

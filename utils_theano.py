@@ -25,54 +25,25 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import theano
 import theano.tensor as T
-import theano.sandbox.cuda
 
 def print_sysinfo_theano():
-    print('    Theano: {} {}'.format(theano.__version__, theano.config.floatX, theano.__file__))
+    print('    Theano: {} {}'.format(theano.__version__, theano.__file__))
     print('    THEANO_FLAGS: '+str(os.getenv('THEANO_FLAGS')))
     print('    floatX={}'.format(theano.config.floatX))
-    print('    device={}'.format(theano.config.device))
-    print('    GID={}'.format(nvidia_smi_current_gpu()))
     print('    base_compiledir={}'.format(theano.config.base_compiledir))
+    print('    device={}'.format(theano.config.device))
+    print('    CUDAPATH={}'.format(theano.config.cuda.root))
     print('    cuDNN={}'.format(theano.config.dnn.enabled))
-    print('    CUDA {}'.format(theano.config.cuda.root))
+    print('    GID={}'.format(nvidia_smi_current_gpu()))
     print('')
 
+def th_cuda_available():
+    return theano.config.cuda.root!=''
 
-def nvidia_smi_current_gpu():
-
-    if theano.config.device=='cpu': return -2
-
-    try:
-        xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
-        root = ET.fromstring(xml)
-        for gpu in root.findall('gpu'):
-            for proc in gpu.find('processes').findall('process_info'):
-                if int(proc.find('pid').text) == os.getpid():
-                    return int(gpu.find('minor_number').text)
-    except:
-        return -1
-    return -1
-
-def nvidia_smi_proc_memused():
-
-    if theano.config.device=='cpu': return -2
-
-    try:
-        # Returns MiB
-        xml = subprocess.Popen(['nvidia-smi', '-q', '-x'], stdout=subprocess.PIPE).communicate()[0]
-        root = ET.fromstring(xml)
-        for gpu in root.findall('gpu'):
-            for proc in gpu.find('processes').findall('process_info'):
-                if int(proc.find('pid').text) == os.getpid():
-                    return int(proc.find('used_memory').text.split(' ')[0])
-    except:
-        return -1
-    return -1
-
-# def th_memfree():
-#     meminfo = theano.sandbox.cuda.basic_ops.cuda_ndarray.cuda_ndarray.mem_info()
-#     return '{}MB mem free'.format(meminfo[0]/(1024*1024))
+def th_cuda_memfree():
+    import theano.sandbox.cuda
+    meminfo = theano.sandbox.cuda.basic_ops.cuda_ndarray.cuda_ndarray.mem_info()
+    return '{}MB mem free'.format(meminfo[0]/(1024*1024))
 
 def th_print(msg, op):
     print_shape = theano.printing.Print(msg, attrs = [ 'shape' ])

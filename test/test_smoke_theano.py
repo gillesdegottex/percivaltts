@@ -79,9 +79,10 @@ class TestSmokeTheano(unittest.TestCase):
         import theano.tensor as T
 
         # Test the following if CUDA is available: (won't be tested on travis anyway since no GPU are available on travis)
-        # print(utils_theano.th_memfree()) # Can't test it because needs CUDA
-        # print(utils_theano.nvidia_smi_current_gpu())  # Can't test it because needs CUDA
-        # print(utils_theano.nvidia_smi_proc_memused()) # Can't test it because needs CUDA
+        if utils_theano.th_cuda_available():
+            print('th_memfree={}'.format(utils_theano.th_memfree())) # Can't test it because needs CUDA
+            print('nvidia_smi_current_gpu={}'.format(utils_theano.nvidia_smi_current_gpu()))  # Can't test it because needs CUDA
+            print('nvidia_smi_gpu_memused={}'.format(utils_theano.nvidia_smi_gpu_memused())) # Can't test it because needs CUDA
 
         # th_print(msg, op) # TODO
         # paramss_count(paramss) # TODO
