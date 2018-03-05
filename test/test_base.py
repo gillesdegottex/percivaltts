@@ -27,11 +27,11 @@ cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-
 
 # Output features
 cfg.fs = 32000
+cfg.shift = 0.005
 f0_min, f0_max = 60, 600
 spec_size = 65
 nm_size = 17
 out_size = 1+spec_size+nm_size
-cfg.shift = 0.005
 wav_dir = 'wav'
 wav_path = cp+wav_dir+'/*.wav'
 f0_path = cp+wav_dir+'_lf0/*.lf0'
