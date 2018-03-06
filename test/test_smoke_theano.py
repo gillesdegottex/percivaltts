@@ -36,8 +36,8 @@ class TestSmokeTheano(unittest.TestCase):
         makedirs('test/test_made__smoke_theano_model')
 
         import models_basic
-        model = models_basic.ModelFC(601, 1+spec_size+17, spec_size, nm_size, hiddensize=4, nblayers=2)
-        modelwdeltas = models_basic.ModelFC(601, 3*(1+spec_size+17), spec_size, nm_size, hiddensize=4, nblayers=2) # TODO Should train it too
+        model = models_basic.ModelFC(601, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=2)
+        modelwdeltas = models_basic.ModelFC(601, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=2) # TODO Should train it too
 
 
         print("modgan.nbParams={}".format(model.nbParams()))
@@ -110,13 +110,13 @@ class TestSmokeTheano(unittest.TestCase):
 
         # Now test the various models available
 
-        model = models_basic.ModelBGRU(601, 1+spec_size+17, spec_size, nm_size, hiddensize=4, nblayers=1)
+        model = models_basic.ModelBGRU(601, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=1)
         modelwdeltas = models_basic.ModelBGRU(601, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype=None)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size)
 
-        model = models_basic.ModelBLSTM(601, 1+spec_size+17, spec_size, nm_size, hiddensize=4, nblayers=1)
+        model = models_basic.ModelBLSTM(601, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=1)
         modelwdeltas = models_basic.ModelBLSTM(601, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype=None)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
