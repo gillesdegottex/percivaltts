@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/gillesdegottex/percival.svg?branch=master)](https://travis-ci.org/gillesdegottex/percival) [![codecov](https://codecov.io/gh/gillesdegottex/percival/branch/master/graph/badge.svg)](https://codecov.io/gh/gillesdegottex/percival)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f910efb5168a4569acea88ee0011e394)](https://www.codacy.com/app/gillesdegottex/percival?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gillesdegottex/percival&amp;utm_campaign=Badge_Grade)
 
 ## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
