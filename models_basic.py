@@ -28,8 +28,8 @@ from functools import partial
 import numpy as np
 rng = np.random.RandomState(123) # TODO Doesn't seems to be working properly bcs each run is different
 
-import theano
-import theano.tensor as T
+# import theano
+# import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
 
