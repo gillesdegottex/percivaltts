@@ -287,7 +287,7 @@ class Optimizer:
                 train_times.append(time.time()-timetrainstart)
 
                 print_tty('err={:.4f} ({:.4f}s)                  '.format(cost_tra,train_times[-1]))
-                if np.isnan(cost_tra):
+                if np.isnan(cost_tra):                      # pragma: no cover
                     print_log('    previous costs: {}'.format(costs_tra_batches))
                     print_log('    epoch {} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
                     raise ValueError('ERROR: Training cost is nan!')
@@ -341,7 +341,7 @@ class Optimizer:
 
             if len(costs['model_rmse_validation'])<2 or costs['model_rmse_validation'][-1]<min(costs['model_rmse_validation'][:-1]):
                 nbnodecepochs = 0
-            elif epoch>cfg.train_cancel_nodecepochs:
+            elif epoch>cfg.train_cancel_nodecepochs:        # pragma: no cover
                 nbnodecepochs += 1
                 if nbnodecepochs>=cfg.train_cancel_nodecepochs:
                     print_log('WARNING: validation error did not decrease for {} epochs. Early stop!'.format(cfg.train_cancel_nodecepochs))
@@ -446,9 +446,9 @@ class Optimizer:
                     cont = None
                     print_log('Total trial run time: {}s'.format(time2str(time.time()-timewholetrainstart)))
 
-                except KeyboardInterrupt:
+                except KeyboardInterrupt:                   # pragma: no cover
                     raise KeyboardInterrupt
-                except:
+                except:                                     # pragma: no cover
                     if len(cfg.train_hypers)>0: print_log('WARNING: Training crashed!')
                     else:                       print_log('ERROR: Training crashed!')
                     import traceback
@@ -460,7 +460,7 @@ class Optimizer:
                     # Save results of each trial
                     np.savetxt(params_savefile+'.trials', np.vstack(trials), header=('trials '+' '.join([field[0] for field in cfg.train_hypers]+sorted(train_rets.keys()))))
 
-        except KeyboardInterrupt:
+        except KeyboardInterrupt:                           # pragma: no cover
             print_log('WARNING: Training interrupted by user!')
             pass
 
