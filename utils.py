@@ -116,7 +116,7 @@ def weights_normal_ortho(insiz, outsiz, std, rng, dtype):
     '''
     # Preserve std!
     a = rng.normal(0.0, std, size=(insiz, outsiz))
-    u, s, v = np.linalg.svd(a, full_matrices=0)
+    u, _, v = np.linalg.svd(a, full_matrices=0)
     if u.shape!=(insiz, outsiz): u=v
     u = u.reshape((insiz, outsiz))
     return np.asarray(u, dtype=dtype)
@@ -234,7 +234,7 @@ def log_plot_costs(costs, worst_val, fname, epochs_modelssaved):
     for key in sorted(costs.keys()):
         plt.plot(epochs, np.array(costs[key]), label=key)
     if not epochs_modelssaved is None and len(epochs_modelssaved)>0:
-        markerline, stemlines, baseline = plt.stem(epochs_modelssaved, worst_val*np.ones(len(epochs_modelssaved)), 'gray', markerfmt='.', basefmt=' ')
+        plt.stem(epochs_modelssaved, worst_val*np.ones(len(epochs_modelssaved)), 'gray', markerfmt='.', basefmt=' ')
     plt.xlim([0, len(epochs)])
     plt.xlabel('Epochs')
     # plt.ylim([0.0, 1.1*worst_val])
