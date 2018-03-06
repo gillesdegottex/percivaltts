@@ -135,6 +135,8 @@ class TestSmoke(unittest.TestCase):
         spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
         nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
 
+        compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab0/*.lab', id_valid_start=8, normfn=None, do_finalcheck=True, wins=[], dropzerovardims=False)
+
         compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab1/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=False)
 
         path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,601)')
