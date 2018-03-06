@@ -128,9 +128,9 @@ def cropsize(xs, axis=0):
         for x in xs:
             # print('cropsize: {} {}'.format(x[ki].shape, siz))
             if axis==0:   x[ki] = x[ki][:siz,]
-            elif axis==1: x[ki] = x[ki][:,:siz,]
-            elif axis==2: x[ki] = x[ki][:,:,:siz,]
-            # etc. TODO How to generalize?
+            elif axis==1: x[ki] = x[ki][:,:siz,]            # pragma: no cover
+            elif axis==2: x[ki] = x[ki][:,:,:siz,]          # pragma: no cover
+            # etc. TODO How to generalize this?
 
     return xs
 

@@ -135,6 +135,8 @@ class TestSmoke(unittest.TestCase):
         spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
         nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
 
+        compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab0/*.lab', id_valid_start=8, normfn=None, do_finalcheck=True, wins=[], dropzerovardims=False)
+
         compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab1/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=False)
 
         path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,601)')
@@ -146,6 +148,8 @@ class TestSmoke(unittest.TestCase):
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fileids, 'test/test_made__smoke_compose_compose2_cmp2/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd, do_finalcheck=True, wins=[])
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fileids, 'test/test_made__smoke_compose_compose2_cmp3/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_bndminmaxm11, do_finalcheck=True, wins=[])
+
+        compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fileids, 'test/test_made__smoke_compose_compose2_cmp3_deltas/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_bndminmaxm11, do_finalcheck=True, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fileids, 'test/test_made__smoke_compose_compose2_cmp4/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_bndnmnoscale, do_finalcheck=True, wins=[])
 

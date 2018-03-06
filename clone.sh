@@ -36,18 +36,25 @@ CODEDIR="`dirname \"$0\"`"              # relative
 CODEDIR="`( cd \"$CODEDIR\" && pwd )`"
 echo Cloning \"$CODEDIR\" in \"$WORKDIR\"
 
-mkdir -p $WORKDIR
-mkdir -p $WORKDIR/out
+# Create the destination directory if access done by NFS
+if [[ -n `echo "$WORKDIR" |grep '^/net'` ]] ; then
+    mkdir -p $WORKDIR;
+    mkdir -p $WORKDIR/out;
+else
+    ssh "`echo "$WORKDIR" |sed 's/:.*$//'`" /bin/mkdir -p `echo $WORKDIR |sed 's/^.*://'`/out;
+fi
 
 # Do the actual copy
 # cp -fr $CODEDIR $WORKDIR
 rsync -qav $CODEDIR/ $WORKDIR/Code --exclude .git/
 
+if [[ "${@:2}" ]]; then
+
 # Go into the working directory
 cd $WORKDIR/out
 
-if [[ "${@:2}" ]]; then
 echo Run command: "${@:2}"
 # ${@:2} > log 2>&1
 ${@:2}
+
 fi

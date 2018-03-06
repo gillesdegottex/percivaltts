@@ -41,11 +41,6 @@ def print_sysinfo_theano():
 def th_cuda_available():
     return theano.config.cuda.root!=''
 
-def th_cuda_memfree():
-    import theano.sandbox.cuda
-    meminfo = theano.sandbox.cuda.basic_ops.cuda_ndarray.cuda_ndarray.mem_info()
-    return '{}MB mem free'.format(meminfo[0]/(1024*1024))
-
 def th_print(msg, op):
     print_shape = theano.printing.Print(msg, attrs = [ 'shape' ])
     print_val = theano.printing.Print(msg)
