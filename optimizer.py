@@ -63,8 +63,9 @@ class Optimizer:
 
         self._target_values = T.ftensor3('target_values')
 
-    def saveTrainingState(self, fstate, cfg=None, extras=dict(), printfn=print):
+    def saveTrainingState(self, fstate, cfg=None, extras=None, printfn=print):
         # https://github.com/Lasagne/Lasagne/issues/159
+        if extras is None: extras=dict()
         printfn('    saving training state in {} ...'.format(fstate), end='')
         sys.stdout.flush()
 
