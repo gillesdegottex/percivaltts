@@ -99,7 +99,7 @@ def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepi
         Y = np.fromfile(finpath, dtype='float32')
         Y = Y.reshape((-1,len(means)))
         Y = (Y - means)/stds
-        print('\r    Write normed data file {}: {}                '.format(nf, fid)),
+        print_nnl('\r    Write normed data file {}: {}                '.format(nf, fid))
         foutpath = outfilepath.replace('*',fid)
         Y.astype('float32').tofile(foutpath)
     print_nnl('\r                                                                                 \r')
