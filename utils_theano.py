@@ -19,9 +19,9 @@ Author
 '''
 
 import os
-import subprocess
 
 import numpy as np
+
 import theano
 import theano.tensor as T
 
