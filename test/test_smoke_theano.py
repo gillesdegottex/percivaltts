@@ -69,7 +69,7 @@ class TestSmokeTheano(unittest.TestCase):
         print('randomize_hyper: hyperstr='+hyperstr)
         cfg.print_content()
 
-        cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0)] # For ADAM
+        cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0), ('train_batchsize', 1, 4)] # For ADAM
         cfg_hyprnd1, hyperstr1 = optigan.randomize_hyper(cfg)
         print('randomize_hyper: hyperstr1='+hyperstr1)
         cfg_hyprnd1.print_content()
