@@ -247,6 +247,8 @@ class Model:
 
         if indicestosynth is None: indicestosynth=range(0,len(X_test))
         for vi in indicestosynth:
+            if vi>=len(X_test): continue
+
             print('Generating {}/{} ...'.format(1+vi, len(X_test)))
             print('    Predict ...')
 

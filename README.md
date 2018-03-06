@@ -2,6 +2,8 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/gillesdegottex/percival/badge.svg?branch=master)](https://coveralls.io/github/gillesdegottex/percival?branch=master)
 
+[![codecov](https://codecov.io/gh/gillesdegottex/percival/branch/master/graph/badge.svg)](https://codecov.io/gh/gillesdegottex/percival)
+
 ## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
 <img align="right" width="300" src="./doc/spec_sample.png">
@@ -82,6 +84,11 @@ And other version numbers
 ```
 CUDA                      9.0
 NVidia Drivers            384.111
+```
+
+If you want to use MLPG (disabled by default), you will need to also install:
+```
+$ sudo pip install bandmat
 ```
 
 ### Install/Demo

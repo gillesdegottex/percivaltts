@@ -69,7 +69,7 @@ class TestSmokeTheano(unittest.TestCase):
         print('randomize_hyper: hyperstr='+hyperstr)
         cfg.print_content()
 
-        cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0)] # For ADAM
+        cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0), ('train_batchsize', 1, 4)] # For ADAM
         cfg_hyprnd1, hyperstr1 = optigan.randomize_hyper(cfg)
         print('randomize_hyper: hyperstr1='+hyperstr1)
         cfg_hyprnd1.print_content()
@@ -78,15 +78,37 @@ class TestSmokeTheano(unittest.TestCase):
         cfg_hyprnd2.print_content()
         self.assertNotEqual(cfg_hyprnd1, cfg_hyprnd2)
 
-
         makedirs('test/test_made__smoke_theano_model_train')
         cfg.train_max_nbepochs = 5
-        cfg.train_nbtrials = 1        # Just run one training only
+        cfg.train_nbtrials = 5        # Just run one training only
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+
+        # Go back to single trial for the next tests
+        cfg.train_nbtrials = 1
         cfg.train_hypers = []
 
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+        cfg.train_max_nbepochs = 10
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=True)
+
         model.saveAllParams('test/test_made__smoke_theano_model_train/smokymodelparams.pkl')
         model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size)
+        model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd-pp_spec_extrapfreq', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size, pp_spec_extrapfreq=8000)
+        model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd-pp_spec_pf_coef', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size, pp_spec_pf_coef=1.2)
+
+        # Test MLPG
+        cfg.outdir = 'test/test_made__smoke_compose_compose2_cmp_deltas/*.cmp:(-1,249)'
+        optiganwdeltas = optimizer.Optimizer(modelwdeltas, errtype=None)
+        optiganwdeltas.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modelwdeltas.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl', cfgtomerge=cfg, cont=False)
+        modelwdeltas.saveAllParams('test/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl')
+        modelwdeltas.generate('test/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size, do_mlpg=True)
+
+        cfg.outdir = cptest+'wav_cmp_lf0_fwspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
+
+
+        # Now test the various models available
 
         model = models_basic.ModelBGRU(601, 1+spec_size+17, spec_size, nm_size, hiddensize=4, nblayers=1)
         modelwdeltas = models_basic.ModelBGRU(601, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=1)
@@ -110,10 +132,6 @@ class TestSmokeTheano(unittest.TestCase):
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size)
 
-
-        # cfg.train_nbtrials = 5        # Just run one training only
-        # cfg.train_hypers = [] # TODO
-        # TODO
 
 
     def test_utils_theano(self):
