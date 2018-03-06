@@ -96,10 +96,11 @@ class Optimizer:
         sys.stdout.flush()
 
         if cfg.__dict__!=DATA[2].__dict__:
-            printfn('        configurations are not the same !')
+            printfn('        configurations are not the same!')
             for attr in cfg.__dict__:
                 if attr in DATA[2].__dict__:
-                    print('            attribute {}: new state {}, saved state {}'.format(attr, cfg.__dict__[attr], DATA[2].__dict__[attr]))
+                    if cfg.__dict__[attr]!=DATA[2].__dict__[attr]:
+                        print('            attribute {}: new state {}, saved state {}'.format(attr, cfg.__dict__[attr], DATA[2].__dict__[attr]))
                 else:
                     print('            attribute {}:{} is not in the saved state'.format(attr, cfg.__dict__[attr]))
             for attr in DATA[2].__dict__:
