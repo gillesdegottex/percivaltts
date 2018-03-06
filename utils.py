@@ -185,7 +185,11 @@ def print_sysinfo():
 
     print('')
 
-def nvidia_smi_current_gpu():
+def nvidia_smi_current_gpu():                               # pragma: no cover
+    '''
+        return : [MiB]
+    (no need of coverage for this fn since it cannot crash)
+    '''
 
     # if theano.config.device=='cpu': return -2
 
@@ -200,9 +204,10 @@ def nvidia_smi_current_gpu():
         return -1
     return -1
 
-def nvidia_smi_gpu_memused():
+def nvidia_smi_gpu_memused():                               # pragma: no cover
     '''
         return : [MiB]
+    (no need of coverage for this fn since it cannot crash)
     '''
 
     # if theano.config.device=='cpu': return -2
