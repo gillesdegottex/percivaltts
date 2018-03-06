@@ -86,6 +86,11 @@ CUDA                      9.0
 NVidia Drivers            384.111
 ```
 
+If you want to use MLPG (disabled by default), you will need to also install:
+```
+$ sudo pip install bandmat
+```
+
 ### Install/Demo
 
 In the root directory of the source code, run first:
