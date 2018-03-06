@@ -471,6 +471,5 @@ class Optimizer:
 
         except KeyboardInterrupt:                           # pragma: no cover
             print_log('WARNING: Training interrupted by user!')
-            pass
 
         print_log('Finished')
