@@ -29,7 +29,6 @@ Author
 print('')
 import sys
 import os
-import numpy as np
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
 from utils import *
