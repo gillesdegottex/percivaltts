@@ -72,7 +72,6 @@ class configuration(object):
             if k[:2]!='__':
                 setattr(self, k, cfgtoadd.__dict__[k])
 
-    pass
 
 def print_log(txt, end='\n'):
 
