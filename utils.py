@@ -72,7 +72,6 @@ class configuration(object):
             if k[:2]!='__':
                 setattr(self, k, cfgtoadd.__dict__[k])
 
-    pass
 
 def print_log(txt, end='\n'):
 
@@ -116,7 +115,7 @@ def weights_normal_ortho(insiz, outsiz, std, rng, dtype):
     '''
     # Preserve std!
     a = rng.normal(0.0, std, size=(insiz, outsiz))
-    u, s, v = np.linalg.svd(a, full_matrices=0)
+    u, _, v = np.linalg.svd(a, full_matrices=0)
     if u.shape!=(insiz, outsiz): u=v
     u = u.reshape((insiz, outsiz))
     return np.asarray(u, dtype=dtype)
@@ -186,7 +185,7 @@ def print_sysinfo():
 def nvidia_smi_current_gpu():                               # pragma: no cover
     '''
         return : [MiB]
-    (no need of coverage for this fn since it cannot crash)
+    (tested locally, no need of CI testing and coverage)
     '''
 
     # if theano.config.device=='cpu': return -2
@@ -198,14 +197,14 @@ def nvidia_smi_current_gpu():                               # pragma: no cover
             for proc in gpu.find('processes').findall('process_info'):
                 if int(proc.find('pid').text) == os.getpid():
                     return int(gpu.find('minor_number').text)
-    except:
+    except OSError:
         return -1
     return -1
 
 def nvidia_smi_gpu_memused():                               # pragma: no cover
     '''
         return : [MiB]
-    (no need of coverage for this fn since it cannot crash)
+    (tested locally, no need of CI testing and coverage)
     '''
 
     # if theano.config.device=='cpu': return -2
@@ -217,7 +216,7 @@ def nvidia_smi_gpu_memused():                               # pragma: no cover
             for proc in gpu.find('processes').findall('process_info'):
                 if int(proc.find('pid').text) == os.getpid():
                     return int(proc.find('used_memory').text.split(' ')[0])
-    except:
+    except OSError:
         return -1
     return -1
 
@@ -234,7 +233,7 @@ def log_plot_costs(costs, worst_val, fname, epochs_modelssaved):
     for key in sorted(costs.keys()):
         plt.plot(epochs, np.array(costs[key]), label=key)
     if not epochs_modelssaved is None and len(epochs_modelssaved)>0:
-        markerline, stemlines, baseline = plt.stem(epochs_modelssaved, worst_val*np.ones(len(epochs_modelssaved)), 'gray', markerfmt='.', basefmt=' ')
+        plt.stem(epochs_modelssaved, worst_val*np.ones(len(epochs_modelssaved)), 'gray', markerfmt='.', basefmt=' ')
     plt.xlim([0, len(epochs)])
     plt.xlabel('Epochs')
     # plt.ylim([0.0, 1.1*worst_val])

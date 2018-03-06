@@ -42,6 +42,11 @@ import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
 
+if th_cuda_available():
+    from pygpu.gpuarray import GpuArrayException
+else:
+    class GpuArrayException(Exception): pass    # declare a dummy one if pygpu is not loaded
+
 # import model
 
 import models_cnn # For GAN discriminator
@@ -63,8 +68,9 @@ class Optimizer:
 
         self._target_values = T.ftensor3('target_values')
 
-    def saveTrainingState(self, fstate, cfg=None, extras=dict(), printfn=print):
+    def saveTrainingState(self, fstate, cfg=None, extras=None, printfn=print):
         # https://github.com/Lasagne/Lasagne/issues/159
+        if extras is None: extras=dict()
         printfn('    saving training state in {} ...'.format(fstate), end='')
         sys.stdout.flush()
 
@@ -247,7 +253,7 @@ class Optimizer:
 
                 # Load training data online, because data is often too heavy to hold in memory
                 fid_lst_trab = [fid_lst_tra[bidx] for bidx in rndidxb[k]]
-                X_trab, MX_trab, Y_trab, MY_trab = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype)
+                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype)
 
                 if 0: # Plot batch
                     import matplotlib.pyplot as plt
@@ -356,7 +362,8 @@ class Optimizer:
         return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val}
 
 
-    def randomize_hyper(self, cfg):
+    @classmethod
+    def randomize_hyper(cls, cfg):
         cfg = copy.copy(cfg) # Create a new one instead of updating the object passed as argument
 
         # Randomized the hyper parameters
@@ -364,7 +371,7 @@ class Optimizer:
 
         hyperstr = ''
         for hyper in cfg.train_hypers:
-            if type(hyper[1]) is int and type(hyper[2]) is int:
+            if isinstance(hyper[1], int) and isinstance(hyper[2], int):
                 setattr(cfg, hyper[0], np.random.randint(hyper[1],hyper[2]))
             else:
                 setattr(cfg, hyper[0], np.random.uniform(hyper[1],hyper[2]))
@@ -448,12 +455,14 @@ class Optimizer:
 
                 except KeyboardInterrupt:                   # pragma: no cover
                     raise KeyboardInterrupt
-                except:                                     # pragma: no cover
-                    if len(cfg.train_hypers)>0: print_log('WARNING: Training crashed!')
-                    else:                       print_log('ERROR: Training crashed!')
-                    import traceback
-                    traceback.print_exc()
-                    pass
+                except (ValueError, GpuArrayException):     # pragma: no cover
+                    if len(cfg.train_hypers)>0:
+                        print_log('WARNING: Training crashed!')
+                        import traceback
+                        traceback.print_exc()
+                    else:
+                        print_log('ERROR: Training crashed!')
+                        raise   # Crash the whole training if there is only one trial
 
                 if cfg.train_nbtrials>1:
                     trials.append([triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]+[train_rets[key] for key in sorted(train_rets.keys())])

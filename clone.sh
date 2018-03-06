@@ -32,16 +32,16 @@
 
 WORKDIR=$1
 
-CODEDIR="`dirname \"$0\"`"              # relative
-CODEDIR="`( cd \"$CODEDIR\" && pwd )`"
+CODEDIR=$(dirname "$0")              # relative
+CODEDIR=$( ( cd "$CODEDIR" && pwd ) )
 echo Cloning \"$CODEDIR\" in \"$WORKDIR\"
 
 # Create the destination directory if access done by NFS
-if [[ -n `echo "$WORKDIR" |grep '^/net'` ]] ; then
+if [[ -n $(echo "$WORKDIR" |grep '^/net') ]] ; then
     mkdir -p $WORKDIR;
     mkdir -p $WORKDIR/out;
 else
-    ssh "`echo "$WORKDIR" |sed 's/:.*$//'`" /bin/mkdir -p `echo "$WORKDIR" |sed 's/^.*://'`/out;
+    ssh ${WORKDIR%:*} /bin/mkdir -p ${WORKDIR#*:}/out;
 fi
 
 # Do the actual copy

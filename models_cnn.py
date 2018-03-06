@@ -41,8 +41,8 @@ class CstMulLayer(lasagne.layers.Layer):
         super(CstMulLayer, self).__init__(incoming, **kwargs)
         self.cstW = cstW
 
-    def get_output_for(self, input, **kwargs):
-        return input*self.cstW
+    def get_output_for(self, x, **kwargs):
+        return x*self.cstW
 
     # def get_output_shape_for(self, input_shape):
     #     return (input_shape[0], self.num_units)
