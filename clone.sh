@@ -41,7 +41,7 @@ if [[ -n $(echo "$WORKDIR" |grep '^/net') ]] ; then
     mkdir -p $WORKDIR;
     mkdir -p $WORKDIR/out;
 else
-    ssh $(echo "$WORKDIR" |sed 's/:.*$//') /bin/mkdir -p $(echo "$WORKDIR" |sed 's/^.*://')/out;
+    ssh ${WORKDIR%:*} /bin/mkdir -p ${WORKDIR#*:}/out;
 fi
 
 # Do the actual copy
