@@ -31,6 +31,8 @@ nm_size = 17
 cfg.shift = 0.005   # Time shift between 2 frames
 cfg.fs = 32000      # Sampling frequency of the samples used for testing
 
+cfg.dummyattribute = -1
+
 class TestSmokeTheano(unittest.TestCase):
     def test_model(self):
         makedirs('test/test_made__smoke_theano_model')
@@ -91,6 +93,9 @@ class TestSmokeTheano(unittest.TestCase):
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
 
         cfg.train_max_nbepochs = 10
+        cfg.newdummyattribute = -1
+        delattr(cfg, 'dummyattribute')
+
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=True)
 
         model.saveAllParams('test/test_made__smoke_theano_model_train/smokymodelparams.pkl')
