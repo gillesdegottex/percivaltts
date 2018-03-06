@@ -42,6 +42,11 @@ import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
 
+if th_cuda_available():
+    from pygpu.gpuarray import GpuArrayException
+else:
+    class GpuArrayException(Exception): pass    # declare a dummy one if pygpu is not loaded
+
 # import model
 
 import models_cnn # For GAN discriminator
@@ -450,12 +455,15 @@ class Optimizer:
 
                 except KeyboardInterrupt:                   # pragma: no cover
                     raise KeyboardInterrupt
-                except:                                     # pragma: no cover
-                    if len(cfg.train_hypers)>0: print_log('WARNING: Training crashed!')
-                    else:                       print_log('ERROR: Training crashed!')
-                    import traceback
-                    traceback.print_exc()
-                    pass
+                except (ValueError, GpuArrayException):     # pragma: no cover
+                    if len(cfg.train_hypers)>0:
+                        print_log('WARNING: Training crashed!')
+                        import traceback
+                        traceback.print_exc()
+                        pass
+                    else:
+                        print_log('ERROR: Training crashed!')
+                        raise   # Crash the whole training if there is only one trial
 
                 if cfg.train_nbtrials>1:
                     trials.append([triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]+[train_rets[key] for key in sorted(train_rets.keys())])
