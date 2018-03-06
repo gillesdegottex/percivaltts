@@ -41,12 +41,12 @@ if [[ -n `echo "$WORKDIR" |grep '^/net'` ]] ; then
     mkdir -p $WORKDIR;
     mkdir -p $WORKDIR/out;
 else
-    ssh "`echo "$WORKDIR" |sed 's/:.*$//'`" /bin/mkdir -p `echo $WORKDIR |sed 's/^.*://'`/out;
+    ssh "`echo "$WORKDIR" |sed 's/:.*$//'`" /bin/mkdir -p `echo "$WORKDIR" |sed 's/^.*://'`/out;
 fi
 
 # Do the actual copy
 # cp -fr $CODEDIR $WORKDIR
-rsync -qav $CODEDIR/ $WORKDIR/Code --exclude .git/
+rsync -qav $CODEDIR/ $WORKDIR/Code/ --exclude .git/
 
 if [[ "${@:2}" ]]; then
 
