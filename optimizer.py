@@ -460,7 +460,6 @@ class Optimizer:
                         print_log('WARNING: Training crashed!')
                         import traceback
                         traceback.print_exc()
-                        pass
                     else:
                         print_log('ERROR: Training crashed!')
                         raise   # Crash the whole training if there is only one trial
