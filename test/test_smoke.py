@@ -15,6 +15,12 @@ class TestSmoke(unittest.TestCase):
 
         cfg = utils.configuration()
 
+        text_file = open('cptest/info.py', "w")
+        text_file.write("fs = 32000\n")
+        text_file.write("shift = 0.005\n")
+        text_file.close()
+        cfg.mergefile(['cptest/info.py'])
+
         utils.print_log('print_log')
 
         utils.print_tty('print_tty', end='\n')
