@@ -113,7 +113,7 @@ def gettotallen(Xs, axis=0):
         l += Xs[i].shape[axis]
     return l
 
-def cropsize(xs, axis=0):
+def cropsize(xs, axis=0): # TODO croplen, no ?
     # Attention! It modifies the argument
 
     if axis>2:
