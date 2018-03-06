@@ -161,15 +161,12 @@ class Model:
         Ystd = np.fromfile(os.path.dirname(cfg.outdir)+'/std4norm.dat', dtype='float32')
 
         print('\nLoading generation data at once ...')
+        X_test = data.load(cfg.indir, fid_lst_gen, verbose=1)
         if do_objmeas:
-            X_test = data.load(cfg.indir, fid_lst_gen, verbose=1)
             y_test = data.load(cfg.outdir, fid_lst_gen, verbose=1)
             X_test, y_test = data.cropsize((X_test, y_test))
             #cost_test = data.cost_model_merlin(mod, X_test, y_test, model_outsize=cfg.model_outsize)
             #print("    test cost = {:.6f} ({:.4f}%)".format(cost_test, 100*np.sqrt(cost_test)/np.sqrt(worst_val)))
-        else:
-            X_test = data.load(cfg.indir, fid_lst_gen, verbose=1)
-            #(X_test), M_test = data.maskify([X_test])
 
         self.loadAllParams(params_savefile)              # Load the model's parameters
 
