@@ -185,7 +185,7 @@ def print_sysinfo():
 def nvidia_smi_current_gpu():                               # pragma: no cover
     '''
         return : [MiB]
-    (no need of coverage for this fn since it cannot crash)
+    (tested locally, no need of CI testing and coverage)
     '''
 
     # if theano.config.device=='cpu': return -2
@@ -197,14 +197,14 @@ def nvidia_smi_current_gpu():                               # pragma: no cover
             for proc in gpu.find('processes').findall('process_info'):
                 if int(proc.find('pid').text) == os.getpid():
                     return int(gpu.find('minor_number').text)
-    except:
+    except OSError:
         return -1
     return -1
 
 def nvidia_smi_gpu_memused():                               # pragma: no cover
     '''
         return : [MiB]
-    (no need of coverage for this fn since it cannot crash)
+    (tested locally, no need of CI testing and coverage)
     '''
 
     # if theano.config.device=='cpu': return -2
@@ -216,7 +216,7 @@ def nvidia_smi_gpu_memused():                               # pragma: no cover
             for proc in gpu.find('processes').findall('process_info'):
                 if int(proc.find('pid').text) == os.getpid():
                     return int(proc.find('used_memory').text.split(' ')[0])
-    except:
+    except OSError:
         return -1
     return -1
 
