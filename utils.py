@@ -78,13 +78,16 @@ def print_log(txt, end='\n'):
     print(datetime2str()+': '+txt, end=end)
     sys.stdout.flush()
 
+def print_nnl(txt, end=''):
+    print(txt, end=end)
+    sys.stdout.flush()
+
 def print_tty(txt, end=''):
 
     if not sys.stdout.isatty():
         return                                              # pragma: no cover
 
-    print(txt, end=end)
-    sys.stdout.flush()
+    print_nnl(txt, end=end)
 
 def datetime2str(sec=None):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(sec))
