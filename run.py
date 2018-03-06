@@ -41,9 +41,9 @@ cfg = configuration() # Init configuration structure
 # Corpus/Voice(s) options
 cp = 'test/slttest/' # The main directory where the data of the voice is stored # TODO Use demo data not test data
 cfg.fileids = cp+'/file_id_list.scp'
-cfg.id_valid_start = 8  # TODO
-cfg.id_valid_nb = 1     # TODO
-cfg.id_test_nb = 1      # TODO
+cfg.id_valid_start = 160
+cfg.id_valid_nb = 20
+cfg.id_test_nb = 20
 
 # Input text labels
 in_size = 601
@@ -66,13 +66,21 @@ nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
 cfg.outdir = cp+wav_dir+'_cmp_lf0_fwspec'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')'
 cfg.wdir = cp+wav_dir+'_fwspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
+# Model options
+cfg.model_hiddensize = 512
+cfg.model_nbprelayers = 2
+cfg.model_nbcnnlayers = 4
+cfg.model_nbfilters = 8
+cfg.model_spec_freqlen = 13
+cfg.model_nm_freqlen = 7
+cfg.model_windur = 0.100
+
 # Training options
 fparams_fullset = 'model.pkl'
 # The ones below will overwrite default options in model.py:train_multipletrials(.)
-cfg.train_batchsize = 2     # TODO 
+cfg.train_batchsize = 5
 cfg.train_batch_lengthmax = int(3.0/0.005) # Maximum duration [frames] of each batch
 cfg.train_nbtrials = 1        # Just run one training only
-cfg.train_max_nbepochs = 10 # TODO
 
 cfg.print_content()
 
@@ -119,10 +127,10 @@ def training(cont=False):
 
     # Build the model
     import models_cnn
-    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=512, nbprelayers=2, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100)
+    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     # Here you can load pre-computed weights, or just do nothing and start
-    # from fully random weights, as usually.
+    # from fully random weights.
 
     # Here you can select a subset of the parameters to train, while keeping
     # the other ones frozen.
@@ -152,7 +160,6 @@ def generate_wavs():
     indicestosynth = range(demostart,demostart+10) # Just generate 10 of them
     mod.generate(fparams_fullset, '-demo-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True, indicestosynth=indicestosynth)
     mod.generate(fparams_fullset, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
-
 
 if  __name__ == "__main__" :
     features_extraction()
