@@ -39,7 +39,7 @@ print_log('Global configurations')
 cfg = configuration() # Init configuration structure
 
 # Corpus/Voice(s) options
-cp = 'test/slttest/' # The main directory where the data of the voice is stored
+cp = 'test/slttest/' # The main directory where the data of the voice is stored # TODO Use demo data not test data
 cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 160
 cfg.id_valid_nb = 20
@@ -64,7 +64,16 @@ f0_path = cp+wav_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
 nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
 cfg.outdir = cp+wav_dir+'_cmp_lf0_fwspec'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')'
-cfg.outwdir = cp+wav_dir+'_fwspec'+str(spec_size)+'_weights/*.w:(-1,1)'
+cfg.wdir = cp+wav_dir+'_fwspec'+str(spec_size)+'_weights/*.w:(-1,1)'
+
+# Model options
+cfg.model_hiddensize = 512
+cfg.model_nbprelayers = 2
+cfg.model_nbcnnlayers = 4
+cfg.model_nbfilters = 8
+cfg.model_spec_freqlen = 13
+cfg.model_nm_freqlen = 7
+cfg.model_windur = 0.100
 
 # Training options
 fparams_fullset = 'model.pkl'
@@ -101,7 +110,7 @@ def composition():
 
     # Create time weights (column vector in [0,1]). The frames at begining or end of
     # each file whose weights are smaller than 0.5 will be ignored by the training
-    compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.outwdir)
+    compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir)
 
 
 # Training ---------------------------------------------------------------------
@@ -117,18 +126,19 @@ def training(cont=False):
     print('    {} validation files; ratio of validation data over training data: {:.2f}%'.format(len(fid_lst_val), 100.0*float(len(fid_lst_val))/len(fid_lst_tra)))
 
     # Build the model
-    import model_gan
-    mod = model_gan.ModelGAN(in_size, spec_size, nm_size)
+    import models_cnn
+    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     # Here you can load pre-computed weights, or just do nothing and start
-    # from fully random weights, as usually.
+    # from fully random weights.
 
     # Here you can select a subset of the parameters to train, while keeping
     # the other ones frozen.
-    params = mod.params_trainable # Train all the model's parameters, you can make a selection here
+    params = model.params_trainable # Train all the model's parameters, you can make a selection here
 
-    mod.train_multipletrials(cfg.indir, cfg.outdir, cfg.outwdir, fid_lst_tra, fid_lst_val, params, fparams_fullset, cfgtomerge=cfg, cont=cont)
-
+    import optimizer
+    optigan = optimizer.Optimizer(model, errtype='WGAN')
+    optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, fparams_fullset, cfgtomerge=cfg, cont=cont)
 
     # Here you can save a subset of parameters to save in a different file
     # import cPickle
@@ -150,7 +160,6 @@ def generate_wavs():
     indicestosynth = range(demostart,demostart+10) # Just generate 10 of them
     mod.generate(fparams_fullset, '-demo-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True, indicestosynth=indicestosynth)
     mod.generate(fparams_fullset, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
-
 
 if  __name__ == "__main__" :
     features_extraction()

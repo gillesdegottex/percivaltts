@@ -130,7 +130,7 @@ class Optimizer:
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
             # TODO Might drop discri_input_var and replace it with self._target_values
-            [discri, layer_discri, layer_cond] = networks_cnn.build_discri_split(discri_input_var, self._model.input_values, self._model.specsize, self._model.nmsize, self._model.insize, self._model._hidfcwidth, use_bn=False)
+            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, nbpostlayers=self._model._nbprelayers, windur=self._model._windur)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
@@ -140,7 +140,7 @@ class Optimizer:
             real_out = lasagne.layers.get_output(discri)
             # Create expression for passing fake data through the discri
             genout = lasagne.layers.get_output(self._model.net_out)
-            indict = {layer_discri:lasagne.layers.get_output(self._model.net_out), layer_cond:self._model.input_values}
+            indict = {layer_discri:lasagne.layers.get_output(self._model.net_out), layer_cond:self._model._input_values}
             fake_out = lasagne.layers.get_output(discri, indict)
 
             # Create generator's loss expression
@@ -149,7 +149,7 @@ class Optimizer:
                     print('Overall additive LS solution')
                     generator_loss = -(1.0-cfg.train_LScoef)*fake_out.mean() + cfg.train_LScoef*lasagne.objectives.squared_error(genout, self._target_values).mean()
                 else:
-                    print('WGAN Weighted LS - Generator part - New one which oversmooths')
+                    print('WGAN Weighted LS - Generator part')
                     specxs = np.arange(self._model.specsize, dtype=theano.config.floatX)
                     nmxs = np.arange(self._model.nmsize, dtype=theano.config.floatX)
                     wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specxs,  int(self._model.specsize/2), 1.0/8.0), nonlin_sigmoidparm(nmxs,  int(self._model.nmsize/2), 1.0/8.0)))
@@ -171,7 +171,7 @@ class Optimizer:
             # Improved training for Wasserstein GAN
             epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
             mixed_X = (epsi * genout) + (1-epsi) * discri_input_var
-            indict = {layer_discri:mixed_X, layer_cond:self._model.input_values}
+            indict = {layer_discri:mixed_X, layer_cond:self._model._input_values}
             output_D_mixed = lasagne.layers.get_output(discri, inputs=indict)
             grad_mixed = T.grad(T.sum(output_D_mixed), mixed_X)
             norm_grad_mixed = T.sqrt(T.sum(T.square(grad_mixed),axis=[1,2]))
@@ -188,12 +188,12 @@ class Optimizer:
             # Compile functions performing a training step on a mini-batch (according
             # to the updates dictionary) and returning the corresponding score:
             print('Compiling generator training function...')
-            generator_train_fn_ins = [self._model.input_values]
+            generator_train_fn_ins = [self._model._input_values]
             if cfg.train_LScoef>0.0: generator_train_fn_ins.append(self._target_values)
             train_fn = theano.function(generator_train_fn_ins, generator_loss, updates=generator_updates)
             train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
             print('Compiling discriminator training function...')
-            discri_train_fn_ins = [self._model.input_values]
+            discri_train_fn_ins = [self._model._input_values]
             discri_train_fn_ins.extend([discri_input_var, epsi])
             discri_train_fn = theano.function(discri_train_fn_ins, discri_loss, updates=discri_updates)
             discri_train_validation_fn = theano.function(discri_train_fn_ins, discri_loss, no_default_updates=True)

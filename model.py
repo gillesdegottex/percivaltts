@@ -41,6 +41,7 @@ import theano
 import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
 
 # import networks_basic
 # import networks_cnn
@@ -60,13 +61,15 @@ class Model:
     params_trainable = None # Trainable parameters
     updates = []
 
+    _hiddensize = 512
+
     outsize = -1
     net_out = None  # Network output
     outputs = None  # Outputs of prediction function
 
     predict = None  # Prection function
 
-    def __init__(self, insize, outsize, specsize, nmsize):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512):
         # Force additional random inputs is using anyform of GAN
         print("Building the model")
 
@@ -74,26 +77,11 @@ class Model:
 
         self.specsize = specsize
         self.nmsize = nmsize
+        self._hiddensize = hiddensize
         self.outsize = outsize
 
         self._input_values = T.ftensor3('input_values')
 
-        # self._hidfcwidth = 512 # width of the intermediate hidden fully-connected layers
-
-        # Build the network ----------------------------------------------------
-        # self.build(insize, outsize, specsize, nmsize)
-
-        # Select your favorite one or just fill self.net_out and self.updates with whatever you want
-
-        # self.net_out, self.updates = networks_basic.LA_NxFC(self._input_values, self._hidfcwidth, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=6, nonlinearity=self._nonlinearity) # TODO TODO TODO
-
-        # self.net_out, self.updates = networks_basic.LA_NxFC(self._input_values, self._hidfcwidth, self.insize, self.specsize, self.nmsize, nblayers=6, nonlinearity=self._nonlinearity)
-        # self.net_out, self.updates = networks_basic.LA_NxBGRU(self._input_values, self._hidfcwidth, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=3, nonlinearity=self._nonlinearity)
-        # self.net_out, self.updates = networks_basic.LA_NxBLSTM(self._input_values, self._hidfcwidth, self.insize, self.outsize, self.specsize, self.nmsize, nblayers=3, nonlinearity=self._nonlinearity)
-
-        # self.net_out, self.updates = networks_cnn.LA_3xFC_splitfeats_2xGC2D_C2D(self._input_values, self._hidfcwidth, self.insize, self.specsize, self.nmsize, nonlinearity=self._nonlinearity)
-
-        # End network building -------------------------------------------------
 
     def init_finish(self, net_out):
 
@@ -185,8 +173,6 @@ class Model:
 
         self.loadAllParams(params_savefile)              # Load the model's parameters
 
-        import generate_pp
-
         def decomposition(CMP, outsize_wodeltas, do_mlpg=False, pp_mcep=True, f0clipmin=-1, f0clipmax=-1):
 
             # Denormalise
@@ -211,6 +197,7 @@ class Model:
                 SPEC = np.exp(sp.fwbnd2linbnd(mcep, cfg.fs, dftlen, smooth=True))
 
             elif spec_comp=='mcep':
+                import generate_pp
                 if pp_mcep: mcep=generate_pp.mcep_postproc_sptk(mcep, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(mcep, sp.bark_alpha(cfg.fs), dftlen=dftlen)
 

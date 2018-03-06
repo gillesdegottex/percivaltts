@@ -48,8 +48,8 @@ class configuration(object):
         for key in sorted(dir(self)):
             if callable(getattr(self, key)) or key.startswith("__"):
                 continue
-            if hasattr(self, 'hypers'):
-                if key in [hyper[0] for hyper in self.hypers]:
+            if hasattr(self, 'train_hypers'):
+                if key in [hyper[0] for hyper in self.train_hypers]:
                     print("    {:<30}{:}    (Attention! hyper-parameter optimized during multi-training)".format(key, getattr(self, key)))
                 else:
                     print("    {:<30}{:}".format(key, getattr(self, key)))
@@ -82,7 +82,7 @@ def print_log(txt, end='\n'):
 def print_tty(txt, end=''):
 
     if not sys.stdout.isatty():
-        return
+        return                                              # pragma: no cover
 
     print(txt, end=end)
     sys.stdout.flush()
@@ -103,7 +103,7 @@ def makedirs(path):
         os.makedirs(path)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
-            raise
+            raise                                           # pragma: no cover
 
 def is_int(v):
     # From https://stackoverflow.com/questions/1265665/python-check-if-a-string-represents-an-int-without-using-try-except
@@ -127,7 +127,7 @@ def proc_memresident():
     if len(PID_memsize)>0:
         return int(PID_memsize)/1024
 
-    return -1
+    return -1                                               # pragma: no cover
 
 def print_sysinfo():
     print_log('System information')
@@ -160,7 +160,7 @@ def print_sysinfo():
     diropts = ['--git-dir={}/.git'.format(codedir), '--work-tree={}'.format(codedir)]
     ret = os.system('git {} {} status > /dev/null 2>&1'.format(diropts[0], diropts[1]))
     if ret!=0:
-        print('  Git: No repository detected')
+        print('  Git: No repository detected')              # pragma: no cover
     else:
         import subprocess
         print('  Git is available in the working directory:')
@@ -171,7 +171,7 @@ def print_sysinfo():
         git_diff = subprocess.Popen(['git', diropts[0], diropts[1], 'diff'], stdout=subprocess.PIPE).communicate()[0] #, '--name-status'
         #git_diff = git_diff.replace('\t',' ').split('\n')
         if len(git_diff)==0:
-            print('    current diff: None')
+            print('    current diff: None')                 # pragma: no cover
         else:
             print('    current diff in git.diff file')
             ret = os.system('git {} {} diff > git.diff'.format(diropts[0], diropts[1]))
@@ -181,7 +181,7 @@ def print_sysinfo():
     print('  PID: '+str(os.getpid()))
     PBS_JOBID = os.getenv('PBS_JOBID')
     if PBS_JOBID:
-        print('  PBS_JOBID: '+PBS_JOBID)
+        print('  PBS_JOBID: '+PBS_JOBID)                    # pragma: no cover
 
     print('')
 
@@ -220,30 +220,6 @@ def nvidia_smi_gpu_memused():
 
 # Logging plot functions -------------------------------------------------------
 
-def log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_discri=[]):
-    import matplotlib
-    matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend.
-    import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(16, 8), dpi=200)
-    plt.title('Cost functions')
-    epochs = np.arange(len(costs_val))
-    plt.plot(epochs, worst_val*np.ones(len(costs_val)), ':k', label='0-pred')
-    plt.plot(epochs[1:], np.array(costs_tra), 'b', label='tra')
-    plt.plot(epochs, costs_val, 'k', label='val')
-    if len(costs_discri)>0:
-        plt.plot(epochs[1:], np.array(costs_discri), 'r', label='tra_discri')
-    if not epochs_modelssaved is None and len(epochs_modelssaved)>0:
-        markerline, stemlines, baseline = plt.stem(epochs_modelssaved, worst_val*np.ones(len(epochs_modelssaved)), 'gray', markerfmt='.', basefmt=' ')
-    plt.xlim([0, len(epochs)])
-    plt.xlabel('Epochs')
-    # plt.ylim([0.0, 1.1*worst_val])
-    plt.ylim([-2.0, 4.0*worst_val])
-    plt.ylabel('RMSE')
-    plt.legend(loc='lower left')
-    plt.grid()
-    fig.savefig(fname)
-    plt.close()
-
 def log_plot_costs(costs, worst_val, fname, epochs_modelssaved):
     import matplotlib
     matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend.
@@ -281,47 +257,33 @@ def log_plot_samples(Y_vals, Y_preds, nbsamples, shift, fname, fs=-1, specsize=2
 
         ts = np.arange(Y_vals[sidx].shape[0])*shift
 
-        if Y_vals[0].shape[1]==specsize:
-            SPEC_val = Y_vals[sidx]
-            SPEC_pred = Y_preds[sidx]
-            if fs==-1: fs=SPEC_val.shape[1]
-            plt.subplot(2,nbsamples,1+sidx)
-            spec_min = np.min(SPEC_val)
-            spec_max = np.max(SPEC_val)
-            plt.imshow(SPEC_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
-            plt.axis('off')
-            plt.subplot(2,nbsamples,nbsamples+1+sidx)
-            plt.imshow(SPEC_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
-            plt.axis('off')
+        plt.subplot(5,nbsamples,1+sidx)
+        f0_val = Y_vals[sidx][:,0]
+        f0_pred = Y_preds[sidx][:,0]
+        plt.plot(ts, f0_val, 'k')
+        plt.plot(ts, f0_pred, 'b')
+        plt.axis('off')
 
-        else:
-            plt.subplot(5,nbsamples,1+sidx)
-            f0_val = Y_vals[sidx][:,0]
-            f0_pred = Y_preds[sidx][:,0]
-            plt.plot(ts, f0_val, 'k')
-            plt.plot(ts, f0_pred, 'b')
-            plt.axis('off')
+        SPEC_val = Y_vals[sidx][:,1:1+specsize]
+        SPEC_pred = Y_preds[sidx][:,1:1+specsize]
+        if fs==-1: fs=SPEC_val.shape[1]
+        plt.subplot(5,nbsamples,nbsamples+1+sidx)
+        spec_max = np.max(SPEC_val)
+        spec_min = np.min(SPEC_val)
+        plt.imshow(SPEC_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
+        plt.axis('off')
+        plt.subplot(5,nbsamples,2*nbsamples+1+sidx)
+        plt.imshow(SPEC_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
+        plt.axis('off')
 
-            SPEC_val = Y_vals[sidx][:,1:1+specsize]
-            SPEC_pred = Y_preds[sidx][:,1:1+specsize]
-            if fs==-1: fs=SPEC_val.shape[1]
-            plt.subplot(5,nbsamples,nbsamples+1+sidx)
-            spec_max = np.max(SPEC_val)
-            spec_min = np.min(SPEC_val)
-            plt.imshow(SPEC_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
-            plt.axis('off')
-            plt.subplot(5,nbsamples,2*nbsamples+1+sidx)
-            plt.imshow(SPEC_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
-            plt.axis('off')
-
-            NM_val = Y_vals[sidx][:,1+specsize:]
-            NM_pred = Y_preds[sidx][:,1+specsize:]
-            plt.subplot(5,nbsamples,3*nbsamples+1+sidx)
-            plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=0.0, vmax=1.0)
-            plt.axis('off')
-            plt.subplot(5,nbsamples,4*nbsamples+1+sidx)
-            plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=0.0, vmax=1.0)
-            plt.axis('off')
+        NM_val = Y_vals[sidx][:,1+specsize:]
+        NM_pred = Y_preds[sidx][:,1+specsize:]
+        plt.subplot(5,nbsamples,3*nbsamples+1+sidx)
+        plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=0.0, vmax=1.0)
+        plt.axis('off')
+        plt.subplot(5,nbsamples,4*nbsamples+1+sidx)
+        plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=0.0, vmax=1.0)
+        plt.axis('off')
 
     if not title is None: plt.suptitle(title)
     fig.savefig(fname)

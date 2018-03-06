@@ -17,9 +17,7 @@
 
 FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
-ifeq ($(TRAVIS),true)
-    SETENVSCRIPT=setenv_travis.sh
-endif
+# SETENVSCRIPT=setenv_travis.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 
 # Maintenance targets ----------------------------------------------------------
@@ -82,7 +80,7 @@ test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
 	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
-	# python test/test_run.py
+	bash "$(SETENVSCRIPT)" test/test_run.py
 
 test_clean:
 	rm -fr test/slttest

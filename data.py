@@ -53,7 +53,7 @@ def getpathandshape(path, shape=None):
                 # The shape selector is a simple integer
                 shapeselector = shapeselector + (int(shapesstr),)
             else:
-                # The shape selector seems to be a file name
+                # The shape selector seems to be a file name in the same directory
                 # so take the size from the first dimension of the file's dimension
                 X = np.fromfile(os.path.join(os.path.dirname(matches[0][0]), shapesstr), dtype=np.float32)
                 shapeselector = shapeselector + (X.shape[0],)
@@ -82,7 +82,7 @@ def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
             print_tty('\r    {}Loading file {}/{} {}: ({:.2f}% done)        '.format(label, 1+n, len(fbases), fbase, 100*float(n)/len(fbases)))
 
         fX = dirpath.replace('*',fbase)
-        if not os.path.isfile(fX):
+        if not os.path.isfile(fX):                          # pragma: no cover
             print('fX={} does not exists'.format(fX))
             raise
 
@@ -116,9 +116,10 @@ def gettotallen(Xs, axis=0):
 def cropsize(xs, axis=0):
     # Attention! It modifies the argument
 
-    if axis>2: raise ValueError('Do not manage axis values bigger than 2')
+    if axis>2:
+        raise ValueError('Do not manage axis values bigger than 2') # pragma: no cover
     if len(set([len(x) for x in xs]))>1:
-        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs]))
+        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
 
     # ys = [[] for i in range(len(xs))]
     for ki in xrange(len(xs[0])):   # For each sample of the data set
@@ -136,7 +137,7 @@ def cropsize(xs, axis=0):
 def cropsilences(xs, w, thresh=0.5):
 
     if len(set([len(w)]+[len(x) for x in xs]))>1:
-        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs]))
+        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
 
     for ki in xrange(len(w)):   # For each sample of the data set
 
@@ -156,17 +157,10 @@ def cropsilences(xs, w, thresh=0.5):
     return xs, w
 
 
-def vstack_masked(X, M):
-    UX = []
-    for b in xrange(X.shape[0]):
-        seqlen = np.max(np.where(M[b,:]==1)[0])
-        UX.append(X[b,:seqlen+1,:])
-    return np.vstack(UX)
-
 def maskify(xs, length=None, lengthmax=None, padtype='padright'):
 
     if len(set([len(x) for x in xs]))>1:
-        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs]))
+        raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
 
     if length is None:
         # Consider only the first var
@@ -249,7 +243,7 @@ def cost_0pred_rmse(Y_val):
         worst_val /= nbel
         worst_val = np.sqrt(worst_val)
     else:
-        worst_val = np.sqrt(np.mean(Y_val[k,]**2))
+        worst_val = np.sqrt(np.mean(Y_val**2))
     return worst_val
 
 def cost_model(fn, Xs):

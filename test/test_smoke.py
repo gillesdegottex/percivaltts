@@ -86,14 +86,21 @@ class TestSmoke(unittest.TestCase):
 
         Xs_w_stop = data.addstop(Xs)
 
-        X_full, MX_full, Y_full, MY_full = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift')
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift', inouttimesync=False)
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fbases, length=None, lengthmax=100, maskpadtype='randshift')
 
         worst_val = data.cost_0pred_rmse(Ys)
         print('worst_val={}'.format(worst_val))
 
+        worst_val = data.cost_0pred_rmse(Ys[0])
+        print('worst_val={}'.format(worst_val))
+
         def data_cost_model(Xs, Ys):
             return np.std(Ys) # TODO More usefull
-        cost = data.cost_model(data_cost_model, [X_full, Y_full])
+        X_vals = data.load(indir, fbases)
+        Y_vals = data.load(outdir, fbases)
+        X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
+        cost = data.cost_model(data_cost_model, [X_vals, Y_vals])
         print(cost)
 
         class SmokyModel:
@@ -107,6 +114,7 @@ class TestSmoke(unittest.TestCase):
         print(std)
 
     def test_compose(self):
+        import data
         import compose
 
         cp = 'test/slttest/' # The main directory where the data of the voice is stored
@@ -123,6 +131,8 @@ class TestSmoke(unittest.TestCase):
 
         compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab1/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=False)
 
+        path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,601)')
+
         compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab2/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=True)
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fileids, 'test/test_made__smoke_compose_compose2_cmp1/*.cmp', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
@@ -136,6 +146,7 @@ class TestSmoke(unittest.TestCase):
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fileids, 'test/test_made__smoke_compose_compose2_cmp4/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_bndnmnoscale, do_finalcheck=True, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
 
         compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', fileids, 'test/test_made__smoke_compose_compose2_w1/*.w', spec_type='fwspec', thresh=-32)
+
 
 if __name__ == '__main__':
     unittest.main()
