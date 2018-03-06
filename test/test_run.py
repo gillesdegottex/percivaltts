@@ -10,7 +10,7 @@ class TestRun(unittest.TestCase):
     def test_run(self):
         import run
 
-        # Hack the configuration to run a test lighter than the demo
+        print('Overwrite the configuration to run a test that is lighter than the demo')
         run.cfg.id_valid_start = 8
         run.cfg.id_valid_nb = 1
         run.cfg.id_test_nb = 1
@@ -29,7 +29,7 @@ class TestRun(unittest.TestCase):
         run.features_extraction()
         run.composition()
         run.training(cont=False)
-        # run.generate_wavs() # TODO
+        run.generate_wavs('model.pkl.last')
 
 if __name__ == '__main__':
     unittest.main()
