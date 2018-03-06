@@ -22,15 +22,11 @@ Author
 
 from __future__ import print_function
 
-import sys
 import os
-import glob
 import time
 import re
-import cPickle
 
 import numpy as np
-import random
 
 from utils import *
 
@@ -83,15 +79,14 @@ def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
 
         fX = dirpath.replace('*',fbase)
         if not os.path.isfile(fX):                          # pragma: no cover
-            print('fX={} does not exists'.format(fX))
-            raise
+            raise ValueError('fX={} does not exists'.format(fX))
 
         X = np.fromfile(fX, dtype='float32')
         if not shape is None:
             X = X.reshape(shape)
 
-        if np.isnan(X).any(): print('ERROR: There are nan in {}'.format(fX)); raise
-        if np.isinf(X).any(): print('ERROR: There are inf in {}'.format(fX)); raise
+        if np.isnan(X).any(): ValueError('ERROR: There are nan in {}'.format(fX))
+        if np.isinf(X).any(): ValueError('ERROR: There are inf in {}'.format(fX))
 
         Xs.append(X)
 
@@ -249,7 +244,6 @@ def cost_0pred_rmse(Y_val):
 def cost_model(fn, Xs):
     cost = 0.0
     if isinstance(Xs[0], list):
-        nbel = 0
         for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory bcs the batch size would be too big TODO still even a single one might be too big
 
             ins = []
