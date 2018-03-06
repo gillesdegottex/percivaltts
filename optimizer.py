@@ -27,7 +27,6 @@ import time
 
 import random
 import cPickle
-import functools
 from collections import defaultdict
 
 import numpy as np
@@ -43,7 +42,7 @@ import theano.tensor as T
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
 
-import model
+# import model
 
 import models_cnn # For GAN discriminator
 
@@ -102,10 +101,10 @@ class Optimizer:
                     if cfg.__dict__[attr]!=DATA[2].__dict__[attr]:
                         print('            attribute {}: new state {}, saved state {}'.format(attr, cfg.__dict__[attr], DATA[2].__dict__[attr]))
                 else:
-                    print('            attribute {}:{} is not in the saved state'.format(attr, cfg.__dict__[attr]))
+                    print('            attribute {}: is not in the saved configuration state'.format(attr))
             for attr in DATA[2].__dict__:
                 if attr not in cfg.__dict__:
-                    print('            attribute {}:{} is not in the new state'.format(attr, cfg.__dict__[attr]))
+                    print('            attribute {}: is not in the new configuration state'.format(attr))
 
         return DATA[2:]
 
