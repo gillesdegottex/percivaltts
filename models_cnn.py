@@ -59,6 +59,13 @@ class ModelCNN(model.Model):
         outsize = 1+specsize+nmsize
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
+        self._nbprelayers = nbprelayers
+        self._nbcnnlayers = nbcnnlayers
+        self._nbfilters = nbfilters
+        self._spec_freqlen = spec_freqlen
+        self._nm_freqlen = nm_freqlen
+        self._windur = windur
+
         _winlen = int(0.5*windur/0.005)*2+1
 
         layer = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
@@ -138,7 +145,7 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
     layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1,1+specsize), axis=2)
 
     if _use_LSweighting: # Using weighted WGAN+LS
-        print('WGAN Weighted LS - Discri part')
+        print('WGAN Weighted LS - Discri - spec')
         wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(specsize, dtype=theano.config.floatX),  int(specsize/2), 1.0/8.0)   # TODO
         wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
         layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
@@ -164,7 +171,7 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
         layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1+specsize,1+specsize+nmsize), axis=2)
 
         if _use_LSweighting: # Using weighted WGAN+LS
-            print('WGAN Weighted LS - Discri part')
+            print('WGAN Weighted LS - Discri - spec')
             wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(nmsize, dtype=theano.config.floatX),  int(nmsize/2), 1.0/8.0)   # TODO
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
