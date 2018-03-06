@@ -24,8 +24,8 @@ import numpy as np
 
 import data
 
-def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange=[-1,1], keepidx=None):
-
+def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange=None, keepidx=None):
+    if nrange is None: nrange=[-1,1]
     if outfilepath is None: outfilepath=filepath
     print('Normalise data using min and max values (in={}, out={})'.format(filepath,outfilepath))
 
@@ -226,11 +226,13 @@ def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepat
     print('\r                                                                                 \r'),
 
 
-def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, normfn=None, do_finalcheck=False, dropzerovardims=False):
+def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1, normfn=None, do_finalcheck=False, dropzerovardims=False):
     '''
     wins: default values are wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]] (as in Merlin)
     '''
     print('Compose data (id_valid_start={})'.format(id_valid_start))
+
+    if wins is None: wins=[]
 
     outfilepath = re.sub(r':[^:]+$', "", outfilepath)   # ignore any shape suffix in the output path
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
