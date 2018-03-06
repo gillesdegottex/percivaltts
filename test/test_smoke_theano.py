@@ -89,6 +89,10 @@ class TestSmokeTheano(unittest.TestCase):
         cfg.train_hypers = []
 
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+        cfg.train_max_nbepochs = 10
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=True)
+
         model.saveAllParams('test/test_made__smoke_theano_model_train/smokymodelparams.pkl')
         model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size)
         model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd-pp_spec_extrapfreq', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size, pp_spec_extrapfreq=8000)
