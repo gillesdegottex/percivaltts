@@ -1,3 +1,7 @@
+# Testing
+test/slttest/
+test/test_made__*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
