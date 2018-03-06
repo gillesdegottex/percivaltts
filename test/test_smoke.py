@@ -123,25 +123,24 @@ class TestSmoke(unittest.TestCase):
         import data
         import compose
 
-        cp = 'test/slttest/' # The main directory where the data of the voice is stored
-        fileids = cp+'/file_id_list.scp'
+        fileids = cptest+'/file_id_list.scp'
 
         lab_size = 601
         spec_size = 65
         nm_size = 17
 
         wav_dir = 'wav'
-        f0_path = cp+wav_dir+'_lf0/*.lf0'
-        spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
-        nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
+        f0_path = cptest+wav_dir+'_lf0/*.lf0'
+        spec_path = cptest+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
+        nm_path = cptest+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
 
-        compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab0/*.lab', id_valid_start=8, normfn=None, do_finalcheck=True, wins=[], dropzerovardims=False)
+        compose.compose([cptest+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab0/*.lab', id_valid_start=8, normfn=None, do_finalcheck=True, wins=[], dropzerovardims=False)
 
-        compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab1/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=False)
+        compose.compose([cptest+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab1/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=False)
 
         path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,601)')
 
-        compose.compose([cp+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab2/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=True)
+        compose.compose([cptest+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab2/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=True)
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fileids, 'test/test_made__smoke_compose_compose2_cmp1/*.cmp', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
