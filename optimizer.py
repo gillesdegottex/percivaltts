@@ -356,7 +356,8 @@ class Optimizer:
         return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val}
 
 
-    def randomize_hyper(self, cfg):
+    @classmethod
+    def randomize_hyper(cls, cfg):
         cfg = copy.copy(cfg) # Create a new one instead of updating the object passed as argument
 
         # Randomized the hyper parameters
@@ -364,7 +365,7 @@ class Optimizer:
 
         hyperstr = ''
         for hyper in cfg.train_hypers:
-            if type(hyper[1]) is int and type(hyper[2]) is int:
+            if isinstance(hyper[1], int) and isinstance(hyper[2], int):
                 setattr(cfg, hyper[0], np.random.randint(hyper[1],hyper[2]))
             else:
                 setattr(cfg, hyper[0], np.random.uniform(hyper[1],hyper[2]))
