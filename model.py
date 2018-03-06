@@ -105,7 +105,8 @@ class Model:
     def nbParams(self):
         return paramss_count(self.params_all)
 
-    def saveAllParams(self, fmodel, cfg=None, extras=dict(), printfn=print):
+    def saveAllParams(self, fmodel, cfg=None, extras=None, printfn=print):
+        if extras is None: extras=dict()
         # https://github.com/Lasagne/Lasagne/issues/159
         printfn('    saving parameters in {} ...'.format(fmodel), end='')
         sys.stdout.flush()
