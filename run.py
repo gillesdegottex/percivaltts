@@ -76,7 +76,7 @@ cfg.model_nm_freqlen = 7
 cfg.model_windur = 0.100
 
 # Training options
-fparams_fullset = 'model.pkl'
+cfg.fparams_fullset = 'model.pkl'
 # The ones below will overwrite default options in model.py:train_multipletrials(.)
 cfg.train_batchsize = 5
 cfg.train_batch_lengthmax = int(3.0/0.005) # Maximum duration [frames] of each batch
@@ -138,30 +138,31 @@ def training(cont=False):
 
     import optimizer
     optigan = optimizer.Optimizer(model, errtype='WGAN')
-    optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, fparams_fullset, cfgtomerge=cfg, cont=cont)
+    optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
     # Here you can save a subset of parameters to save in a different file
     # import cPickle
-    #params = cPickle.load(open(fparams_fullset, 'rb'))[0]
+    #params = cPickle.load(open(cfg.fparams_fullset, 'rb'))[0]
     #print([p[0] for p in params])
     # Save the parameters of the first layer
     #model.saveParams('bottleneck.pkl', params[:2])
     #btl = cPickle.load(open('bottleneck.pkl', 'rb')) # For verification
 
 
-def generate_wavs():
+def generate_wavs(fparams=cfg.fparams_fullset):
 
     # Rebuild the model
-    import model_gan
-    mod = model_gan.ModelGAN(in_size, spec_size, nm_size)
+    import models_cnn
+    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     demostart = 0
     if hasattr(cfg, 'id_test_demostart'): demostart=cfg.id_test_demostart
-    indicestosynth = range(demostart,demostart+10) # Just generate 10 of them
-    mod.generate(fparams_fullset, '-demo-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True, indicestosynth=indicestosynth)
-    mod.generate(fparams_fullset, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
+    indicestosynth = range(demostart,demostart+10) # Just generate 10 of them for pre-listening
+    model.generate(fparams, '-demo-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True, indicestosynth=indicestosynth)
+    # And generate all of them for listening tests
+    model.generate(fparams, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
 
-if  __name__ == "__main__" :
+if  __name__ == "__main__" :                                 # pragma: no cover
     features_extraction()
     composition()
     training(cont='--continue' in sys.argv)
