@@ -134,6 +134,9 @@ class TestSmokeTheano(unittest.TestCase):
         # # model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size)
 
         optigan = optimizer.Optimizer(model, errtype='WGAN')
+        cfg.train_LScoef = 0.0
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        cfg.train_LScoef = 0.25
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size)
 

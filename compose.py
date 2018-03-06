@@ -67,11 +67,11 @@ def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange
         Y *= (nrange[1]-nrange[0])/2.0    # 2.0 is the current range
         Y += 0.5*(nrange[0]+nrange[1])
 
-        print_nnl('\r    Write normed data file {}: {}                '.format(nf, fid))
+        print_tty('\r    Write normed data file {}: {}                '.format(nf, fid))
 
         foutpath = outfilepath.replace('*',fid)
         Y.astype('float32').tofile(foutpath)
-    print_nnl('\r                                                                                 \r')
+    print_tty('\r                                                           \r')
 
 def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None):
 
@@ -99,10 +99,10 @@ def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepi
         Y = np.fromfile(finpath, dtype='float32')
         Y = Y.reshape((-1,len(means)))
         Y = (Y - means)/stds
-        print_nnl('\r    Write normed data file {}: {}                '.format(nf, fid))
+        print_tty('\r    Write normed data file {}: {}                '.format(nf, fid))
         foutpath = outfilepath.replace('*',fid)
         Y.astype('float32').tofile(foutpath)
-    print_nnl('\r                                                                                 \r')
+    print_tty('\r                                                           \r')
 
 def normalise_meanstd_bndminmaxm11(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None):
 
@@ -175,11 +175,11 @@ def normalise_meanstd_bndminmaxm11(filepath, fids, featurepaths=None, outfilepat
         Y = np.fromfile(finpath, dtype='float32')
         Y = Y.reshape((-1,len(means)))
         Y = (Y - means)/stds
-        print_nnl('\r    Write normed data file {}: {}                '.format(nf, fid))
+        print_tty('\r    Write normed data file {}: {}                '.format(nf, fid))
         sys.stdout.flush()
         foutpath = outfilepath.replace('*',fid)
         Y.astype('float32').tofile(foutpath)
-    print_nnl('\r                                                                                 \r')
+    print_tty('\r                                                           \r')
 
 def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None):
 
@@ -225,10 +225,10 @@ def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepat
         Y = np.fromfile(finpath, dtype='float32')
         Y = Y.reshape((-1,len(means)))
         Y = (Y - means)/stds
-        print_nnl('\r    Write normed data file {}: {}                '.format(nf, fid))
+        print_tty('\r    Write normed data file {}: {}                '.format(nf, fid))
         foutpath = outfilepath.replace('*',fid)
         Y.astype('float32').tofile(foutpath)
-    print_nnl('\r                                                                                 \r')
+    print_tty('\r                                                           \r')
 
 
 def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1, normfn=None, do_finalcheck=False, dropzerovardims=False):
@@ -254,7 +254,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
         fids = filter(None, lines)
 
         for nf, fid in enumerate(fids):
-            print_nnl('\r    Composing file {}/{} {}               '.format(1+nf, len(fids), fid))
+            print_tty('\r    Composing file {}/{} {}               '.format(1+nf, len(fids), fid))
 
             features = []
             minlen = None
@@ -310,7 +310,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
 
             #print('\r    Write data file {}: {}                '.format(nf, fid)),
             Y.astype('float32').tofile(outfilepath.replace('*',fid))
-        print_nnl('\r                                                                                 \r')
+        print_tty('\r                                                           \r')
 
         means /= nbframes
         zerovaridx = np.where((maxs-mins)==0.0)[0]  # Indices of dimensions having zero-variance
@@ -420,7 +420,7 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
         fids = filter(None, lines)
 
         for nf, fid in enumerate(fids):
-            print_nnl('\r    Processing feature files {} for {}                '.format(nf, fid))
+            print_tty('\r    Processing feature files {} for {}                '.format(nf, fid))
 
             infilepath, shape = data.getpathandshape(specfeaturepath)
             if shape is None: shape=(-1,1)
@@ -433,7 +433,10 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
             elif spec_type=='mcep':
                 Ymcep = np.fromfile(infilepath, dtype='float32')
                 Ymcep = Ymcep.reshape(shape)
-
+                ener = mag2db(np.exp(Ymcep[:,0]))    # Just extract the first coef
+            elif spec_type=='fwcep':
+                Ymcep = np.fromfile(infilepath, dtype='float32')
+                Ymcep = Ymcep.reshape(shape)
                 ener = mag2db(np.exp(Ymcep[:,0]))    # Just extract the first coef
 
             ener -= np.max(ener)
@@ -451,4 +454,4 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
                 plt.plot([0, len(ener)], thresh*np.array([1, 1]), 'k')
                 from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
-        print_nnl('\r                                                                                 \r')
+        print_tty('\r                                                           \r')

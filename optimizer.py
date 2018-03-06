@@ -43,7 +43,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/'
 import lasagne
 
 if th_cuda_available():
-    from pygpu.gpuarray import GpuArrayException
+    from pygpu.gpuarray import GpuArrayException            # pragma: no cover
 else:
     class GpuArrayException(Exception): pass    # declare a dummy one if pygpu is not loaded
 

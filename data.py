@@ -78,8 +78,8 @@ def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
             print_tty('\r    {}Loading file {}/{} {}: ({:.2f}% done)        '.format(label, 1+n, len(fbases), fbase, 100*float(n)/len(fbases)))
 
         fX = dirpath.replace('*',fbase)
-        if not os.path.isfile(fX):                          # pragma: no cover
-            raise ValueError('fX={} does not exists'.format(fX))
+        if not os.path.isfile(fX):
+            raise ValueError('fX={} does not exists'.format(fX))# pragma: no cover
 
         X = np.fromfile(fX, dtype='float32')
         if not shape is None:

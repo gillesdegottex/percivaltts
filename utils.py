@@ -26,7 +26,9 @@ import time
 import socket
 import subprocess
 import runpy
-import xml.etree.ElementTree as ET
+# import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET # safer version
+
 
 import numpy as np
 
