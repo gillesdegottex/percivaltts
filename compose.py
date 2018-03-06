@@ -433,7 +433,10 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
             elif spec_type=='mcep':
                 Ymcep = np.fromfile(infilepath, dtype='float32')
                 Ymcep = Ymcep.reshape(shape)
-
+                ener = mag2db(np.exp(Ymcep[:,0]))    # Just extract the first coef
+            elif spec_type=='fwcep':
+                Ymcep = np.fromfile(infilepath, dtype='float32')
+                Ymcep = Ymcep.reshape(shape)
                 ener = mag2db(np.exp(Ymcep[:,0]))    # Just extract the first coef
 
             ener -= np.max(ener)
