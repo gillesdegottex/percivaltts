@@ -190,7 +190,10 @@ class Model:
             if spec_comp=='fwspec':
                 SPEC = np.exp(sp.fwbnd2linbnd(mcep, cfg.fs, dftlen, smooth=True))
 
-            elif spec_comp=='mcep':
+            elif spec_comp=='mcep': # pragma: no cover
+                                    # nothing is guaranteed, this one even less.
+                # SPTK necessary here, but it doesn't bring better quality
+                # anyway, so no need to submodule SPTK nor test these lines.
                 import generate_pp
                 if pp_mcep: mcep=generate_pp.mcep_postproc_sptk(mcep, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(mcep, sp.bark_alpha(cfg.fs), dftlen=dftlen)
