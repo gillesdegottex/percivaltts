@@ -78,10 +78,14 @@ class TestSmokeTheano(unittest.TestCase):
         cfg_hyprnd2.print_content()
         self.assertNotEqual(cfg_hyprnd1, cfg_hyprnd2)
 
-
         makedirs('test/test_made__smoke_theano_model_train')
         cfg.train_max_nbepochs = 5
-        cfg.train_nbtrials = 1        # Just run one training only
+        cfg.train_nbtrials = 5        # Just run one training only
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
+
+        # Go back to single trial for the next tests
+        cfg.train_nbtrials = 1
         cfg.train_hypers = []
 
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
@@ -112,10 +116,6 @@ class TestSmokeTheano(unittest.TestCase):
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size)
 
-
-        # cfg.train_nbtrials = 5        # Just run one training only
-        # cfg.train_hypers = [] # TODO
-        # TODO
 
 
     def test_utils_theano(self):
