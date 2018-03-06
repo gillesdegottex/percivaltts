@@ -22,12 +22,8 @@ from __future__ import print_function
 
 import sys
 import os
-import copy
 
-import time
-import random
 import cPickle
-import functools
 
 import numpy as np
 
@@ -220,7 +216,7 @@ class Model:
                     # But really NOT equivalent
                     # This one creates way more low-pass effect with same coef (1.4)
                     cc = np.fft.irfft(np.log(abs(SPEC[n,:])))
-                    cc = cc[:dftlen/2+1]
+                    cc = cc[:int(dftlen/2)+1]
                     cc[1:] = 2.0*cc[1:]
                     cc[2:] = pp_spec_pf_coef*cc[2:]
                     spec_pp = abs(np.exp(np.fft.rfft(cc, dftlen)))

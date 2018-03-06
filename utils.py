@@ -152,8 +152,7 @@ def print_sysinfo():
         for p in env_PYTHONPATHs:
             if len(p)>0:
                 print('      '+p)
-    import numpy
-    print('  Numpy: {} {}'.format(numpy.version.version, numpy.__file__))
+    print('  Numpy: {} {}'.format(np.version.version, np.__file__))
 
     # Check for the presence of git
     codedir = os.path.dirname(os.path.realpath(__file__))
@@ -162,7 +161,6 @@ def print_sysinfo():
     if ret!=0:
         print('  Git: No repository detected')              # pragma: no cover
     else:
-        import subprocess
         print('  Git is available in the working directory:')
         git_describe = subprocess.Popen(['git', diropts[0], diropts[1], 'describe', '--tags', '--always'], stdout=subprocess.PIPE).communicate()[0][:-1]
         print('    Code version: '+git_describe)
@@ -185,7 +183,11 @@ def print_sysinfo():
 
     print('')
 
-def nvidia_smi_current_gpu():
+def nvidia_smi_current_gpu():                               # pragma: no cover
+    '''
+        return : [MiB]
+    (no need of coverage for this fn since it cannot crash)
+    '''
 
     # if theano.config.device=='cpu': return -2
 
@@ -200,9 +202,10 @@ def nvidia_smi_current_gpu():
         return -1
     return -1
 
-def nvidia_smi_gpu_memused():
+def nvidia_smi_gpu_memused():                               # pragma: no cover
     '''
         return : [MiB]
+    (no need of coverage for this fn since it cannot crash)
     '''
 
     # if theano.config.device=='cpu': return -2

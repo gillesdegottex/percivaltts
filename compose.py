@@ -17,8 +17,6 @@ Author
 '''
 
 import os
-import sys
-import glob
 import datetime
 import re
 
@@ -238,7 +236,6 @@ def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, 
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
 
     if wins is not None: import scipy.signal
-    basesize = None
     size = None
     mins = None
     maxs = None
@@ -249,7 +246,6 @@ def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, 
         lines = [x for x in map(str.strip, lines) if x]
         fids = filter(None, lines)
 
-        Ys = list()
         for nf, fid in enumerate(fids):
             print('\r    Composing file {}/{} {}               '.format(1+nf, len(fids), fid)),
 
@@ -271,7 +267,6 @@ def compose(featurepaths, fileidspath, outfilepath, wins=[], id_valid_start=-1, 
 
             # from IPython.core.debugger import  Pdb; Pdb().set_trace()
             Y = np.hstack(features)
-            basesize = Y.shape[1]
 
             if wins is not None:
                 YWs = [Y] # Always add first the static values
@@ -418,7 +413,6 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
         lines = [x for x in map(str.strip, lines) if x]
         fids = filter(None, lines)
 
-        Ys = list()
         for nf, fid in enumerate(fids):
             print('\r    Processing feature files {} for {}                '.format(nf, fid)),
 
