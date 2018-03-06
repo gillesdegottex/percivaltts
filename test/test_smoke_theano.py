@@ -98,6 +98,18 @@ class TestSmokeTheano(unittest.TestCase):
         model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd-pp_spec_extrapfreq', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size, pp_spec_extrapfreq=8000)
         model.generate('test/test_made__smoke_theano_model_train/smokymodelparams.pkl', '-snd-pp_spec_pf_coef', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size, pp_spec_pf_coef=1.2)
 
+        # Test MLPG
+        cfg.outdir = 'test/test_made__smoke_compose_compose2_cmp_deltas/*.cmp:(-1,249)'
+        optiganwdeltas = optimizer.Optimizer(modelwdeltas, errtype=None)
+        optiganwdeltas.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modelwdeltas.params_trainable, 'test/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl', cfgtomerge=cfg, cont=False)
+        modelwdeltas.saveAllParams('test/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl')
+        modelwdeltas.generate('test/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl', '-snd', cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwspec', spec_size=spec_size, nm_size=nm_size, do_mlpg=True)
+
+        cfg.outdir = cptest+'wav_cmp_lf0_fwspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
+
+
+        # Now test the various models available
+
         model = models_basic.ModelBGRU(601, 1+spec_size+17, spec_size, nm_size, hiddensize=4, nblayers=1)
         modelwdeltas = models_basic.ModelBGRU(601, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype=None)
