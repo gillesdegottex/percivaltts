@@ -237,7 +237,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
     outfilepath = re.sub(r':[^:]+$', "", outfilepath)   # ignore any shape suffix in the output path
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
 
-    if wins is not None: import scipy.signal
+    if len(wins)>0: import scipy.signal
     size = None
     mins = None
     maxs = None
@@ -267,10 +267,9 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
             for feati in xrange(len(features)):
                 features[feati] = features[feati][:minlen,]
 
-            # from IPython.core.debugger import  Pdb; Pdb().set_trace()
             Y = np.hstack(features)
 
-            if wins is not None:
+            if len(wins)>0:
                 YWs = [Y] # Always add first the static values
                 for win in wins:
                     # Then concatenate the windowed values
