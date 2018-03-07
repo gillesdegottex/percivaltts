@@ -37,10 +37,12 @@ CODEDIR=$( ( cd "$CODEDIR" && pwd ) )
 echo Cloning \"$CODEDIR\" in \"$WORKDIR\"
 
 # Create the destination directory if access done by NFS
-if [[ -n $(echo "$WORKDIR" |grep '^/net') ]] ; then
+if [[ $WORKDIR = '/'* ]] ; then
+    echo "Using file system copy to $WORKDIR"
     mkdir -p $WORKDIR;
     mkdir -p $WORKDIR/out;
 else
+    echo "Using ssh on ${WORKDIR%:*} to ${WORKDIR#*:}"
     ssh ${WORKDIR%:*} /bin/mkdir -p ${WORKDIR#*:}/out;
 fi
 
