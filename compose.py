@@ -16,14 +16,15 @@ Author
     Gilles Degottex <gad27@cam.ac.uk>
 '''
 
+
+from utils import *  # Always include this first to setup a few things
+
 import sys
 import os
 import datetime
 import re
 
 import numpy as np
-
-from utils import *
 
 import data
 
