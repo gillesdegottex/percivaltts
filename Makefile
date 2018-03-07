@@ -80,7 +80,7 @@ test: build test/slttest
 	python test/test_base.py
 	python test/test_smoke.py
 	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
-	bash "$(SETENVSCRIPT)" test/test_run.py
+	# bash "$(SETENVSCRIPT)" test/test_run.py
 
 test_clean:
 	rm -fr test/slttest
