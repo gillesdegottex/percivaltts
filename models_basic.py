@@ -38,7 +38,8 @@ import model
 
 
 class ModelFC(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=[0,1], dropout_p=-1.0):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, dropout_p=-1.0):
+        if bn_axes is None: bn_axes=[0,1]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
         l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
@@ -79,7 +80,8 @@ class ModelFC(model.Model):
 
 
 class ModelBGRU(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=[], dropout_p=-1.0, grad_clipping=50):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+        if bn_axes is None: bn_axes=[]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
         if len(bn_axes)>0: warnings.warn('ModelBGRU: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable'.format(bn_axes))
@@ -137,7 +139,8 @@ class ModelBGRU(model.Model):
 
 
 class ModelBLSTM(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=[], dropout_p=-1.0, grad_clipping=50):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+        if bn_axes is None: bn_axes=[]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
         if len(bn_axes)>0: warnings.warn('ModelBLSTM: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable'.format(bn_axes))
