@@ -243,7 +243,10 @@ def cost_0pred_rmse(Y_val):
         nbel = 0
         print(type(nbel))
         for k in xrange(len(Y_val)):
-            print(np.std(Y_val[k]))
+            print(Y_val[k].dtype)
+            # from IPython.core.debugger import  Pdb; Pdb().set_trace()
+            print(Y_val[k])
+            print('std='+str(np.std(Y_val[k])))
             worst_val += np.sum(Y_val[k]**2)
             nbel += Y_val[k].size
         worst_val /= nbel               # This is not variance, so no nbel-1
