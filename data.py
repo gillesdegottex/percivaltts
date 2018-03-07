@@ -234,14 +234,21 @@ def cost_0pred_rmse(Y_val):
     Compute the Root Mean Square Error (RMSE), assuming the prediction is always zero (i.e. worst predictor RMSE).
     This is the true RMSE of the data in Y_val (not some mean of sub-RMSEs).
     '''
+    print(type(Y_val))
+    print(type(Y_val[0]))
+    print(Y_val[0].dtype)
     if isinstance(Y_val, list):
         worst_val = 0.0
+        print(type(worst_val))
         nbel = 0
+        print(type(nbel))
         for k in xrange(len(Y_val)):
             worst_val += np.sum(Y_val[k]**2)
             nbel += Y_val[k].size
         worst_val /= nbel               # This is not variance, so no nbel-1
+        print(type(worst_val))
         worst_val = np.sqrt(worst_val)
+        print(type(worst_val))
     else:
         worst_val = np.sqrt(np.mean(Y_val**2))
     return worst_val
