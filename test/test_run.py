@@ -13,7 +13,7 @@ class TestRun(unittest.TestCase):
     def test_run(self):
         import run
 
-        print('Overwrite the configuration to run a test that is lighter than the demo')
+        print('Overwrite the configuration to run a smoke test')    # TODO Test the demo ?
         run.cfg.id_valid_start = 8
         run.cfg.id_valid_nb = 1
         run.cfg.id_test_nb = 1
