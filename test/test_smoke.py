@@ -8,6 +8,7 @@ from utils import *
 import unittest
 
 import numpy as np
+numpy_force_random_seed()
 
 cptest = 'test/slttest/'
 

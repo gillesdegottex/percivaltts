@@ -23,7 +23,7 @@ import utils  # Always include this first to setup a few things
 import os
 
 import numpy as np
-# np.random.seed(123) # Comment this line if you want non-deterministic runs
+utils.numpy_force_random_seed()
 
 import theano
 import theano.tensor as T

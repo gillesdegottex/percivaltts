@@ -29,7 +29,7 @@ import time
 import re
 
 import numpy as np
-# np.random.seed(123) # Comment this line if you want non-deterministic runs
+numpy_force_random_seed()
 
 def loadids(fileids):
     with open(fileids, 'r') as f:

@@ -31,7 +31,7 @@ import cPickle
 from collections import defaultdict
 
 import numpy as np
-# np.random.seed(123) # Comment this line if you want non-deterministic runs
+numpy_force_random_seed()
 
 print('\nLoading Theano')
 from utils_theano import *
