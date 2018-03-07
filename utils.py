@@ -152,6 +152,7 @@ def print_sysinfo():
         env_LD_LIBRARY_PATHs = env_LD_LIBRARY_PATHs.split(':')
         for p in env_LD_LIBRARY_PATHs:
             if len(p)>0: print('      '+p)
+    print('  Python executable: '+sys.executable)
     print('  Python version: '+sys.version.replace('\n',''))
     print('    PYTHONPATH:')
     env_PYTHONPATHs = os.getenv('PYTHONPATH')
