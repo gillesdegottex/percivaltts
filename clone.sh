@@ -34,15 +34,15 @@ WORKDIR=$1
 
 CODEDIR=$(dirname "$0")              # relative
 CODEDIR=$( ( cd "$CODEDIR" && pwd ) )
-echo Cloning \"$CODEDIR\" in \"$WORKDIR\"
+echo -n Cloning \"$CODEDIR\" in \"$WORKDIR\"
 
 # Create the destination directory if access done by NFS
 if [[ $WORKDIR = '/'* ]] ; then
-    echo "Using file system copy to $WORKDIR"
+    echo " (using file system)"
     mkdir -p $WORKDIR;
     mkdir -p $WORKDIR/out;
 else
-    echo "Using ssh on ${WORKDIR%:*} to ${WORKDIR#*:}"
+    echo " (using ssh on ${WORKDIR%:*})"
     ssh ${WORKDIR%:*} /bin/mkdir -p ${WORKDIR#*:}/out;
 fi
 
