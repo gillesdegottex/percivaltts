@@ -22,13 +22,13 @@ Author
 
 from __future__ import print_function
 
+from utils import *  # Always include this first to setup a few things
+
 import os
 import time
 import re
 
 import numpy as np
-
-from utils import *
 
 def loadids(fileids):
     with open(fileids, 'r') as f:
@@ -229,13 +229,17 @@ def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=No
 # Evaluation functions ---------------------------------------------------------
 
 def cost_0pred_rmse(Y_val):
+    '''
+    Compute the Root Mean Square Error (RMSE), assuming the prediction is always zero (i.e. worst predictor RMSE).
+    This is the true RMSE of the data in Y_val (not some mean of sub-RMSEs).
+    '''
     if isinstance(Y_val, list):
         worst_val = 0.0
         nbel = 0
         for k in xrange(len(Y_val)):
             worst_val += np.sum(Y_val[k]**2)
             nbel += Y_val[k].size
-        worst_val /= nbel
+        worst_val /= nbel               # This is not variance, so no nbel-1
         worst_val = np.sqrt(worst_val)
     else:
         worst_val = np.sqrt(np.mean(Y_val**2))
@@ -244,13 +248,13 @@ def cost_0pred_rmse(Y_val):
 def cost_model(fn, Xs):
     cost = 0.0
     if isinstance(Xs[0], list):
-        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory bcs the batch size would be too big TODO still even a single one might be too big
+        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory TODO still even a single one might be too big
 
             ins = []
             for inp in Xs:
                 ins.append(np.reshape(inp[xi],[1]+[s for s in inp[xi].shape]))
 
-            cost += fn(*ins) # TODO Put [0] in an anonymous fn
+            cost += fn(*ins) # TODO Put [0] in an anonymous fn  # TODO without a square errors could compensate on bi-directionlal errors (as in GAN)
 
         cost /= len(Xs[0])
     # else: # TODO
@@ -258,34 +262,52 @@ def cost_model(fn, Xs):
     return cost
 
 def cost_model_prediction_rmse(mod, Xs, Y_val, inouttimesync=True):
+    '''
+    '''
     cost = 0.0
     if isinstance(Xs[0], list):
         nbel = 0
-        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory bcs the batch size would be too big
+        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory
             ins = []
             for inp in Xs:
                 ins.append(np.reshape(inp[xi],[1]+[s for s in inp[xi].shape]))
             ypred = mod.predict(*ins)
 
             cost += np.sum((Y_val[xi]-ypred[0,])**2)
-            nbel += ypred.size
-        cost /= nbel
+            nbel += ypred[0,].size
+        cost /= nbel                    # This is not variance, so no nbel-1
         cost = np.sqrt(cost)
-    # else: # TODO
 
     return cost
 
-def prediction_std(mod, Xs):
+def prediction_mstd(mod, Xs):
+    '''
+    Mean of standard-deviation of each sample
+    '''
     init_pred_std = 0.0
     if isinstance(Xs[0], list):
-        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory bcs the batch size would be too big
+        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory
             ins = []
             for inp in Xs:
                 ins.append(np.reshape(inp[xi],[1]+[s for s in inp[xi].shape]))
             ypred = mod.predict(*ins)
-            init_pred_std += np.std(ypred)
+            init_pred_std += np.std(ypred[0,])
         init_pred_std /= len(Xs[0]) # Average of std!
-    # else: # TODO
-            # ins.append(inp[xi:xi+1,])
 
     return init_pred_std
+
+def prediction_rms(mod, Xs):
+    init_pred_rms = 0.0
+    if isinstance(Xs[0], list):
+        nbel = 0
+        for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory
+            ins = []
+            for inp in Xs:
+                ins.append(np.reshape(inp[xi],[1]+[s for s in inp[xi].shape]))
+            ypred = mod.predict(*ins)
+            init_pred_rms += np.sum((ypred[0,])**2)
+            nbel += ypred[0,].size
+        init_pred_rms /= nbel              # This is not variance, so no nbel-1
+        init_pred_rms = np.sqrt(init_pred_rms)
+
+    return init_pred_rms
