@@ -20,18 +20,18 @@ Author
 
 from __future__ import print_function
 
+from utils import *  # Always include this first to setup a few things
+
 import sys
 import os
 import warnings
 from functools import partial
 
 import numpy as np
-rng = np.random.RandomState(123) # TODO Doesn't seems to be working properly bcs each run is different
-
 # import theano
 # import theano.tensor as T
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
+# lasagne.random.set_rng(np.random)
 
 from utils_theano import *
 import model
@@ -81,10 +81,10 @@ class ModelFC(model.Model):
 
 class ModelBGRU(model.Model):
     def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
-        if bn_axes is None: bn_axes=[]
+        if bn_axes is None: bn_axes=[] # Recurrent nets don't like batch norm [ref. needed]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
-        if len(bn_axes)>0: warnings.warn('ModelBGRU: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable'.format(bn_axes))
+        if len(bn_axes)>0: warnings.warn('ModelBGRU: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable [ref. needed]'.format(bn_axes))
 
         l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
 
@@ -124,6 +124,7 @@ class ModelBGRU(model.Model):
         l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
         layers_toconcat.extend([l_out_f0spec, l_out_nm])
 
+        # TODO fn
         if outsize>(1+specsize+nmsize):
             l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
             l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
@@ -140,10 +141,10 @@ class ModelBGRU(model.Model):
 
 class ModelBLSTM(model.Model):
     def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
-        if bn_axes is None: bn_axes=[]
+        if bn_axes is None: bn_axes=[] # Recurrent nets don't like batch norm [ref needed]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
-        if len(bn_axes)>0: warnings.warn('ModelBLSTM: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable'.format(bn_axes))
+        if len(bn_axes)>0: warnings.warn('ModelBLSTM: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable [ref. needed]'.format(bn_axes))
 
         l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
 
@@ -189,6 +190,7 @@ class ModelBLSTM(model.Model):
         l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
         layers_toconcat.extend([l_out_f0spec, l_out_nm])
 
+        # TODO fn
         if outsize>(1+specsize+nmsize):
             l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
             l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
