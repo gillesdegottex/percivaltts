@@ -244,7 +244,8 @@ def cost_0pred_rmse(Y_val):
         print(type(nbel))
         for k in xrange(len(Y_val)):
             print(Y_val[k].dtype)
-            # from IPython.core.debugger import  Pdb; Pdb().set_trace()
+            print(np.std(Y_val[k], axis=0))
+            print(np.std(Y_val[k], axis=1))
             print(Y_val[k])
             print('std='+str(np.std(Y_val[k])))
             worst_val += np.sum(Y_val[k]**2)
