@@ -27,7 +27,7 @@ import os
 import cPickle
 
 import numpy as np
-np.random.seed(123) # Comment this line if you want non-deterministic runs
+# np.random.seed(123) # Comment this line if you want non-deterministic runs
 
 print('\nLoading Theano')
 from utils_theano import *

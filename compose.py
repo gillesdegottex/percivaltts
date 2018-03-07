@@ -25,7 +25,7 @@ import datetime
 import re
 
 import numpy as np
-np.random.seed(123) # Comment this line if you want non-deterministic runs
+# np.random.seed(123) # Comment this line if you want non-deterministic runs
 
 import data
 

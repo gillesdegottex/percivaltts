@@ -27,11 +27,8 @@ Author
 '''
 
 print('')
-import sys
-import os
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
-from utils import *
+from utils import *  # Always include this first to setup a few things
 print_sysinfo()
 
 print_log('Global configurations')

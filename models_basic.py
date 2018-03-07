@@ -28,7 +28,7 @@ import warnings
 from functools import partial
 
 import numpy as np
-np.random.seed(123) # Comment this line if you want non-deterministic runs
+# np.random.seed(123) # Comment this line if you want non-deterministic runs
 
 # import theano
 # import theano.tensor as T

@@ -1,10 +1,9 @@
 # http://pymbook.readthedocs.io/en/latest/testing.html
 
-import sys
 import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+'/external/')
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+'/external/Lasagne/')
+from utils import *
 
 import unittest
 
