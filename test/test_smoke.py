@@ -3,6 +3,9 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+'/external/')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+'/external/Lasagne/')
+
 import unittest
 
 import numpy as np
@@ -116,8 +119,11 @@ class TestSmoke(unittest.TestCase):
         cost = data.cost_model_prediction_rmse(mod, Xs, Ys)
         print(cost)
 
-        std = data.prediction_std(mod, Xs)
+        std = data.prediction_mstd(mod, Xs)
         print(std)
+
+        rms = data.prediction_rms(mod, Xs)
+        print(rms)
 
     def test_compose(self):
         import data
