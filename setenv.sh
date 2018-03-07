@@ -23,6 +23,10 @@ export THEANO_FLAGS="cuda.root=$CUDAPATH,floatX=float32,on_unused_input=ignore,"
 # Force use of cnMEM
 # export THEANO_FLAGS="lib.cnmem=1,"$THEANO_FLAGS
 
+# For reproducibility with 2D convolution (still doesn't make the results reproducible)
+# export THEANO_FLAGS="dnn.conv.algo_bwd_filter=deterministic,dnn.conv.algo_bwd_data=deterministic,"$THEANO_FLAGS
+# or
+# export THEANO_FLAGS="dnn.enabled=False,"$THEANO_FLAGS
 
 export THEANO_FLAGS="mode=FAST_RUN,device=cuda,"$THEANO_FLAGS
 # For debugging, uncomment below and comment above
