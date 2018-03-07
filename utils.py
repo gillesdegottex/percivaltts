@@ -22,15 +22,19 @@ from __future__ import print_function
 
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
+
+import numpy as np
+np.random.seed(123) # Comment this line if you want non-deterministic runs
+
 import time
 import socket
 import subprocess
 import runpy
 # import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ET # safer version
-
-
-import numpy as np
 
 
 class configuration(object):
