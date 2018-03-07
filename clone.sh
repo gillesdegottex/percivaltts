@@ -50,6 +50,9 @@ fi
 # cp -fr $CODEDIR $WORKDIR
 rsync -qav $CODEDIR/ $WORKDIR/Code/ --exclude .git/
 
+# TODO Do not exclude git, do this instead:
+# git clone --depth 1 file:///home/degottex/Research/CUED/Code/cnn/percival percishort
+
 if [[ "${@:2}" ]]; then
 
 # Go into the working directory
