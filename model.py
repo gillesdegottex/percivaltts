@@ -20,27 +20,23 @@ Author
 
 from __future__ import print_function
 
+from utils import *  # Always include this first to setup a few things
+
 import sys
 import os
-
 import cPickle
 
 import numpy as np
-
-from utils import *
-import data
 
 print('\nLoading Theano')
 from utils_theano import *
 print_sysinfo_theano()
 import theano
 import theano.tensor as T
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
+# lasagne.random.set_rng(np.random)
 
-# import networks_basic
-# import networks_cnn
+import data
 
 class Model:
 
