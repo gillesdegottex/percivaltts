@@ -75,12 +75,14 @@ class TestBase(unittest.TestCase):
         import data
         fid_lst = data.loadids(cfg.fileids)
         fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
-        # X_vals = data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
+        X_vals = data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
+        worst_val = data.cost_0pred_rmse(X_vals) # RMSE
+        print("    X 0-pred validation RMSE = {} (100%)".format(worst_val))
+
         Y_vals = data.load(cfg.outdir, fid_lst_val, verbose=1, label='Output features: ')
         # X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
-
         worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
-        print("    0-pred validation RMSE = {} (100%)".format(worst_val))
+        print("    Y 0-pred validation RMSE = {} (100%)".format(worst_val))
 
     # def test_vocoder_pulsemodel_features_extraction_and_composition_fwcep(self):
     #     import pulsemodel
