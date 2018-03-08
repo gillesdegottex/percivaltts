@@ -59,25 +59,25 @@ class TestBase(unittest.TestCase):
 
         # Compose the inputs
         # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
-        compose.compose([label_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
+        # compose.compose([label_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
         # Compose the outputs
         compose.compose([f0_path, spec_fw_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], cfg.fileids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_bndnmnoscale)
 
-        # Create time weights (column vector in [0,1]). The frames at begining or end of
-        # each file whose weights are smaller than 0.5 will be ignored by the training
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='fwspec')  # Overwrite with the good one
+        # # Create time weights (column vector in [0,1]). The frames at begining or end of
+        # # each file whose weights are smaller than 0.5 will be ignored by the training
+        # compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
+        # compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
+        # compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='fwspec')  # Overwrite with the good one
 
         # from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
         import data
         fid_lst = data.loadids(cfg.fileids)
         fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
-        X_vals = data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
+        # X_vals = data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
         Y_vals = data.load(cfg.outdir, fid_lst_val, verbose=1, label='Output features: ')
-        X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
+        # X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
 
         worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
         print("    0-pred validation RMSE = {} (100%)".format(worst_val))
