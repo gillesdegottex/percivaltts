@@ -51,8 +51,8 @@ class TestBase(unittest.TestCase):
             fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
             for fid in fids:
                 print('Extracting features from: '+fid)
-                pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, f0_file=f0_path.replace('*',fid), f0_log=True,
-                spec_file=spec_fw_path.replace('*',fid), spec_nbfwbnds=spec_size, nm_file=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+                pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+                fspec=spec_fw_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 
         import compose
@@ -88,8 +88,8 @@ class TestBase(unittest.TestCase):
     #         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
     #         for fid in fids:
     #             print('Extracting features from: '+fid)
-    #             pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, f0_file=f0_path.replace('*',fid), f0_log=True,
-    #             spec_file=spec_fwcep_path.replace('*',fid), spec_fwceporder=spec_size, nm_file=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+    #             pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+    #             fspec=spec_fwcep_path.replace('*',fid), spec_fwceporder=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
     #
     #     import compose
     #
