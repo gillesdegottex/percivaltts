@@ -125,7 +125,7 @@ class Model:
 
 
     def generate(self, params_savefile, outsuffix, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None
-            , spec_comp='fwspec'
+            , spec_comp='fwlspec'
             , spec_size=129
             , nm_size=33
             , do_mlpg=False
@@ -184,7 +184,7 @@ class Model:
             f0sgen = np.vstack((ts, f0sgen)).T
 
             CMP_spec = CMP[:,1:1+spec_size]
-            if spec_comp=='fwspec':
+            if spec_comp=='fwlspec':
                 SPEC = np.exp(sp.fwbnd2linbnd(CMP_spec, cfg.fs, dftlen, smooth=True))
 
             elif spec_comp=='mcep': # pragma: no cover

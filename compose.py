@@ -400,7 +400,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
             print('verif_stds={}'.format(verif_stds))
 
 
-def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen=4096, spec_type='fwspec'):
+def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen=4096, spec_type='fwlspec'):
     '''
     This function creates a one-column vector with one weight value per frame.
     E.g. The weight is here below computed as a silence coefficient. During
@@ -428,7 +428,7 @@ def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen
             if shape is None: shape=(-1,1)
             infilepath = infilepath.replace('*',fid)
 
-            if spec_type=='fwspec':
+            if spec_type=='fwlspec':
                 Yspec = np.fromfile(infilepath, dtype='float32')
                 Yspec = Yspec.reshape(shape)
                 ener = mag2db(np.exp(np.mean(Yspec, axis=1)))
