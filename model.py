@@ -183,17 +183,17 @@ class Model:
             ts = (cfg.shift)*np.arange(len(f0sgen))
             f0sgen = np.vstack((ts, f0sgen)).T
 
-            mcep = CMP[:,1:1+spec_size]
+            CMP_spec = CMP[:,1:1+spec_size]
             if spec_comp=='fwspec':
-                SPEC = np.exp(sp.fwbnd2linbnd(mcep, cfg.fs, dftlen, smooth=True))
+                SPEC = np.exp(sp.fwbnd2linbnd(CMP_spec, cfg.fs, dftlen, smooth=True))
 
             elif spec_comp=='mcep': # pragma: no cover
                                     # nothing is guaranteed, this one even less.
                 # SPTK necessary here, but it doesn't bring better quality
                 # anyway, so no need to submodule SPTK nor test these lines.
                 import generate_pp
-                if pp_mcep: mcep=generate_pp.mcep_postproc_sptk(mcep, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
-                SPEC = sp.mcep2spec(mcep, sp.bark_alpha(cfg.fs), dftlen=dftlen)
+                if pp_mcep: CMP_spec=generate_pp.mcep_postproc_sptk(CMP_spec, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
+                SPEC = sp.mcep2spec(CMP_spec, sp.bark_alpha(cfg.fs), dftlen=dftlen)
 
             if 0:
                 import matplotlib.pyplot as plt
@@ -202,8 +202,8 @@ class Model:
                 #plt.plot(ts, 0.5*cfg.fs*LSF/np.pi, 'k')
                 from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
-            bndnm = CMP[:,1+spec_size:]
-            nm = sp.fwbnd2linbnd(bndnm, cfg.fs, dftlen)
+            CMP_nm = CMP[:,1+spec_size:]
+            nm = sp.fwbnd2linbnd(CMP_nm, cfg.fs, dftlen)
 
             if pp_spec_extrapfreq>0:
                 idxlim = int(dftlen*pp_spec_extrapfreq/cfg.fs)
@@ -231,7 +231,7 @@ class Model:
                         from IPython.core.debugger import  Pdb; Pdb().set_trace()
                     SPEC[n,:] = spec_pp
 
-            return f0sgen, SPEC, nm, mcep, bndnm
+            return f0sgen, SPEC, nm, CMP_spec, CMP_nm
 
         import pulsemodel
         import pulsemodel.sigproc as sp
@@ -253,14 +253,14 @@ class Model:
             CMP = CMP[0,:,:]
 
             print('    Decompose ...')
-            f0sgen, specgen, nmgen, mcepgen, bndnmgen = decomposition(CMP, outsize_wodeltas=outsize_wodeltas, do_mlpg=do_mlpg, pp_mcep=pp_mcep, f0clipmin=f0clipmin, f0clipmax=f0clipmax)
+            f0sgen, specgen, nmgen, cmpspecgen, cmpnmgen = decomposition(CMP, outsize_wodeltas=outsize_wodeltas, do_mlpg=do_mlpg, pp_mcep=pp_mcep, f0clipmin=f0clipmin, f0clipmax=f0clipmax)
 
             if do_objmeas:
                 # Objective measurements
-                f0strg, spectrg, nmtrg, mceptrg, bndnmtrg = decomposition( y_test[vi], outsize_wodeltas=outsize_wodeltas, do_mlpg=False, pp_mcep=False)
+                f0strg, spectrg, nmtrg, cmpspectrg, cmpnmtrg = decomposition( y_test[vi], outsize_wodeltas=outsize_wodeltas, do_mlpg=False, pp_mcep=False)
                 features_err.setdefault('F0', []).append(np.sqrt(np.mean((f0strg[:,1]-f0sgen[:,1])**2)))
-                features_err.setdefault('MCEP', []).append(sp.log2db(np.sqrt(np.mean((mceptrg-mcepgen)**2, 0))))
-                features_err.setdefault('BNDNM', []).append(np.sqrt(np.mean((bndnmtrg-bndnmgen)**2, 0)))
+                features_err.setdefault('MCEP', []).append(sp.log2db(np.sqrt(np.mean((cmpspectrg-cmpspecgen)**2, 0))))
+                features_err.setdefault('BNDNM', []).append(np.sqrt(np.mean((cmpnmtrg-cmpnmgen)**2, 0)))
 
                 if do_resynth:
                     # resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_forcebinary=True) # Prev version
