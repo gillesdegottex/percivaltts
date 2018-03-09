@@ -80,14 +80,18 @@ class TestSmoke(unittest.TestCase):
         indir = cptest+'binary_label_'+str(lab_size)+'_norm_minmaxm11/*.lab:(-1,'+str(lab_size)+')'
         Xs = data.load(indir, fbases, shape=None, frameshift=0.005, verbose=1, label='Xs: ')
         self.assertTrue(len(Xs)==10)
-        self.assertTrue(Xs[0].shape==(666, lab_size))
+        print(Xs[0].shape)
+        self.assertTrue(Xs[0].shape==(667, lab_size))
 
-        self.assertTrue(data.gettotallen(Xs)==5688)
+        print(data.gettotallen(Xs))
+        self.assertTrue(data.gettotallen(Xs)==5694)
 
         outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
         Ys = data.load(outdir, fbases, shape=None, frameshift=0.005, verbose=1, label='Ys: ')
+        print(len(Ys))
         self.assertTrue(len(Ys)==10)
-        self.assertTrue(Ys[0].shape==(664, 83))
+        print(Ys[0].shape)
+        self.assertTrue(Ys[0].shape==(666, 83))
 
         wdir = cptest+'wav_fwlspec65_weights/*.w:(-1,1)'
         Ws = data.load(wdir, fbases, shape=None, frameshift=0.005, verbose=1, label='Ws: ')
