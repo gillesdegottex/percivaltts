@@ -12,7 +12,7 @@ import data
 global cfg
 cfg = configuration() # Init configuration structure
 
-cptest = 'test/slttest/' # The main directory where the data of the voice is stored
+cptest = 'test/slt_arctic_merlin_test/' # The main directory where the data of the voice is stored
 cfg.fileids = cptest+'/file_id_list.scp'
 fid_lst = data.loadids(cfg.fileids)
 cfg.id_valid_start = 8

@@ -10,7 +10,7 @@ import unittest
 import numpy as np
 numpy_force_random_seed()
 
-cptest = 'test/slttest/'
+cptest = 'test/slt_arctic_merlin_test/'
 
 class TestSmoke(unittest.TestCase):
     def test_utils(self):
