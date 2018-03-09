@@ -35,14 +35,15 @@ print_log('Global configurations')
 cfg = configuration() # Init configuration structure
 
 # Corpus/Voice(s) options
-cp = 'test/slttest/' # The main directory where the data of the voice is stored # TODO Use demo data not test data
+cp = 'test/slt_arctic_merlin_test/' # The main directory where the data of the voice is stored # TODO Use demo data not test data
 cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 1030
 cfg.id_valid_nb = 50
 cfg.id_test_nb = 50
 
 # Input text labels
-in_size = 601
+label_state_align_path = cp+'label_state_align/*.lab'
+in_size = 416+9   # 601
 label_dir = 'binary_label_'+str(in_size)
 label_path = cp+label_dir+'/*.lab'
 cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
@@ -89,15 +90,29 @@ def features_extraction():
         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
         for fid in fids:
             print('Extracting features from: '+fid)
-            pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, f0_file=f0_path.replace('*',fid), f0_log=True,
-            spec_file=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, nm_file=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+            pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+            fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+
+
+def contexts_extraction():
+    # Let's use Merlin's code for this
+
+    from label_normalisation import HTSLabelNormalisation
+    label_normaliser = HTSLabelNormalisation(question_file_name='external/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full') # TODO TODO TODO Test question 416 !!!
+
+    makedirs(os.path.dirname(label_path))
+    with open(cfg.fileids) as f:
+        fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
+        for fid in fids:
+            label_normaliser.perform_normalisation([label_state_align_path.replace('*',fid)], [label_path.replace('*',fid)])
 
 
 # DNN data composition ---------------------------------------------------------
-def composition():
+def composition_normalisation():
     import compose
 
     # Compose the inputs
+
     # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
     compose.compose([label_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
@@ -160,6 +175,7 @@ def generate_wavs(fparams=cfg.fparams_fullset):
 
 if  __name__ == "__main__" :                                 # pragma: no cover
     features_extraction()
-    composition()
+    contexts_extraction()
+    composition_normalisation()
     training(cont='--continue' in sys.argv)
     generate_wavs()
