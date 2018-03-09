@@ -11,6 +11,10 @@ import numpy as np
 numpy_force_random_seed()
 
 cptest = 'test/slt_arctic_merlin_test/'
+lab_size = 425
+spec_size = 65
+nm_size = 17
+
 
 class TestSmoke(unittest.TestCase):
     def test_utils(self):
@@ -73,10 +77,10 @@ class TestSmoke(unittest.TestCase):
         dim = data.getlastdim('dummy.fwlspec:(-1,129)')
         self.assertTrue(dim==129)
 
-        indir = cptest+'binary_label_425_norm_minmaxm11/*.lab:(-1,425)'
+        indir = cptest+'binary_label_'+str(lab_size)+'_norm_minmaxm11/*.lab:(-1,'+str(lab_size)+')'
         Xs = data.load(indir, fbases, shape=None, frameshift=0.005, verbose=1, label='Xs: ')
         self.assertTrue(len(Xs)==10)
-        self.assertTrue(Xs[0].shape==(666, 425))
+        self.assertTrue(Xs[0].shape==(666, lab_size))
 
         self.assertTrue(data.gettotallen(Xs)==5688)
 
@@ -131,10 +135,6 @@ class TestSmoke(unittest.TestCase):
 
         fileids = cptest+'/file_id_list.scp'
 
-        lab_size = 425
-        spec_size = 65
-        nm_size = 17
-
         wav_dir = 'wav'
         f0_path = cptest+wav_dir+'_lf0/*.lf0'
         spec_path = cptest+wav_dir+'_fwlspec'+str(spec_size)+'/*.fwlspec'
@@ -144,7 +144,7 @@ class TestSmoke(unittest.TestCase):
 
         compose.compose([cptest+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab1/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=False)
 
-        path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,425)')
+        path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,'+str(lab_size)+')')
 
         compose.compose([cptest+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab2/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=True)
 
