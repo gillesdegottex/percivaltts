@@ -138,7 +138,14 @@ def training(cont=False):
 
     # Build the model
     import models_cnn
-    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    # model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    # model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=4, nbprelayers=1, nbcnnlayers=1, nbfilters=2, spec_freqlen=3, nm_freqlen=3, windur=0.020)
+    import models_basic
+    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=2)
+    model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=16, nblayers=2)
+    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=6)
+    # model = models_basic.ModelBGRU(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
+    # model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
 
     # Here you can load pre-computed weights, or just do nothing and start
     # from fully random weights.
@@ -148,7 +155,9 @@ def training(cont=False):
     params = model.params_trainable # Train all the model's parameters, you can make a selection here
 
     import optimizer
-    optigan = optimizer.Optimizer(model, errtype='WGAN')
+    optigan = optimizer.Optimizer(model, errtype='LSE')
+    # optigan = optimizer.Optimizer(model, errtype='WGAN')
+    cfg.train_max_nbepochs = 10
     optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
     # Here you can save a subset of parameters to save in a different file
@@ -164,7 +173,7 @@ def generate_wavs(fparams=cfg.fparams_fullset):
 
     # Rebuild the model
     import models_cnn
-    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     demostart = 0
     if hasattr(cfg, 'id_test_demostart'): demostart=cfg.id_test_demostart

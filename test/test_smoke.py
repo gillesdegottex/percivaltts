@@ -73,10 +73,10 @@ class TestSmoke(unittest.TestCase):
         dim = data.getlastdim('dummy.fwlspec:(-1,129)')
         self.assertTrue(dim==129)
 
-        indir = cptest+'binary_label_601_norm_minmaxm11/*.lab:(-1,601)'
+        indir = cptest+'binary_label_425_norm_minmaxm11/*.lab:(-1,425)'
         Xs = data.load(indir, fbases, shape=None, frameshift=0.005, verbose=1, label='Xs: ')
         self.assertTrue(len(Xs)==10)
-        self.assertTrue(Xs[0].shape==(666, 601))
+        self.assertTrue(Xs[0].shape==(666, 425))
 
         self.assertTrue(data.gettotallen(Xs)==5688)
 
@@ -131,7 +131,7 @@ class TestSmoke(unittest.TestCase):
 
         fileids = cptest+'/file_id_list.scp'
 
-        lab_size = 601
+        lab_size = 425
         spec_size = 65
         nm_size = 17
 
@@ -144,7 +144,7 @@ class TestSmoke(unittest.TestCase):
 
         compose.compose([cptest+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab1/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=False)
 
-        path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,601)')
+        path2, shape2 = data.getpathandshape('test/test_made__smoke_compose_compose_lab1/*.lab:(mean.dat,425)')
 
         compose.compose([cptest+'binary_label_'+str(lab_size)+'/*.lab:(-1,'+str(lab_size)+')'], fileids, 'test/test_made__smoke_compose_compose_lab2/*.lab', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[], dropzerovardims=True)
 

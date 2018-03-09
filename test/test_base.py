@@ -20,7 +20,7 @@ cfg.id_valid_nb = 1
 cfg.id_test_nb = 1
 
 # Input text labels
-in_size = 601
+in_size = 425 # 601
 label_dir = 'binary_label_'+str(in_size)
 label_path = cp+label_dir+'/*.lab'
 cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.

@@ -58,7 +58,7 @@ model. Technically, it is dependent on a text-to-audio alignment system, which
 usually provides context input labels (e.g. in HTS format; label_state_align in
 Merlin). It is currently dependent on the
 [Merlin](https://github.com/CSTR-Edinburgh/merlin) TTS pipeline for generating
-the binary labels (e.g. binary_label_601 in Merlin) from the context input
+the binary labels (e.g. binary_label_425 in Merlin) from the context input
 labels using a set of questions (e.g. label_state_align and questions.hed in
 Merlin).
 
@@ -98,7 +98,7 @@ $ make
 Edit the `setenv.sh` file according to your CUDA/Theano installation (see above).
 
 Then, you will need the three following elements from any corpus:
-* `binary_label_601`
+* `binary_label_425`
 
     The same directory that you will find in Merlin, which is created by the NORMLAB Process.
 
@@ -108,7 +108,7 @@ Then, you will need the three following elements from any corpus:
 
 * `file_id_list.scp`
 
-    The same file that you find in Merlin, which contains the basenames of each file in `binary_label_601` and `wav`.    
+    The same file that you find in Merlin, which contains the basenames of each file in `binary_label_425` and `wav`.    
 
 Put this somehwere in a common directory and point the `cp` variable in the `run.py` file to this directory.
 
