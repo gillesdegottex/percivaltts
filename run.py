@@ -27,25 +27,23 @@ Author
 '''
 
 print('')
-import sys
-import os
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
-from utils import *
+from utils import *  # Always include this first to setup a few things
 print_sysinfo()
 
 print_log('Global configurations')
 cfg = configuration() # Init configuration structure
 
 # Corpus/Voice(s) options
-cp = 'test/slttest/' # The main directory where the data of the voice is stored # TODO Use demo data not test data
+cp = 'test/slt_arctic_merlin_test/' # The main directory where the data of the voice is stored # TODO Use demo data not test data
 cfg.fileids = cp+'/file_id_list.scp'
-cfg.id_valid_start = 160
-cfg.id_valid_nb = 20
-cfg.id_test_nb = 20
+cfg.id_valid_start = 1030
+cfg.id_valid_nb = 50
+cfg.id_test_nb = 50
 
 # Input text labels
-in_size = 601
+label_state_align_path = cp+'label_state_align/*.lab'
+in_size = 416+9   # 601
 label_dir = 'binary_label_'+str(in_size)
 label_path = cp+label_dir+'/*.lab'
 cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
@@ -53,17 +51,17 @@ cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-
 # Output features
 cfg.fs = 32000
 f0_min, f0_max = 60, 600
-spec_size = 65
-nm_size = 17
+spec_size = 129
+nm_size = 33
 out_size = 1+spec_size+nm_size
 cfg.shift = 0.005
 wav_dir = 'wav'
 wav_path = cp+wav_dir+'/*.wav'
 f0_path = cp+wav_dir+'_lf0/*.lf0'
-spec_path = cp+wav_dir+'_fwspec'+str(spec_size)+'/*.fwspec'
+spec_path = cp+wav_dir+'_fwlspec'+str(spec_size)+'/*.fwlspec'
 nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
-cfg.outdir = cp+wav_dir+'_cmp_lf0_fwspec'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')'
-cfg.wdir = cp+wav_dir+'_fwspec'+str(spec_size)+'_weights/*.w:(-1,1)'
+cfg.outdir = cp+wav_dir+'_cmp_lf0_fwlspec'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')'
+cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model options
 cfg.model_hiddensize = 512
@@ -92,15 +90,29 @@ def features_extraction():
         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
         for fid in fids:
             print('Extracting features from: '+fid)
-            pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, f0_file=f0_path.replace('*',fid), f0_log=True,
-            spec_file=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, nm_file=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+            pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+            fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+
+
+def contexts_extraction():
+    # Let's use Merlin's code for this
+
+    from label_normalisation import HTSLabelNormalisation
+    label_normaliser = HTSLabelNormalisation(question_file_name='external/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full') # TODO TODO TODO Test question 416 !!!
+
+    makedirs(os.path.dirname(label_path))
+    with open(cfg.fileids) as f:
+        fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
+        for fid in fids:
+            label_normaliser.perform_normalisation([label_state_align_path.replace('*',fid)], [label_path.replace('*',fid)])
 
 
 # DNN data composition ---------------------------------------------------------
-def composition():
+def composition_normalisation():
     import compose
 
     # Compose the inputs
+
     # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
     compose.compose([label_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
@@ -126,7 +138,14 @@ def training(cont=False):
 
     # Build the model
     import models_cnn
-    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    # model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    # model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=4, nbprelayers=1, nbcnnlayers=1, nbfilters=2, spec_freqlen=3, nm_freqlen=3, windur=0.020)
+    import models_basic
+    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=2)
+    model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=16, nblayers=2)
+    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=6)
+    # model = models_basic.ModelBGRU(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
+    # model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
 
     # Here you can load pre-computed weights, or just do nothing and start
     # from fully random weights.
@@ -136,7 +155,9 @@ def training(cont=False):
     params = model.params_trainable # Train all the model's parameters, you can make a selection here
 
     import optimizer
-    optigan = optimizer.Optimizer(model, errtype='WGAN')
+    optigan = optimizer.Optimizer(model, errtype='LSE')
+    # optigan = optimizer.Optimizer(model, errtype='WGAN')
+    cfg.train_max_nbepochs = 10
     optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
     # Here you can save a subset of parameters to save in a different file
@@ -152,7 +173,7 @@ def generate_wavs(fparams=cfg.fparams_fullset):
 
     # Rebuild the model
     import models_cnn
-    model = models_cnn.ModelCNN(601, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     demostart = 0
     if hasattr(cfg, 'id_test_demostart'): demostart=cfg.id_test_demostart
@@ -163,6 +184,7 @@ def generate_wavs(fparams=cfg.fparams_fullset):
 
 if  __name__ == "__main__" :                                 # pragma: no cover
     features_extraction()
-    composition()
+    contexts_extraction()
+    composition_normalisation()
     training(cont='--continue' in sys.argv)
     generate_wavs()

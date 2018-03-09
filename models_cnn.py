@@ -20,16 +20,18 @@ Author
 
 from __future__ import print_function
 
+from utils import *  # Always include this first to setup a few things
+
 import sys
 import os
 
 import numpy as np
-rng = np.random.RandomState(123) # As in Merlin
+numpy_force_random_seed()
 
 import theano
 import theano.tensor as T
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
+# lasagne.random.set_rng(np.random)
 
 from utils_theano import *
 import model

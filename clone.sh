@@ -34,19 +34,34 @@ WORKDIR=$1
 
 CODEDIR=$(dirname "$0")              # relative
 CODEDIR=$( ( cd "$CODEDIR" && pwd ) )
-echo Cloning \"$CODEDIR\" in \"$WORKDIR\"
+echo -n Cloning \"$CODEDIR\" in \"$WORKDIR\"
 
 # Create the destination directory if access done by NFS
-if [[ -n $(echo "$WORKDIR" |grep '^/net') ]] ; then
+if [[ $WORKDIR = '/'* ]] ; then
+    echo " (using file system)"
     mkdir -p $WORKDIR;
     mkdir -p $WORKDIR/out;
 else
+    echo " (using ssh on ${WORKDIR%:*})"
     ssh ${WORKDIR%:*} /bin/mkdir -p ${WORKDIR#*:}/out;
 fi
 
 # Do the actual copy
 # cp -fr $CODEDIR $WORKDIR
-rsync -qav $CODEDIR/ $WORKDIR/Code/ --exclude .git/
+rsync -qav $CODEDIR/ $WORKDIR/Code/ --exclude .git --exclude .git/
+
+
+# Copy a short version of the git in the working directory
+if [[ -d '.git/' ]] ; then
+    rm -fr tmp_clone_gitstatedepth1;
+    mkdir -p tmp_clone_gitstatedepth1;
+    cd tmp_clone_gitstatedepth1;
+    git clone --depth 1 file://$CODEDIR gitstatedepth1;
+    rsync -qav gitstatedepth1/.git/ $WORKDIR/Code/.git/;
+    cd ..;
+    rm -fr tmp_clone_gitstatedepth1;
+fi
+
 
 if [[ "${@:2}" ]]; then
 

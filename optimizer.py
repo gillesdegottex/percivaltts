@@ -20,32 +20,35 @@ Author
 
 from __future__ import print_function
 
+from utils import *  # Always include this first to setup a few things
+
 import sys
 import os
 import copy
 import time
 
-import random
 import cPickle
 from collections import defaultdict
 
 import numpy as np
-
-from utils import *
-import data
+numpy_force_random_seed()
 
 print('\nLoading Theano')
 from utils_theano import *
 print_sysinfo_theano()
 import theano
 import theano.tensor as T
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
+# sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 import lasagne
+# lasagne.random.set_rng(np.random)
+
+import data
+
 
 if th_cuda_available():
-    from pygpu.gpuarray import GpuArrayException            # pragma: no cover
+    from pygpu.gpuarray import GpuArrayException   # pragma: no cover
 else:
-    class GpuArrayException(Exception): pass    # declare a dummy one if pygpu is not loaded
+    class GpuArrayException(Exception): pass       # declare a dummy one if pygpu is not loaded
 
 # import model
 
@@ -121,8 +124,8 @@ class Optimizer:
         print('Model initial status before training')
         worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
         print("    0-pred validation RMSE = {} (100%)".format(worst_val))
-        init_pred_std = data.prediction_std(self._model, [X_vals])
-        print('    initial std of prediction = {}'.format(init_pred_std))
+        init_pred_rms = data.prediction_rms(self._model, [X_vals])
+        print('    initial RMS of prediction = {}'.format(init_pred_rms))
         init_val = data.cost_model_prediction_rmse(self._model, [X_vals], Y_vals)
         best_val = init_val # Among all trials of hyper-parameters optimisation
         print("    initial validation RMSE = {} ({:.4f}%)".format(init_val, 100.0*init_val/worst_val))
@@ -240,7 +243,7 @@ class Optimizer:
         rndidx = np.arange(len(fid_lst_tra))
         for epoch in range(epochstart,1+cfg.train_max_nbepochs):
             timeepochstart = time.time()
-            random.shuffle(rndidx)
+            np.random.shuffle(rndidx)
             rndidxb = np.split(rndidx, nbbatches)
             costs_tra_batches = []
             costs_tra_discri_batches = []

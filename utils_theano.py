@@ -18,14 +18,15 @@ Author
     Gilles Degottex <gad27@cam.ac.uk>
 '''
 
+import utils  # Always include this first to setup a few things
+
 import os
 
 import numpy as np
+utils.numpy_force_random_seed()
 
 import theano
 import theano.tensor as T
-
-import utils
 
 def print_sysinfo_theano():
     print('    Theano: {} {}'.format(theano.__version__, theano.__file__))

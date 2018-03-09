@@ -22,15 +22,21 @@ from __future__ import print_function
 
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/')
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
+
+import numpy as np
+def numpy_force_random_seed():
+    np.random.seed(123) # Replace this line with a "pass" if you want non-deterministic runs # TODO TODO TODO
+numpy_force_random_seed()
+
 import time
 import socket
 import subprocess
 import runpy
 # import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ET # safer version
-
-
-import numpy as np
 
 
 class configuration(object):
@@ -148,6 +154,7 @@ def print_sysinfo():
         env_LD_LIBRARY_PATHs = env_LD_LIBRARY_PATHs.split(':')
         for p in env_LD_LIBRARY_PATHs:
             if len(p)>0: print('      '+p)
+    print('  Python executable: '+sys.executable)
     print('  Python version: '+sys.version.replace('\n',''))
     print('    PYTHONPATH:')
     env_PYTHONPATHs = os.getenv('PYTHONPATH')
