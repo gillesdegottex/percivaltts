@@ -160,25 +160,11 @@ def training(cont=False):
 
     model = build_model()
 
-    # Here you can load pre-computed weights, or just do nothing and start
-    # from fully random weights.
-
-    # Here you can select a subset of the parameters to train, while keeping
-    # the other ones frozen.
-    params = model.params_trainable # Train all the model's parameters, you can make a selection here
 
     import optimizer
     # optigan = optimizer.Optimizer(model, errtype='LSE')
     optigan = optimizer.Optimizer(model, errtype='WGAN')
-    optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
-
-    # Here you can save a subset of parameters to save in a different file
-    # import cPickle
-    #params = cPickle.load(open(cfg.fparams_fullset, 'rb'))[0]
-    #print([p[0] for p in params])
-    # Save the parameters of the first layer
-    #model.saveParams('bottleneck.pkl', params[:2])
-    #btl = cPickle.load(open('bottleneck.pkl', 'rb')) # For verification
+    optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 
 def generate_wavs(fparams=cfg.fparams_fullset):
