@@ -4,6 +4,3 @@
 [submodule "external/Lasagne"]
 	path = external/Lasagne
 	url = https://github.com/Lasagne/Lasagne.git
-[submodule "external/pfs"]
-	path = external/pfs
-	url = https://github.com/gillesdegottex/pfs.git
