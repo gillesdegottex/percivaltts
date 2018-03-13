@@ -25,6 +25,7 @@ from __future__ import print_function
 from utils import *  # Always include this first to setup a few things
 
 import os
+import copy
 import time
 import re
 
@@ -193,6 +194,7 @@ def maskify(xs, length=None, lengthmax=None, padtype='padright'):
     return xbs, MB
 
 def addstop(X, value=1.0):
+    X = copy.deepcopy(X)
     framestop = np.zeros(X[0].shape[1]+1)
     framestop[-1] = value
     for xi in xrange(len(X)):
@@ -272,8 +274,8 @@ def cost_model_prediction_rmse(mod, Xs, Y_val, inouttimesync=True):
             ins = []
             for inp in Xs:
                 ins.append(np.reshape(inp[xi],[1]+[s for s in inp[xi].shape]))
+            # from IPython.core.debugger import  Pdb; Pdb().set_trace()
             ypred = mod.predict(*ins)
-
             cost += np.sum((Y_val[xi]-ypred[0,])**2)
             nbel += ypred[0,].size
         cost /= nbel                    # This is not variance, so no nbel-1
