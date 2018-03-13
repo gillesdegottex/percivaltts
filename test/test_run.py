@@ -12,7 +12,11 @@ class TestRun(unittest.TestCase):
     def test_run(self):
         import run
 
-        print('Overwrite the configuration to run a smoke test')    # TODO Test the demo ?
+        # Fool the demo data with the test data
+        # Because running the full demo on travis is not possible
+        os.symlink('test/slt_arctic_merlin_test', 'test/slt_arctic_merlin_full')
+
+        print('Overwrite the configuration to run a smoke test')
         run.cfg.id_valid_start = 8
         run.cfg.id_valid_nb = 1
         run.cfg.id_test_nb = 1
@@ -29,7 +33,8 @@ class TestRun(unittest.TestCase):
         run.cfg.print_content()
 
         run.features_extraction()
-        run.composition()
+        run.contexts_extraction()
+        run.composition_normalisation()
         run.training(cont=False)
         run.generate_wavs('model.pkl.last')
 
