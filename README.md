@@ -111,7 +111,7 @@ Edit `setenv.sh` according to your CUDA/Theano installation (see above).
 
 And finally run the demo!
 ```
-$ make run
+$ make run_demo
 ```
 
 ## Preparing a new voice
