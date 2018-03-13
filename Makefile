@@ -39,6 +39,9 @@ describe:
 
 distclean: test_clean
 	cd external/pulsemodel; $(MAKE) distclean
+	# TODO Clean REAPER
+	# TODO Clean WORLD
+	# TODO Clean sigproc
 	find . -name '*.pyc' -delete
 
 # Run targets ------------------------------------------------------------------
