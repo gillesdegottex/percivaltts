@@ -11,7 +11,7 @@
 Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
-It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input labels preparation and [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
+It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input binary labels computation and [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
 the waveform synthesis.
 
 <br/><br/>
@@ -55,12 +55,8 @@ related to those code source.
 
 Percival is _not_ a standalone pipeline for TTS. It only trains an acoustic
 model. Technically, it is dependent on a text-to-audio alignment system, which
-usually provides context input labels (e.g. in HTS format; label_state_align in
-Merlin). It is currently dependent on the
-[Merlin](https://github.com/CSTR-Edinburgh/merlin) TTS pipeline for generating
-the binary labels (e.g. binary_label_425 in Merlin) from the context input
-labels using a set of questions (e.g. label_state_align and questions.hed in
-Merlin).
+usually provides context input labels (e.g. in HTS format; as label_state_align
+in Merlin).
 
 Dealing with the numerous dependencies between the libraries and tools can also
 be a nightmare. I strongly suggest to use a package manager
@@ -91,16 +87,39 @@ $ sudo pip install bandmat
 
 ### Install/Demo
 
-In the root directory of the source code, run first:
+It is best to first make an experiment directory somewhere:
 ```
+$ mkdir exp
+```
+and clone Percival's code inside.
+```
+cd exp
+git clone git@github.com:gillesdegottex/percival.git
+```
+That's because the output of the experiment (the demo of Percival here) will
+appear in a sub-directory of ```exp``` and not within the git repository of the
+code. This keeps the generated files out of the code.
+
+Then, to compile the various tools imported in Percival, go in the root
+directory of the source code, and run:
+```
+$ cd percival
 $ make
 ```
-Edit the `setenv.sh` file according to your CUDA/Theano installation (see above).
 
-Then, you will need the three following elements from any corpus:
-* `binary_label_425`
+Edit `setenv.sh` according to your CUDA/Theano installation (see above).
 
-    The same directory that you will find in Merlin, which is created by the NORMLAB Process.
+And finally run the demo!
+```
+$ make run_demo
+```
+
+## Preparing a new voice
+You basically need the three following elements from any corpus:
+* `label_state_align`
+
+    The same directory that is imported in Merlin. It is produced by an
+    alignement tool, as in HTS.
 
 * `wav`
 
@@ -108,19 +127,11 @@ Then, you will need the three following elements from any corpus:
 
 * `file_id_list.scp`
 
-    The same file that you find in Merlin, which contains the basenames of each file in `binary_label_425` and `wav`.    
+    The same file that you find in Merlin, which contains the basenames of each
+    file in `label_state_align` and `wav`.    
 
 Put this somehwere in a common directory and point the `cp` variable in the `run.py` file to this directory.
 
-Finally, make an experiment directory somewhere (preferably outside of the source code directory):
-```
-$ mkdir ../exp
-$ cd ../exp
-```
-and run the demo!
-```
-$ bash ../percival/setenv.sh ../percival/run.py
-```
 
 ### Formats
 

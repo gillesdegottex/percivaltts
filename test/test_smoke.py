@@ -121,16 +121,16 @@ class TestSmoke(unittest.TestCase):
         print(cost)
 
         class SmokyModel:
-            def predict(Xs):
-                return 0    # TODO More usefull
+            def predict(self, Xs):
+                return np.zeros([1, Xs.shape[1], 83])
         mod = SmokyModel()
-        cost = data.cost_model_prediction_rmse(mod, Xs, Ys)
+        cost = data.cost_model_prediction_rmse(mod, [Xs], Ys)
         print(cost)
 
-        std = data.prediction_mstd(mod, Xs)
+        std = data.prediction_mstd(mod, [Xs])
         print(std)
 
-        rms = data.prediction_rms(mod, Xs)
+        rms = data.prediction_rms(mod, [Xs])
         print(rms)
 
     def test_compose(self):

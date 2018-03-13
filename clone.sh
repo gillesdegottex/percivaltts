@@ -32,32 +32,42 @@
 
 WORKDIR=$1
 
-CODEDIR=$(dirname "$0")              # relative
-CODEDIR=$( ( cd "$CODEDIR" && pwd ) )
-echo -n Cloning \"$CODEDIR\" in \"$WORKDIR\"
+CODEDIR=code
+if [[ -n "$2" ]] ; then
+    CODEDIR="$2"
+fi
+
+OUTDIR=out
+if [[ -n "$3" ]] ; then
+    OUTDIR="$3"
+fi
+
+CODESRCDIR=$(dirname "$0")              # relative
+CODESRCDIR=$( ( cd "$CODESRCDIR" && pwd ) )
+echo -n Cloning \"$CODESRCDIR\" in \"$WORKDIR\"
 
 # Create the destination directory if access done by NFS
 if [[ $WORKDIR = '/'* ]] ; then
     echo " (using file system)"
     mkdir -p $WORKDIR;
-    mkdir -p $WORKDIR/out;
+    mkdir -p $WORKDIR/$OUTDIR;
 else
     echo " (using ssh on ${WORKDIR%:*})"
-    ssh ${WORKDIR%:*} /bin/mkdir -p ${WORKDIR#*:}/out;
+    ssh ${WORKDIR%:*} /bin/mkdir -p ${WORKDIR#*:}/$OUTDIR;
 fi
 
 # Do the actual copy
-# cp -fr $CODEDIR $WORKDIR
-rsync -qav $CODEDIR/ $WORKDIR/Code/ --exclude .git --exclude .git/
+# cp -fr $CODESRCDIR $WORKDIR
+rsync -qav $CODESRCDIR/ $WORKDIR/$CODEDIR/ --exclude .git --exclude .git/
 
 
-# Copy a short version of the git in the working directory
+# Copy a shallow version of the git in the code directory
 if [[ -d '.git/' ]] ; then
     rm -fr tmp_clone_gitstatedepth1;
     mkdir -p tmp_clone_gitstatedepth1;
     cd tmp_clone_gitstatedepth1;
-    git clone --depth 1 file://$CODEDIR gitstatedepth1;
-    rsync -qav gitstatedepth1/.git/ $WORKDIR/Code/.git/;
+    git clone --depth 1 file://$CODESRCDIR gitstatedepth1;
+    rsync -qav gitstatedepth1/.git/ $WORKDIR/$CODEDIR/.git/;
     cd ..;
     rm -fr tmp_clone_gitstatedepth1;
 fi
@@ -65,8 +75,8 @@ fi
 
 if [[ "${@:2}" ]]; then
 
-# Go into the working directory
-cd $WORKDIR/out
+# Go into the output directory
+cd $WORKDIR/$OUTDIR
 
 echo Run command: "${@:2}"
 # ${@:2} > log 2>&1

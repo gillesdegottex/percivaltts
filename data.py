@@ -25,6 +25,7 @@ from __future__ import print_function
 from utils import *  # Always include this first to setup a few things
 
 import os
+import copy
 import time
 import re
 
@@ -193,6 +194,7 @@ def maskify(xs, length=None, lengthmax=None, padtype='padright'):
     return xbs, MB
 
 def addstop(X, value=1.0):
+    X = copy.deepcopy(X)
     framestop = np.zeros(X[0].shape[1]+1)
     framestop[-1] = value
     for xi in xrange(len(X)):
@@ -234,26 +236,14 @@ def cost_0pred_rmse(Y_val):
     Compute the Root Mean Square Error (RMSE), assuming the prediction is always zero (i.e. worst predictor RMSE).
     This is the true RMSE of the data in Y_val (not some mean of sub-RMSEs).
     '''
-    print(type(Y_val))
-    print(type(Y_val[0]))
-    print(Y_val[0].dtype)
     if isinstance(Y_val, list):
         worst_val = 0.0
-        print(type(worst_val))
         nbel = 0
-        print(type(nbel))
         for k in xrange(len(Y_val)):
-            print(Y_val[k].dtype)
-            print(np.std(Y_val[k], axis=0))
-            print(np.std(Y_val[k], axis=1))
-            print(Y_val[k])
-            print('std='+str(np.std(Y_val[k])))
             worst_val += np.sum(Y_val[k]**2)
             nbel += Y_val[k].size
         worst_val /= nbel               # This is not variance, so no nbel-1
-        print(type(worst_val))
         worst_val = np.sqrt(worst_val)
-        print(type(worst_val))
     else:
         worst_val = np.sqrt(np.mean(Y_val**2))
     return worst_val
@@ -284,8 +274,8 @@ def cost_model_prediction_rmse(mod, Xs, Y_val, inouttimesync=True):
             ins = []
             for inp in Xs:
                 ins.append(np.reshape(inp[xi],[1]+[s for s in inp[xi].shape]))
+            # from IPython.core.debugger import  Pdb; Pdb().set_trace()
             ypred = mod.predict(*ins)
-
             cost += np.sum((Y_val[xi]-ypred[0,])**2)
             nbel += ypred[0,].size
         cost /= nbel                    # This is not variance, so no nbel-1

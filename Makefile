@@ -19,6 +19,7 @@ FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
 # SETENVSCRIPT=setenv_travis.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
+CODEDIR=percival
 
 # Maintenance targets ----------------------------------------------------------
 
@@ -37,23 +38,29 @@ build_pulsemodel: submodule_init
 describe:
 	@git describe
 
+clean: test_clean
+	rm -fr test/slt_arctic_merlin_full/wav_* test/slt_arctic_merlin_full/label_state_align_*
+
 distclean: test_clean
 	cd external/pulsemodel; $(MAKE) distclean
+	# TODO Clean REAPER
+	# TODO Clean WORLD
+	# TODO Clean sigproc
 	find . -name '*.pyc' -delete
 
 # Run targets ------------------------------------------------------------------
 
 run:
-	mkdir -p ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	mkdir -p ../out; cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 run_continue:
-	cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN} --continue
 
 run_grid:
-	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 run_grid_continue:
-	cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN} --continue
 
 clone:
 	@test "$(DEST)"
@@ -61,26 +68,39 @@ clone:
 
 clone_run:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	./clone.sh "$(DEST)" bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 clone_run_grid:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	./clone.sh "$(DEST)" "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 generate:
 	bash "$(SETENVSCRIPT)" generate.py ../out/model.pkl
 
-
 # Testing ----------------------------------------------------------------------
 
+# Download the full demo data (~1000 sentences)
+test/slt_arctic_merlin_full.tar.gz:
+	git clone git@github.com:gillesdegottex/percival_demo_data.git
+	mv percival_demo_data/* test/
+	rm -fr percival_demo_data
+
+# Decompress the full demo data (~1000 sentences)
+test/slt_arctic_merlin_full: test/slt_arctic_merlin_full.tar.gz
+	tar xvzf test/slt_arctic_merlin_full.tar.gz -C test/
+
+# Decompress the test data (10 sentences)
 test/slt_arctic_merlin_test: test/slt_arctic_merlin_test.tar.gz
 	tar xvf test/slt_arctic_merlin_test.tar.gz -C test/
+
+run_demo: build test/slt_arctic_merlin_full run
+
 
 test: build test/slt_arctic_merlin_test
 	python test/test_base.py
 	python test/test_smoke.py
 	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
-	# bash "$(SETENVSCRIPT)" test/test_run.py
+	bash "$(SETENVSCRIPT)" test/test_run.py
 
 test_clean:
 	rm -fr test/slt_arctic_merlin_test
