@@ -167,14 +167,16 @@ In Percival, the trick is to specify the shape of the data as a suffix of the fi
 A batch has a shape: [size, length, features_dim]. Because Theano/Lasagne needs a "channel" dimension (as in pictures), batches' shape often become temporarily [size, 1, length, features_dim] so that the last two dimensions define a picture of size [length, features_dim].
 
 
-### Results Reproducibility
+### Results Repeatability
 
 The seed of the random number generator is forced by default.
-In order to have non-deterministic runs, comment the line '''np.random.seed(123)''' in utils.py
+In order to have non-deterministic runs, replace the line '''np.random.seed(123)''' in utils.py by '''pass'''
 
-When the seed is forced, and using the CPU, all training runs are supposed to output the exact same numerical results for all models.
-When using the GPU, training a model based on Fully-Connected layers or Recurrent layers should also output the exact same numerical results.
+When the seed is forced, and while using the CPU, all training runs are supposed to output the exact same numerical results, no matter the model.
+
+When using the GPU, training a model that is based on Fully-Connected layers or Recurrent layers only should also output the exact same numerical results for each run.
 However, when using the GPU and 2D Convolutional layers, the results will differ (c.f. [Lasagne thread](https://github.com/Lasagne/Lasagne/issues/6) ).
+It should be possible to make them repeatable by uncommenting some lines in '''setenv.sh''' under repeatability section, at the expense of some computational time.
 
 
 ### Notes

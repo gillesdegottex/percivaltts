@@ -83,7 +83,7 @@ class Optimizer:
         for ov in self._optim_updates:
             ovs.append([p.get_value() for p in ov.keys()]) # The optim algo state
 
-        DATA = [paramsvalues, ovs, cfg, extras]
+        DATA = [paramsvalues, ovs, cfg, extras, np.random.get_state()]
         cPickle.dump(DATA, open(fstate, 'wb'))
 
         print(' done')
@@ -139,7 +139,7 @@ class Optimizer:
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
             # TODO Might drop discri_input_var and replace it with self._target_values
-            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, nbpostlayers=self._model._nbprelayers, windur=self._model._windur)
+            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
@@ -228,7 +228,8 @@ class Optimizer:
         epochstart = 1
         if cont:
             print('    reloading previous training state ...')
-            _, extras = self.loadTrainingState(params_savefile+'.trainingstate.last', cfg)
+            _, extras, rngstate = self.loadTrainingState(params_savefile+'.trainingstate.last', cfg)
+            np.random.set_state(rngstate)
             cost_val = extras['cost_val']
             best_val = extras['best_val']
             # Restoring some local variables
@@ -243,6 +244,7 @@ class Optimizer:
         rndidx = np.arange(len(fid_lst_tra))
         for epoch in range(epochstart,1+cfg.train_max_nbepochs):
             timeepochstart = time.time()
+            rndidx = np.arange(len(fid_lst_tra))    # Need to restart from ordered state to make the shuffling repeatable after reloading training state
             np.random.shuffle(rndidx)
             rndidxb = np.split(rndidx, nbbatches)
             costs_tra_batches = []
