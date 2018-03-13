@@ -109,9 +109,14 @@ $ make
 
 Edit `setenv.sh` according to your CUDA/Theano installation (see above).
 
+Download the demo data:
+```
+$ make test/slt_arctic_merlin_full
+```
+
 And finally run the demo!
 ```
-$ make run_demo
+$ make run
 ```
 
 ## Preparing a new voice
