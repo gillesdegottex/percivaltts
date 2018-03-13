@@ -190,7 +190,7 @@ def generate_wavs(fparams=cfg.fparams_fullset):
     indicestosynth = range(demostart,demostart+10) # Just generate 10 of them for pre-listening
     model.generate(fparams, '-demo-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True, indicestosynth=indicestosynth)
     # And generate all of them for listening tests
-    # model.generate(fparams, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
+    model.generate(fparams, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
 
 if  __name__ == "__main__" :                                 # pragma: no cover
     features_extraction()
