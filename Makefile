@@ -93,7 +93,7 @@ test/slt_arctic_merlin_full: test/slt_arctic_merlin_full.tar.gz
 test/slt_arctic_merlin_test: test/slt_arctic_merlin_test.tar.gz
 	tar xvf test/slt_arctic_merlin_test.tar.gz -C test/
 
-run_demo: test/slt_arctic_merlin_full run
+run_demo: build test/slt_arctic_merlin_full run
 
 
 test: build test/slt_arctic_merlin_test
