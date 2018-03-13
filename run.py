@@ -168,9 +168,8 @@ def training(cont=False):
     params = model.params_trainable # Train all the model's parameters, you can make a selection here
 
     import optimizer
-    optigan = optimizer.Optimizer(model, errtype='LSE')
-    # optigan = optimizer.Optimizer(model, errtype='WGAN')
-    # cfg.train_max_nbepochs = 10
+    # optigan = optimizer.Optimizer(model, errtype='LSE')
+    optigan = optimizer.Optimizer(model, errtype='WGAN')
     optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
     # Here you can save a subset of parameters to save in a different file
