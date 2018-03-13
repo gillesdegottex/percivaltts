@@ -19,6 +19,7 @@ FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
 # SETENVSCRIPT=setenv_travis.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
+CODEDIR=percival
 
 # Maintenance targets ----------------------------------------------------------
 
@@ -47,16 +48,16 @@ distclean: test_clean
 # Run targets ------------------------------------------------------------------
 
 run:
-	mkdir -p ../out; cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	mkdir -p ../out; cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 run_continue:
-	cd ../out; bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN} --continue
 
 run_grid:
-	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 run_grid_continue:
-	cd ../out; "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN} --continue
+	cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN} --continue
 
 clone:
 	@test "$(DEST)"
@@ -64,15 +65,14 @@ clone:
 
 clone_run:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" bash ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	./clone.sh "$(DEST)" bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 clone_run_grid:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" "$(QSUBCMD)" ../Code/"$(SETENVSCRIPT)" ../Code/${FILETORUN}
+	./clone.sh "$(DEST)" "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
 generate:
 	bash "$(SETENVSCRIPT)" generate.py ../out/model.pkl
-
 
 # Testing ----------------------------------------------------------------------
 
