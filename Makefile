@@ -74,9 +74,6 @@ clone_run_grid:
 	@test "$(DEST)"
 	./clone.sh "$(DEST)" "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
 
-generate:
-	bash "$(SETENVSCRIPT)" generate.py ../out/model.pkl
-
 # Testing ----------------------------------------------------------------------
 
 # Download the full demo data (~1000 sentences)
@@ -92,9 +89,6 @@ test/slt_arctic_merlin_full: test/slt_arctic_merlin_full.tar.gz
 # Decompress the test data (10 sentences)
 test/slt_arctic_merlin_test: test/slt_arctic_merlin_test.tar.gz
 	tar xvf test/slt_arctic_merlin_test.tar.gz -C test/
-
-run_demo: build test/slt_arctic_merlin_full run
-
 
 test: build test/slt_arctic_merlin_test
 	python test/test_base.py

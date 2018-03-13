@@ -168,9 +168,8 @@ def training(cont=False):
     params = model.params_trainable # Train all the model's parameters, you can make a selection here
 
     import optimizer
-    optigan = optimizer.Optimizer(model, errtype='LSE')
-    # optigan = optimizer.Optimizer(model, errtype='WGAN')
-    # cfg.train_max_nbepochs = 10
+    # optigan = optimizer.Optimizer(model, errtype='LSE')
+    optigan = optimizer.Optimizer(model, errtype='WGAN')
     optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, params, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
     # Here you can save a subset of parameters to save in a different file
@@ -191,7 +190,7 @@ def generate_wavs(fparams=cfg.fparams_fullset):
     indicestosynth = range(demostart,demostart+10) # Just generate 10 of them for pre-listening
     model.generate(fparams, '-demo-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True, indicestosynth=indicestosynth)
     # And generate all of them for listening tests
-    # model.generate(fparams, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
+    model.generate(fparams, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
 
 if  __name__ == "__main__" :                                 # pragma: no cover
     features_extraction()

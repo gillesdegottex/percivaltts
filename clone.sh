@@ -6,7 +6,7 @@
 # what has been changed in between.
 
 # The output of the experiment will appear in a sub-directory "out" along side
-# the directory "Code", the clone source code.
+# the directory "code", the clone source code.
 
 # This is also useful for running variants of an experiment by copying the whole
 # working directory (the parent dir of "Code" and "out") and modifying only a
@@ -31,16 +31,8 @@
 #
 
 WORKDIR=$1
-
-CODEDIR=code
-if [[ -n "$2" ]] ; then
-    CODEDIR="$2"
-fi
-
+CODEDIR=percival
 OUTDIR=out
-if [[ -n "$3" ]] ; then
-    OUTDIR="$3"
-fi
 
 CODESRCDIR=$(dirname "$0")              # relative
 CODESRCDIR=$( ( cd "$CODESRCDIR" && pwd ) )
@@ -63,10 +55,11 @@ rsync -qav $CODESRCDIR/ $WORKDIR/$CODEDIR/ --exclude .git --exclude .git/
 
 # Copy a shallow version of the git in the code directory
 if [[ -d '.git/' ]] ; then
+    echo "Copy a shallow git in the code directory"
     rm -fr tmp_clone_gitstatedepth1;
     mkdir -p tmp_clone_gitstatedepth1;
     cd tmp_clone_gitstatedepth1;
-    git clone --depth 1 file://$CODESRCDIR gitstatedepth1;
+    git clone --depth 1 --quiet file://$CODESRCDIR gitstatedepth1;
     rsync -qav gitstatedepth1/.git/ $WORKDIR/$CODEDIR/.git/;
     cd ..;
     rm -fr tmp_clone_gitstatedepth1;
@@ -75,11 +68,21 @@ fi
 
 if [[ "${@:2}" ]]; then
 
-# Go into the output directory
-cd $WORKDIR/$OUTDIR
+    if [[ $WORKDIR = '/'* ]] ; then
+        echo Run command: "${@:2}" " (using file system)"
 
-echo Run command: "${@:2}"
+        # Go into the output directory
+        cd $WORKDIR/$OUTDIR
+
+# Keep it unindented
 # ${@:2} > log 2>&1
 ${@:2}
+
+    else
+        echo Run command: "${@:2}" " (using ssh on ${WORKDIR%:*})"
+
+        ssh ${WORKDIR%:*} "cd ${WORKDIR#*:}/$OUTDIR; ${@:2}"
+
+    fi
 
 fi
