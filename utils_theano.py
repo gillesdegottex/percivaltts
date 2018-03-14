@@ -34,8 +34,9 @@ def print_sysinfo_theano():
     print('    floatX={}'.format(theano.config.floatX))
     print('    base_compiledir={}'.format(theano.config.base_compiledir))
     print('    device={}'.format(theano.config.device))
-    print('    CUDAPATH={}'.format(theano.config.cuda.root))
-    print('    cuDNN={}'.format(theano.config.dnn.enabled))
+    print('    CUDA_ROOT={}'.format(theano.config.cuda.root))
+    if theano.config.dnn.enabled!='False':
+        print('    cuDNN={}'.format(theano.gpuarray.dnn.version()))
     print('    GID={}'.format(utils.nvidia_smi_current_gpu()))
     print('')
 
