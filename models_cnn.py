@@ -175,7 +175,7 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
         layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1+specsize,1+specsize+nmsize), axis=2)
 
         if _use_LSweighting: # Using weighted WGAN+LS
-            print('WGAN Weighted LS - Discri - spec')
+            print('WGAN Weighted LS - Discri - nm')
             wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(nmsize, dtype=theano.config.floatX),  int(nmsize/2), 1.0/8.0)   # TODO
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
