@@ -4,34 +4,37 @@
 
 # You might want to change these two paths according to your CONDA/CUDA install.
 CONDAPATH=$HOME/miniconda
-CUDAPATH=/usr/local/cuda-9.0
+CUDA_ROOT=/usr/local/cuda-9.0
 
+# Use CONDA python libraries first
 export PYTHONPATH=$CONDAPATH/lib/python2.7/site-packages:$PYTHONPATH
-export PATH=$CUDAPATH/bin:$PATH
-export LD_LIBRARY_PATH=$CUDAPATH/lib64:$CONDAPATH/lib:$LD_LIBRARY_PATH
-export LIBRARY_PATH=$CUDAPATH/lib64:$CONDAPATH/lib:$LIBRARY_PATH
-export CPATH="$CUDAPATH/include:$CONDAPATH/include:$CPATH"
 
+# Add CUDA
+export PATH=$CUDA_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_ROOT/lib64:$CONDAPATH/lib:$LD_LIBRARY_PATH
+export LIBRARY_PATH=$CUDA_ROOT/lib64:$CONDAPATH/lib:$LIBRARY_PATH
+export CPATH="$CUDA_ROOT/include:$CONDAPATH/include:$CPATH"
 
-# Use default Ubuntu CUDA install
-export THEANO_FLAGS="cuda.root=$CUDAPATH,floatX=float32,on_unused_input=ignore,"
+# Basic Thenao flags
+export THEANO_FLAGS="floatX=float32,on_unused_input=ignore,"
+
+# Force use of cuDNN. An error will be thrown if cuDNN is not accessible
+# export THEANO_FLAGS="optimizer_including=cudnn,"$THEANO_FLAGS
 
 #export THEANO_FLAGS="optimizer_including=cudnn:local_ultra_fast_sigmoid,"$THEANO_FLAGS #local_ultra_fast_sigmoid seems to block training
-# Force use of cuDNN
-#export THEANO_FLAGS="optimizer_including=cudnn,"$THEANO_FLAGS
-# export THEANO_FLAGS="optimizer_excluding=cudnn,"$THEANO_FLAGS
-# Force use of cnMEM
-# export THEANO_FLAGS="lib.cnmem=1,"$THEANO_FLAGS
 
 
 # For repeatability of 2D convolution layers
 # export THEANO_FLAGS="dnn.conv.algo_bwd_filter=deterministic,dnn.conv.algo_bwd_data=deterministic,"$THEANO_FLAGS
 # or
 # export THEANO_FLAGS="dnn.enabled=False,"$THEANO_FLAGS
+# and this might help too
+# export THEANO_FLAGS="deterministic=more,"$THEANO_FLAGS
 
 
+# For maximum speed:
 export THEANO_FLAGS="mode=FAST_RUN,device=cuda,"$THEANO_FLAGS
-# For debugging, uncomment below and comment above
+# For debugging, uncomment the line below and comment the line above
 # export THEANO_FLAGS="device=cpu,exception_verbosity=high,optimizer=None,"$THEANO_FLAGS
 
 # Theano loads way faster by compiling on shm
