@@ -65,7 +65,7 @@ class configuration(object):
                 print("    {:<30}{:}".format(key, getattr(self, key)))
         print('')
 
-    def mergefile(self, filenames):
+    def mergefiles(self, filenames):
 
         files_global = dict()
         for fname in filenames:
@@ -141,7 +141,7 @@ def proc_memresident():
 
 def print_sysinfo():
     print_log('System information')
-    print('  Source directory: '+os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)))
+    print('  Working directory: '+os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)))
     print('  PATH:')
     env_PATHs = os.getenv('PATH')
     if env_PATHs:

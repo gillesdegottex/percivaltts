@@ -26,7 +26,7 @@ class TestSmoke(unittest.TestCase):
         text_file.write("fs = 32000\n")
         text_file.write("shift = 0.005\n")
         text_file.close()
-        cfg.mergefile([cptest+'/info.py'])
+        cfg.mergefiles([cptest+'/info.py'])
 
         utils.print_log('print_log')
 
