@@ -11,8 +11,8 @@
 Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
-It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) for the input binary labels computation and [PML vocoder](https://github.com/gillesdegottex/pulsemodel) for
-the waveform synthesis.
+It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) scripts to generate
+the text labels and features using festival. The [PML vocoder](https://github.com/gillesdegottex/pulsemodel) is used for the waveform synthesis.
 
 <br/><br/>
 
@@ -43,12 +43,13 @@ PixelCNN [article](https://arxiv.org/abs/1606.05328)
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
-The code in this repository is released under the Apache License, Version 2.0. Please see LICENSE.md file for more details.
+The code in this repository is released under the Apache License, Version 2.0.
+Please see LICENSE.md file for more details.
 
-All source files of any kind (code source and any ressources), except
-the content of the 'external' directory, are under the same license.
-Please refer to the content of the 'external' directory for the legal issues
-related to those code source.
+All source files of any kind (code source and any ressources), except the
+content of the 'external' directory, are under the same license. Please refer
+to the content of the 'external' directory for the legal issues related to those
+code source.
 
 
 ### Dependencies and Working versions
@@ -98,7 +99,7 @@ git clone git@github.com:gillesdegottex/percival.git
 ```
 That's because the output of the experiment (the demo of Percival here) will
 appear in a sub-directory of ```exp``` and not within the git repository of the
-code. This keeps the generated files out of the code.
+code. This keeps the code neat and out of generated files.
 
 Then, to compile the various tools imported in Percival, go in the root
 directory of the source code, and run:
@@ -124,7 +125,9 @@ You basically need the three following elements from any corpus:
 * `label_state_align`
 
     The same directory that is imported in Merlin. It is produced by an
-    alignement tool, as in HTS.
+    alignement tool, as in HTS. Merlin provides the necessary scripts for
+    generating the text labels from text inputs and align these text labels on
+    some given waveform.
 
 * `wav`
 
@@ -135,7 +138,8 @@ You basically need the three following elements from any corpus:
     The same file that you find in Merlin, which contains the basenames of each
     file in `label_state_align` and `wav`.    
 
-Put this somehwere in a common directory and point the `cp` variable in the `run.py` file to this directory.
+Put this somehwere in a common directory and point the `cp` variable in the
+`run.py` file to this directory.
 
 
 ### Formats
@@ -180,7 +184,7 @@ It should be possible to make them repeatable by uncommenting some lines in '''s
 
 
 ### Notes
-There is currrently no post-processing of the generated spectral amplitudes before the waveform synthesis.
+Before the waveform synthesis, there is currrently no post-processing of the generated spectral amplitudes.
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
