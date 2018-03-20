@@ -79,15 +79,42 @@ class ModelCNN(model.Model):
         layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, 1+specsize+nmsize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
 
         # F0 - 1D Gated Conv layers
-        layer_f0 = lasagne.layers.SliceLayer(layer, indices=slice(0,1), axis=2)
-        layer_f0 = lasagne.layers.dimshuffle(layer_f0, [0, 'x', 1, 2])
-        for layi in xrange(nbcnnlayers):
-            layerstr = 'f0_l'+str(1+layi)
-            layer_f0 = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_f0, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr+'_GC1D'))
-            if dropout_p>0.0: layer_f0 = lasagne.layers.dropout(layer_f0, p=dropout_p)
-        layer_f0 = lasagne.layers.Conv2DLayer(layer_f0, 1, [_winlen,1], stride=1, pad='same', nonlinearity=None, name='f0_lout_C1D')
-        layer_f0 = lasagne.layers.dimshuffle(layer_f0, [0, 2, 3, 1])
-        layer_f0 = lasagne.layers.flatten(layer_f0, outdim=3)
+        if 0:   # TODO TODO TODO CNN or BLSTM for f0
+            layer_f0 = lasagne.layers.SliceLayer(layer, indices=slice(0,1), axis=2)
+            layer_f0 = lasagne.layers.dimshuffle(layer_f0, [0, 'x', 1, 2])
+            for layi in xrange(nbcnnlayers):
+                layerstr = 'f0_l'+str(1+layi)
+                layer_f0 = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_f0, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr+'_GC1D'))
+                if dropout_p>0.0: layer_f0 = lasagne.layers.dropout(layer_f0, p=dropout_p)
+            layer_f0 = lasagne.layers.Conv2DLayer(layer_f0, 1, [_winlen,1], stride=1, pad='same', nonlinearity=None, name='f0_lout_C1D')
+            layer_f0 = lasagne.layers.dimshuffle(layer_f0, [0, 2, 3, 1])
+            layer_f0 = lasagne.layers.flatten(layer_f0, outdim=3)
+        else:
+            layer_f0 = lasagne.layers.SliceLayer(layer, indices=slice(0,1), axis=2)
+            grad_clipping = 50
+            f0_hiddensize = 128 # TODO params
+            for layi in xrange(2): # TODO params
+                layerstr = 'f0_l'+str(1+layi)
+
+                ingate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+                forgetgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+                outgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+                cell = lasagne.layers.Gate(W_cell=None, W_in=lasagne.init.Orthogonal(np.sqrt(2.0/(1.0+(1.0/3.0))**2)), W_hid=lasagne.init.Orthogonal(np.sqrt(2.0/(1+(1.0/3.0))**2)), nonlinearity=nonlinearity)
+                # The final nonline should be TanH otherwise it doesn't converge (why?)
+                # by default peepholes=True
+                fwd = lasagne.layers.LSTMLayer(layer_f0, num_units=f0_hiddensize, backwards=False, ingate=ingate, forgetgate=forgetgate, outgate=outgate, cell=cell, grad_clipping=grad_clipping, nonlinearity=lasagne.nonlinearities.tanh, name=layerstr+'_LSTM.fwd')
+
+                ingate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+                forgetgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+                outgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+                cell = lasagne.layers.Gate(W_cell=None, W_in=lasagne.init.Orthogonal(np.sqrt(2.0/(1.0+(1.0/3.0))**2)), W_hid=lasagne.init.Orthogonal(np.sqrt(2.0/(1+(1.0/3.0))**2)), nonlinearity=nonlinearity)
+                # The final nonline should be TanH otherwise it doesn't converge (why?)
+                # by default peepholes=True
+                bck = lasagne.layers.LSTMLayer(layer_f0, num_units=f0_hiddensize, backwards=True, ingate=ingate, forgetgate=forgetgate, outgate=outgate, cell=cell, grad_clipping=grad_clipping, nonlinearity=lasagne.nonlinearities.tanh, name=layerstr+'_LSTM.bck')
+
+                layer_f0 = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
+                layer_f0 = lasagne.layers.DenseLayer(layer_f0, num_units=1, nonlinearity=None, num_leading_axes=2, name='lo_f0')
+
 
         # Amplitude spectrum - 2D Gated Conv layers
         layer_spec = lasagne.layers.SliceLayer(layer, indices=slice(1,1+specsize), axis=2)
