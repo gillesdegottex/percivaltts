@@ -107,7 +107,7 @@ def contexts_extraction():
     # Let's use Merlin's code for this
 
     from label_normalisation import HTSLabelNormalisation
-    label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full') # TODO TODO TODO Test question 416 !!!
+    label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full')
 
     makedirs(os.path.dirname(labbin_path))
     with open(cfg.fileids) as f:
@@ -121,7 +121,6 @@ def composition_normalisation():
     import compose
 
     # Compose the inputs
-
     # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
     compose.compose([labbin_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
