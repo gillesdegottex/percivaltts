@@ -28,7 +28,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/'
 
 import numpy as np
 def numpy_force_random_seed():
-    np.random.seed(123) # Replace this line with a "pass" if you want non-deterministic runs # TODO TODO TODO
+    np.random.seed(123) # Replace this line with a "pass" if you want non-deterministic runs
 numpy_force_random_seed()
 
 import time
