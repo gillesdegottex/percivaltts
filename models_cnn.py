@@ -156,6 +156,7 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
 
     # F0
     if 0: # Add f0 in discriminator
+        # Note: Makes f0 curve very noisy
         print('f0 winlen={}'.format(_winlen))
         layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(0,1), axis=2)
         layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
