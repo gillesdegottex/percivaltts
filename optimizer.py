@@ -98,7 +98,7 @@ class Optimizer:
         for p, v in zip(self._model.params_all, DATA[0]): p.set_value(v[1])    # The network parameters
 
         for ov, da in zip(self._optim_updates, DATA[1]):
-            for p, value in zip(ov.keys(), da): p.set_value(value)      # The optim algo state TODO TODO TODO never used acc. to coverage ...
+            for p, value in zip(ov.keys(), da): p.set_value(value)
 
         print(' done')
         sys.stdout.flush()

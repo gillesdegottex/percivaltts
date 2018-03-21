@@ -52,6 +52,7 @@ cfg.indir = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_s
 # Output features
 cfg.fs = 16000
 f0_min, f0_max = 60, 600
+cfg.f0_min, cfg.f0_max = 70, 600 # TODO TODO TODO Put in info.py!
 spec_size = 129
 nm_size = 33
 out_size = 1+spec_size+nm_size
@@ -89,7 +90,7 @@ import pulsemodel
 
 def pml_analysis(fid):
     print('Extracting features from: '+fid)
-    pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True, fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+    pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True, fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 def features_extraction():
     with open(cfg.fileids) as f:
@@ -98,7 +99,7 @@ def features_extraction():
         pfs.map(pml_analysis, fids, processes=7)   # Change number of processes
 
         # for fid in fids:
-        #     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+        #     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
         #     fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 
@@ -106,7 +107,7 @@ def contexts_extraction():
     # Let's use Merlin's code for this
 
     from label_normalisation import HTSLabelNormalisation
-    label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full') # TODO TODO TODO Test question 416 !!!
+    label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full')
 
     makedirs(os.path.dirname(labbin_path))
     with open(cfg.fileids) as f:
@@ -120,7 +121,6 @@ def composition_normalisation():
     import compose
 
     # Compose the inputs
-
     # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
     compose.compose([labbin_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 

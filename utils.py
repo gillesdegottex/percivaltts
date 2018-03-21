@@ -28,7 +28,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/'
 
 import numpy as np
 def numpy_force_random_seed():
-    np.random.seed(123) # Replace this line with a "pass" if you want non-deterministic runs # TODO TODO TODO
+    np.random.seed(123) # Replace this line with a "pass" if you want non-deterministic runs
 numpy_force_random_seed()
 
 import time
@@ -65,7 +65,7 @@ class configuration(object):
                 print("    {:<30}{:}".format(key, getattr(self, key)))
         print('')
 
-    def mergefile(self, filenames):
+    def mergefiles(self, filenames):
 
         files_global = dict()
         for fname in filenames:
@@ -141,7 +141,7 @@ def proc_memresident():
 
 def print_sysinfo():
     print_log('System information')
-    print('  Source directory: '+os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)))
+    print('  Working directory: '+os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)))
     print('  PATH:')
     env_PATHs = os.getenv('PATH')
     if env_PATHs:
