@@ -38,7 +38,7 @@ class TestRun(unittest.TestCase):
         run.contexts_extraction()
         run.composition_normalisation()
         run.training(cont=False)
-        run.generate('model.pkl.last')
+        run.generate('model-last.pkl')
 
 if __name__ == '__main__':
     unittest.main()
