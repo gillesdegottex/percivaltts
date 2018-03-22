@@ -124,7 +124,18 @@ class Model:
         return DATA[1:]
 
 
-    def generate(self, params_savefile, outsuffix, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None
+    def generate_cmp(self, inpath, outpath, fid_lst):
+
+        if not os.path.isdir(os.path.dirname(outpath)): os.mkdir(os.path.dirname(outpath))
+
+        X = data.load(inpath, fid_lst, verbose=1)
+
+        for vi in xrange(len(fid_lst)):
+            CMP = self.predict(np.reshape(X[vi],[1]+[s for s in X[vi].shape]))  # Generate them one by one to avoid blowing up the memory
+            CMP.astype('float32').tofile(outpath.replace('*',fid_lst[vi]))
+
+
+    def generate_wav(self, syndir, fid_lst, cfg, do_objmeas=True, do_resynth=True
             , spec_comp='fwlspec'
             , spec_size=129
             , nm_size=33
@@ -147,22 +158,18 @@ class Model:
 
         # ----------------------------------------------------------------------
 
-        fid_lst = data.loadids(cfg.fileids)
-        fid_lst_gen = fid_lst[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
-
         print('Reloading output stats')
+        # Assume mean/std normalisation of the output
         Ymean = np.fromfile(os.path.dirname(cfg.outdir)+'/mean4norm.dat', dtype='float32')
         Ystd = np.fromfile(os.path.dirname(cfg.outdir)+'/std4norm.dat', dtype='float32')
 
         print('\nLoading generation data at once ...')
-        X_test = data.load(cfg.indir, fid_lst_gen, verbose=1)
+        X_test = data.load(cfg.indir, fid_lst, verbose=1)
         if do_objmeas:
-            y_test = data.load(cfg.outdir, fid_lst_gen, verbose=1)
+            y_test = data.load(cfg.outdir, fid_lst, verbose=1)
             X_test, y_test = data.cropsize((X_test, y_test))
             #cost_test = data.cost_model_merlin(mod, X_test, y_test, model_outsize=cfg.model_outsize)
             #print("    test cost = {:.6f} ({:.4f}%)".format(cost_test, 100*np.sqrt(cost_test)/np.sqrt(worst_val)))
-
-        self.loadAllParams(params_savefile)              # Load the model's parameters
 
         def decomposition(CMP, outsize_wodeltas, do_mlpg=False, pp_mcep=True, f0clipmin=-1, f0clipmax=-1):
 
@@ -194,6 +201,8 @@ class Model:
                 import generate_pp
                 if pp_mcep: CMP_spec=generate_pp.mcep_postproc_sptk(CMP_spec, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(CMP_spec, sp.bark_alpha(cfg.fs), dftlen=dftlen)
+
+            # TODO Do some post-processing using SPTK?
 
             if 0:
                 import matplotlib.pyplot as plt
@@ -235,13 +244,10 @@ class Model:
 
         import pulsemodel
         import pulsemodel.sigproc as sp
-        syndir = os.path.splitext(params_savefile)[0] + outsuffix
         if not os.path.isdir(syndir): os.makedirs(syndir)
         features_err = dict()
 
-        if indicestosynth is None: indicestosynth=range(0,len(X_test))
-        for vi in indicestosynth:
-            if vi>=len(X_test): continue
+        for vi in xrange(len(X_test)):
 
             print('Generating {}/{} ...'.format(1+vi, len(X_test)))
             print('    Predict ...')
@@ -265,12 +271,12 @@ class Model:
                 if do_resynth:
                     # resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_forcebinary=True) # Prev version
                     resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_cont=False)
-                    sp.wavwrite(syndir+'/'+fid_lst_gen[vi]+'-resynth.wav', resyn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+                    sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             # syn = pulsemodel.synthesis.synthesize(cfg.fs, f0sgen, specgen, NM=nmgen, nm_forcebinary=True)
             syn = pulsemodel.synthesis.synthesize(cfg.fs, f0sgen, specgen, NM=nmgen, nm_cont=False)
 
-            sp.wavwrite(syndir+'/'+fid_lst_gen[vi]+'.wav', syn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
         for key in features_err:
             # np.mean(np.vstack(features_err[key]), 0) TODO Per dimension

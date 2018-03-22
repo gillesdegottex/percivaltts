@@ -228,7 +228,7 @@ class Optimizer:
         epochstart = 1
         if cont:
             print('    reloading previous training state ...')
-            _, extras, rngstate = self.loadTrainingState(params_savefile+'.trainingstate.last', cfg)
+            _, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg)
             np.random.set_state(rngstate)
             cost_val = extras['cost_val']
             best_val = extras['best_val']
@@ -318,6 +318,7 @@ class Optimizer:
                 discri_train_validation_fn_args = [X_vals]
                 discri_train_validation_fn_args.extend([Y_vals, random_epsilon])
                 costs['discri_validation'].append(data.cost_model(discri_train_validation_fn, discri_train_validation_fn_args))
+                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
 
             cost_val = costs['model_rmse_validation'][-1]
 
@@ -327,7 +328,7 @@ class Optimizer:
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
             if cost_val>=cfg.train_cancel_validthresh*worst_val: raise ValueError('ERROR: Validation cost blew up! It is higher than {} times the worst possible values'.format(cfg.train_cancel_validthresh))
 
-            self._model.saveAllParams(params_savefile+'.last', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
+            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
             if cost_val<best_val: # Among all trials of hyper-parameter optimisation
@@ -337,7 +338,7 @@ class Optimizer:
 
             if cfg.train_log_plot:
                 print_log('    saving plots')
-                log_plot_costs(costs, worst_val, fname=params_savefile+'.fig_costs_'+trialstr+'.svg', epochs_modelssaved=epochs_modelssaved)
+                log_plot_costs(costs, worst_val, fname=os.path.splitext(params_savefile)[0]+'-fig_costs_'+trialstr+'.svg', epochs_modelssaved=epochs_modelssaved)
 
                 nbsamples = 2
                 nbsamples = min(nbsamples, len(X_vals))
@@ -347,7 +348,7 @@ class Optimizer:
                 plotsuffix = ''
                 if len(epochs_modelssaved)>0 and epochs_modelssaved[-1]==epoch: plotsuffix='_best'
                 else:                                                           plotsuffix='_last'
-                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=params_savefile+'.fig_samples_'+trialstr+plotsuffix+'.png', title='epoch={}'.format(epoch), specsize=self._model.specsize)
+                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='epoch={}'.format(epoch), specsize=self._model.specsize)
 
             if len(costs['model_rmse_validation'])<2 or costs['model_rmse_validation'][-1]<min(costs['model_rmse_validation'][:-1]):
                 nbnodecepochs = 0
@@ -360,7 +361,7 @@ class Optimizer:
             epochs_durs.append(time.time()-timeepochstart)
             print_log('    epoch time: {}   max tot train ~time: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
 
-            self.saveTrainingState(params_savefile+'.trainingstate.last', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
+            self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
 
         return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val}
@@ -427,15 +428,13 @@ class Optimizer:
         cfg.print_content()
 
         print('Loading all validation data at once ...')
-        # from IPython.core.debugger import  Pdb; Pdb().set_trace()
         # X_val, Y_val = data.load_inoutset(indir, outdir, wdir, fid_lst_val, verbose=1)
         X_vals = data.load(indir, fid_lst_val, verbose=1, label='Context labels: ')
         Y_vals = data.load(outdir, fid_lst_val, verbose=1, label='Output features: ')
         X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
 
         if cfg.train_nbtrials>1:
-            self._model.saveAllParams(params_savefile+'.init', cfg=cfg, printfn=print_log)
-            # self.saveTrainingState(params_savefile+'.trainingstate-init', cfg=cfg, printfn=print_log)
+            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-init.pkl', cfg=cfg, printfn=print_log)
 
         try:
             trials = []
@@ -449,8 +448,7 @@ class Optimizer:
                         trialstr += ','+hyperstr
                         print('    randomized hyper-parameters: '+trialstr)
                     if cfg.train_nbtrials>1:
-                        self._model.loadAllParams(params_savefile+'.init')
-                        # self.loadTrainingState(params_savefile+'.trainingstate-init')
+                        self._model.loadAllParams(os.path.splitext(params_savefile)[0]+'-init.pkl')
 
                     timewholetrainstart = time.time()
                     train_rets = self.train(params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr=trialstr, cont=cont)
@@ -471,7 +469,7 @@ class Optimizer:
                 if cfg.train_nbtrials>1:
                     trials.append([triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]+[train_rets[key] for key in sorted(train_rets.keys())])
                     # Save results of each trial
-                    np.savetxt(params_savefile+'.trials', np.vstack(trials), header=('trials '+' '.join([field[0] for field in cfg.train_hypers]+sorted(train_rets.keys()))))
+                    np.savetxt(os.path.splitext(params_savefile)[0]+'-trials.txt', np.vstack(trials), header=('trials '+' '.join([field[0] for field in cfg.train_hypers]+sorted(train_rets.keys()))))
 
         except KeyboardInterrupt:                           # pragma: no cover
             print_log('WARNING: Training interrupted by user!')

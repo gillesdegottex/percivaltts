@@ -29,6 +29,7 @@ Author
 print('')
 
 from utils import *  # Always include this first to setup a few things
+import data
 print_sysinfo()
 
 print_log('Global configurations')
@@ -45,7 +46,7 @@ cfg.id_test_nb = 50
 lab_dir = 'label_state_align'
 lab_path = cp+lab_dir+'/*.lab'
 lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/questions-radio_dnn_416.hed')
-in_size = 416+9   # 601
+in_size = 416+9
 labbin_path = cp+lab_dir+'_bin'+str(in_size)+'/*.lab'
 cfg.indir = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
 
@@ -78,8 +79,10 @@ cfg.model_windur = 0.100        # CNN only
 cfg.fparams_fullset = 'model.pkl'
 # The ones below will overwrite default options in model.py:train_multipletrials(.)
 cfg.train_batchsize = 5
-cfg.train_batch_lengthmax = int(2.0/0.005) # Maximum duration [frames] of each batch
+cfg.train_batch_lengthmax = int(3.0/0.005) # Maximum duration [frames] of each batch
 cfg.train_nbtrials = 1        # Just run one training only
+cfg.train_LScoef = 0.25 # For WGANwLS [def. 0.25]
+
 
 cfg.print_content()
 
@@ -136,6 +139,7 @@ def build_model():
     # Build the model
     import models_cnn
     model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+
     # import models_basic
     # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=6)
     # model = models_basic.ModelBGRU(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
@@ -146,7 +150,6 @@ def build_model():
 # Training ---------------------------------------------------------------------
 def training(cont=False):
     print('\nData profile')
-    import data
     fid_lst = data.loadids(cfg.fileids)
     in_size = data.getlastdim(cfg.indir)
     out_size = data.getlastdim(cfg.outdir)
@@ -157,27 +160,34 @@ def training(cont=False):
 
     model = build_model()
 
-
     import optimizer
     # optigan = optimizer.Optimizer(model, errtype='LSE')
     optigan = optimizer.Optimizer(model, errtype='WGAN')
     optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 
-def generate_wavs(fparams=cfg.fparams_fullset):
+def generate(fparams=cfg.fparams_fullset):
 
-    model = build_model() # Rebuild the model
+    model = build_model()           # Rebuild the model from scratch
+    model.loadAllParams(fparams)    # Load the model's parameters
 
-    demostart = 0
-    if hasattr(cfg, 'id_test_demostart'): demostart=cfg.id_test_demostart
-    indicestosynth = range(demostart,demostart+10) # Just generate 10 of them for pre-listening
-    model.generate(fparams, '-demo-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True, indicestosynth=indicestosynth)
+    fid_lst = data.loadids(cfg.fileids)
+
+    # Generate the network outputs (without any decomposition), for potential re-use for another network's input
+    # model.generate_cmp(cfg.indir, os.path.splitext(fparams)[0]+'-gen/*.cmp', fid_lst)
+
+    fid_lst_test = fid_lst[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
+
+    demostart = cfg.id_test_demostart if hasattr(cfg, 'id_test_demostart') else 0
+    model.generate_wav(os.path.splitext(fparams)[0]+'-demo-snd', fid_lst_test[demostart:demostart+10], cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=True)
+
     # And generate all of them for listening tests
-    model.generate(fparams, '-snd', cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
+    model.generate_wav(os.path.splitext(fparams)[0]+'-snd', fid_lst_test, cfg, spec_size=spec_size, nm_size=nm_size, do_objmeas=True, do_resynth=False)
+
 
 if  __name__ == "__main__" :                                 # pragma: no cover
     features_extraction()
     contexts_extraction()
     composition_normalisation()
     training(cont='--continue' in sys.argv)
-    generate_wavs()
+    generate()
