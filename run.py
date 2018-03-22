@@ -140,7 +140,7 @@ def build_model():
     import models_cnn
     model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
-    import models_basic
+    # import models_basic
     # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=6)
     # model = models_basic.ModelBGRU(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
     # model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
