@@ -318,6 +318,7 @@ class Optimizer:
                 discri_train_validation_fn_args = [X_vals]
                 discri_train_validation_fn_args.extend([Y_vals, random_epsilon])
                 costs['discri_validation'].append(data.cost_model(discri_train_validation_fn, discri_train_validation_fn_args))
+                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
 
             cost_val = costs['model_rmse_validation'][-1]
 
