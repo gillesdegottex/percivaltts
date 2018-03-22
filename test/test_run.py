@@ -38,7 +38,7 @@ class TestRun(unittest.TestCase):
         run.contexts_extraction()
         run.composition_normalisation()
         run.training(cont=False)
-        run.generate_wavs('model.pkl.last')
+        run.generate('model.pkl.last')
 
 if __name__ == '__main__':
     unittest.main()
