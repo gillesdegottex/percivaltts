@@ -182,8 +182,9 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
         wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
         layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
+    stride_init = 1 # Make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
+
     layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
-    stride_init = 1 # TODO
     layer = lasagne.layers.Conv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
     if use_bn: layer=lasagne.layers.batch_norm(layer)
     if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
