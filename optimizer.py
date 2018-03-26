@@ -271,10 +271,8 @@ class Optimizer:
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
                     # TODO Tune this
-                    if (generator_updates < 25) or (generator_updates % 500 == 0):
-                        discri_runs = 10
                     else:
-                        discri_runs = 5
+                        discri_runs = 5 # TODO Params
 
                     random_epsilon = np.random.uniform(size=(cfg.train_batchsize, 1,1)).astype('float32')
 
