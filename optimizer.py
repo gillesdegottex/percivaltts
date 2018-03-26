@@ -191,6 +191,7 @@ class Optimizer:
             generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
             discri_params = lasagne.layers.get_all_params(discri, trainable=True)
             generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
+
             discri_updates = lasagne.updates.adam(discri_loss, discri_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
             self._optim_updates.extend([generator_updates, discri_updates])
 
@@ -202,8 +203,7 @@ class Optimizer:
             train_fn = theano.function(generator_train_fn_ins, generator_loss, updates=generator_updates)
             train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
             print('Compiling discriminator training function...')
-            discri_train_fn_ins = [self._model._input_values]
-            discri_train_fn_ins.extend([discri_input_var, epsi])
+            discri_train_fn_ins = [self._model._input_values, discri_input_var, epsi]
             discri_train_fn = theano.function(discri_train_fn_ins, discri_loss, updates=discri_updates)
             discri_train_validation_fn = theano.function(discri_train_fn_ins, discri_loss, no_default_updates=True)
 
@@ -313,8 +313,7 @@ class Optimizer:
                 costs['model_validation'].append(data.cost_model(train_validation_fn, train_validation_fn_args))
                 costs['discri_training'].append(np.mean(costs_tra_discri_batches))
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
-                discri_train_validation_fn_args = [X_vals]
-                discri_train_validation_fn_args.extend([Y_vals, random_epsilon])
+                discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
                 costs['discri_validation'].append(data.cost_model(discri_train_validation_fn, discri_train_validation_fn_args))
                 costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
 
