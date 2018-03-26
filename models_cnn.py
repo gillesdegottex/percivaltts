@@ -144,7 +144,7 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, nbpostlayers=8, windur=0.100, bn_axes=None, dropout_p=-1.0, use_bn=False):
+def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, nbpostlayers=8, windur=0.100, bn_axes=None, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False): # TODO TODO TODO nbpostlayers
     if bn_axes is None: bn_axes=[0,1]
     layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var)
 
@@ -178,7 +178,7 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
 
     if _use_LSweighting: # Using weighted WGAN+LS
         print('WGAN Weighted LS - Discri - spec')
-        wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(specsize, dtype=theano.config.floatX),  int(specsize/2), 1.0/8.0)   # TODO
+        wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(specsize, dtype=theano.config.floatX),  int(LSWGANtransflc*specsize), LSWGANtransc)
         wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
         layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
@@ -204,7 +204,7 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
 
         if _use_LSweighting: # Using weighted WGAN+LS
             print('WGAN Weighted LS - Discri - nm')
-            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(nmsize, dtype=theano.config.floatX),  int(nmsize/2), 1.0/8.0)   # TODO
+            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(nmsize, dtype=theano.config.floatX),  int(LSWGANtransflc*nmsize), LSWGANtransc)
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
