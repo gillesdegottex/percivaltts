@@ -396,31 +396,32 @@ class Optimizer:
         cfg = configuration() # Init structure
 
         # LSE
-        cfg.train_learningrate_log10 = -3.39794       # (10**-3.39794=0.0004 confirmed on 2xBGRU256_bn20) [potential hyper-parameter] Merlin:0.001 (or 0.002, or 0.004)
-        cfg.train_adam_beta1 = 0.98           # [potential hyper-parameter]
-        cfg.train_adam_beta2 = 0.999          # [potential hyper-parameter]
-        cfg.train_adam_epsilon_log10 = -8     # [potential hyper-parameter]
+        cfg.train_learningrate_log10 = -3.39794 # [potential hyper-parameter] (10**-3.39794=0.0004)
+        cfg.train_adam_beta1 = 0.98             # [potential hyper-parameter]
+        cfg.train_adam_beta2 = 0.999            # [potential hyper-parameter]
+        cfg.train_adam_epsilon_log10 = -8       # [potential hyper-parameter]
         # WGAN
-        cfg.train_D_learningrate = 0.0001     # [potential hyper-parameter]
-        cfg.train_D_adam_beta1 = 0.0          # [potential hyper-parameter]
-        cfg.train_D_adam_beta2 = 0.9          # [potential hyper-parameter]
-        cfg.train_G_learningrate = 0.001      # [potential hyper-parameter]
-        cfg.train_G_adam_beta1 = 0.0          # [potential hyper-parameter]
-        cfg.train_G_adam_beta2 = 0.9          # [potential hyper-parameter]
-        cfg.train_pg_lambda = 10              # [potential hyper-parameter]
-        cfg.train_LScoef = 0.25               # [potential hyper-parameter]
+        cfg.train_D_learningrate = 0.0001       # [potential hyper-parameter]
+        cfg.train_D_adam_beta1 = 0.5            # [potential hyper-parameter] # TODO TODO TODO 0.5 ??
+        cfg.train_D_adam_beta2 = 0.9            # [potential hyper-parameter]
+        cfg.train_G_learningrate = 0.001        # [potential hyper-parameter]
+        cfg.train_G_adam_beta1 = 0.5            # [potential hyper-parameter] # TODO TODO TODO 0.5 ??
+        cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
+        cfg.train_pg_lambda = 10                # [potential hyper-parameter]
+        cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
 
         cfg.train_max_nbepochs = 100
-        cfg.train_batchsize = 5               # [potential hyper-parameter]
-        cfg.train_batch_padtype = 'randshift' # See load_inoutset(..., maskpadtype)
-        cfg.train_batch_length = None # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
-        cfg.train_batch_lengthmax = None # Maximum duration [frames] of each batch
-        cfg.train_cancel_validthresh = 10.0 # Cancel train if valid err is more than N times higher than the 0-pred valid err
+        cfg.train_force_train_nbepochs = 10
+        cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
         cfg.train_cancel_nodecepochs = 50
-        cfg.train_nbtrials = 1
+        cfg.train_batchsize = 5                 # [potential hyper-parameter] # TODO Rename batch_size ?
+        cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
+        cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
+        cfg.train_batch_lengthmax = None        # Maximum duration [frames] of each batch
+        cfg.train_nbtrials = 1                  # Just run one training only
         cfg.train_hypers=[]
-        #cfg.hypers = [('learningrate_log10', -6.0, -2.0), ('adam_beta1', 0.8, 1.0)] # For ADAM
-        ##cfg.train_hyper = [('train_learningrate', 0.0001, 0.1), ('train_adam_beta1', 0.8, 1.0), ('train_adam_beta2', 0.995, 1.0), ('train_adam_epsilon_log10', -10.0, -6.0), ('train_batchsize', 1, 200)] # For ADAM
+        #cfg.train_hypers = [('learningrate_log10', -6.0, -2.0), ('adam_beta1', 0.8, 1.0)] # For ADAM
+        #cfg.train_hyper = [('train_D_learningrate', 0.0001, 0.1), ('train_D_adam_beta1', 0.8, 1.0), ('train_D_adam_beta2', 0.995, 1.0), ('train_batchsize', 1, 200)] # For ADAM
         cfg.train_log_plot=True
         # ... add/overwrite configuration from cfgtomerge ...
         if not cfgtomerge is None: cfg.merge(cfgtomerge)
