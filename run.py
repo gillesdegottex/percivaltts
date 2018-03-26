@@ -98,9 +98,12 @@ def pml_analysis(fid):
 def features_extraction():
     with open(cfg.fileids) as f:
         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
+
+        # Use this tool for parallel extraction of the acoustic features ...
         import pfs
         pfs.map(pml_analysis, fids, processes=7)   # Change number of processes
 
+        # ... or uncomment these line to extract them file by file.
         # for fid in fids:
         #     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
         #     fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
