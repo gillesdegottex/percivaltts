@@ -271,6 +271,8 @@ class Optimizer:
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
                     # TODO Tune this
+                    if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params
+                        discri_runs = 10 # TODO Params
                     else:
                         discri_runs = 5 # TODO Params
 
