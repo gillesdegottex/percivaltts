@@ -59,6 +59,8 @@ class Optimizer:
     _model = None # The model whose parameters will be optimised.
 
     _errtype = 'WGAN' # None for LSE
+    _LSWGANtransflc = 0.5 # TODO TODO TODO
+    _LSWGANtransc = 1.0/8.0 # TODO TODO TODO ref.:1.0/8.0
 
     _target_values = None
     _params_trainable = None
@@ -139,7 +141,7 @@ class Optimizer:
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
             # TODO Might drop discri_input_var and replace it with self._target_values
-            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur)
+            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur, LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
@@ -163,7 +165,7 @@ class Optimizer:
                     print('WGAN Weighted LS - Generator part')
                     specxs = np.arange(self._model.specsize, dtype=theano.config.floatX)
                     nmxs = np.arange(self._model.nmsize, dtype=theano.config.floatX)
-                    wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specxs,  int(self._model.specsize/2), 1.0/8.0), nonlin_sigmoidparm(nmxs,  int(self._model.nmsize/2), 1.0/8.0)))
+                    wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specxs,  int(self._LSWGANtransflc*self._model.specsize), self._LSWGANtransc), nonlin_sigmoidparm(nmxs,  int(self._LSWGANtransflc*self._model.nmsize), self._LSWGANtransc)))
                     wganls_weights_ *= (1.0-cfg.train_LScoef)
 
                     wganls_weights_gan = theano.shared(value=wganls_weights_, name='wganls_weights_gan')
