@@ -197,9 +197,7 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
     layer_spec = lasagne.layers.flatten(layer, outdim=3)
     layerstoconcats.append(layer_spec)
 
-    # Noise mask
-    if 1: # Add NM in discriminator
-        # TODO Should make it pyramidal
+    if 1: # Add Noise mask (NM) in discriminator
         print('bndnm winlen={} freqlen={}'.format(_winlen, nm_freqlen))
         layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1+specsize,1+specsize+nmsize), axis=2)
 
