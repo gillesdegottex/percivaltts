@@ -129,7 +129,7 @@ class Optimizer:
         init_pred_rms = data.prediction_rms(self._model, [X_vals])
         print('    initial RMS of prediction = {}'.format(init_pred_rms))
         init_val = data.cost_model_prediction_rmse(self._model, [X_vals], Y_vals)
-        best_val = init_val # Among all trials of hyper-parameters optimisation
+        best_val = None
         print("    initial validation RMSE = {} ({:.4f}%)".format(init_val, 100.0*init_val/worst_val))
 
         nbbatches = int(len(fid_lst_tra)/cfg.train_batchsize)
@@ -323,9 +323,12 @@ class Optimizer:
                 costs['discri_validation'].append(data.cost_model(discri_train_validation_fn, discri_train_validation_fn_args))
                 costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
 
-            cost_val = costs['model_rmse_validation'][-1]
+                # cost_val = costs['model_rmse_validation'][-1]
+                cost_val = costs['discri_validation_ltm'][-1]   # TODO TODO TODO
+            else:
+                cost_val = costs['model_rmse_validation'][-1]
 
-            print_log("    epoch {} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}%)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_val/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
+            print_log("    epoch {} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}%)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_val/worst_val, nvidia_smi_gpu_memused(), proc_memresident())) # TODO TODO TODO Ratio cost_val/worst_val is meaningless for WGAN
             sys.stdout.flush()
 
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
@@ -334,8 +337,8 @@ class Optimizer:
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
-            if cost_val<best_val: # Among all trials of hyper-parameter optimisation
-                self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
+            if epoch>cfg.train_force_train_nbepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_force_train_nbepochs epoch
+                self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E'+str(epoch)+' '+str(100*cost_val/worst_val)+'%)') # TODO TODO TODO Ratio cost_val/worst_val is meaningless for WGAN
                 epochs_modelssaved.append(epoch)
                 best_val = cost_val
 
@@ -367,7 +370,7 @@ class Optimizer:
             self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
 
-        return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val}
+        return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val} # TODO TODO TODO best_val/worst_val is meaningless for WGAN
 
 
     @classmethod
