@@ -79,9 +79,9 @@ cfg.model_windur = 0.100        # CNN only
 cfg.fparams_fullset = 'model.pkl'
 # The ones below will overwrite default options in model.py:train_multipletrials(.)
 cfg.train_batchsize = 5
-cfg.train_batch_lengthmax = int(3.0/0.005) # Maximum duration [frames] of each batch
-cfg.train_nbtrials = 1        # Just run one training only
-cfg.train_LScoef = 0.25 # For WGANwLS [def. 0.25]
+cfg.train_batch_lengthmax = int(3.0/0.005) # Maximum duration [frames] of each batch (has to be big enough other wise LT dependences cannot be modelled)
+cfg.train_LScoef = 0.25         # For WGANwLS [def. 0.25]
+
 
 
 cfg.print_content()
