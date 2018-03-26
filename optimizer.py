@@ -439,10 +439,12 @@ class Optimizer:
 
         try:
             trials = []
+            train_rets_header = None
             for triali in xrange(1,1+cfg.train_nbtrials):  # Run multiple trials with different hyper-parameters
                 print('\nStart trial {} ...'.format(triali))
 
                 try:
+                    train_rets = None
                     trialstr = 'trial'+str(triali)
                     if len(cfg.train_hypers)>0:
                         cfg, hyperstr = self.randomize_hyper(cfg)
@@ -468,9 +470,16 @@ class Optimizer:
                         raise   # Crash the whole training if there is only one trial
 
                 if cfg.train_nbtrials>1:
-                    trials.append([triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]+[train_rets[key] for key in sorted(train_rets.keys())])
+                    ntrialline = [triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]
+                    if not train_rets is None:
+                        ntrialline = ntrialline+[train_rets[key] for key in sorted(train_rets.keys())]
+                        if train_rets_header is None:
+                            train_rets_header='trials '+' '.join([field[0] for field in cfg.train_hypers])+' '+' '.join(sorted(train_rets.keys()))
+                    if train_rets_header is None: header='trials '+' '.join([field[0] for field in cfg.train_hypers]) # Fall back header if all no trial went through yet
+                    else:                         header=train_rets_header
+                    trials.append(ntrialline)
                     # Save results of each trial
-                    np.savetxt(os.path.splitext(params_savefile)[0]+'-trials.txt', np.vstack(trials), header=('trials '+' '.join([field[0] for field in cfg.train_hypers]+sorted(train_rets.keys()))))
+                    np.savetxt(os.path.splitext(params_savefile)[0]+'-trials.txt', np.vstack(trials), header=header)
 
         except KeyboardInterrupt:                           # pragma: no cover
             print_log('WARNING: Training interrupted by user!')
