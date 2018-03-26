@@ -178,7 +178,7 @@ class Optimizer:
             discri_loss = fake_out.mean() - real_out.mean()
 
             # Improved training for Wasserstein GAN
-            epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
+            epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))() # TODO Test necessity
             mixed_X = (epsi * genout) + (1-epsi) * discri_input_var
             indict = {layer_discri:mixed_X, layer_cond:self._model._input_values}
             output_D_mixed = lasagne.layers.get_output(discri, inputs=indict)
