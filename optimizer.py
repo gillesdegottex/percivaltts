@@ -154,10 +154,12 @@ class Optimizer:
 
             # Create generator's loss expression
             if cfg.train_LScoef>0.0:    # TODO This might be 0 but low freq still needs LS
-                if 0: # Use Standard WGAN+LS (no special weighting curve)
+                if 0:
+                    # Use Standard WGAN+LS (no special weighting curve in spectral domain)
                     print('Overall additive LS solution')
                     generator_loss = -(1.0-cfg.train_LScoef)*fake_out.mean() + cfg.train_LScoef*lasagne.objectives.squared_error(genout, self._target_values).mean()
                 else:
+                    # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
                     print('WGAN Weighted LS - Generator part')
                     specxs = np.arange(self._model.specsize, dtype=theano.config.floatX)
                     nmxs = np.arange(self._model.nmsize, dtype=theano.config.floatX)
