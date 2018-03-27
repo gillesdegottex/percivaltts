@@ -338,7 +338,7 @@ class Optimizer:
 
             # Save model parameters
             if epoch>cfg.train_force_train_nbepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_force_train_nbepochs epoch
-                self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f}%'.format(epoch, 100*cost_val/worst_val)) # TODO TODO TODO Ratio cost_val/worst_val is meaningless for WGAN
+                self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f}%)'.format(epoch, 100*cost_val/worst_val)) # TODO TODO TODO Ratio cost_val/worst_val is meaningless for WGAN
                 epochs_modelssaved.append(epoch)
                 best_val = cost_val
 
