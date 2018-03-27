@@ -247,7 +247,7 @@ class Optimizer:
         print_log("    start training ...")
         for epoch in range(epochstart,1+cfg.train_max_nbepochs):
             timeepochstart = time.time()
-            rndidx = np.arange(len(fid_lst_tra))    # Need to restart from ordered state to make the shuffling repeatable after reloading training state
+            rndidx = np.arange(int(nbbatches*cfg.train_batchsize))    # Need to restart from ordered state to make the shuffling repeatable after reloading training state, the shuffling will be different anyway
             np.random.shuffle(rndidx)
             rndidxb = np.split(rndidx, nbbatches)
             costs_tra_batches = []
