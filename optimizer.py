@@ -445,7 +445,6 @@ class Optimizer:
 
         try:
             trials = []
-            train_rets_header = None
             for triali in xrange(1,1+cfg.train_nbtrials):  # Run multiple trials with different hyper-parameters
                 print('\nStart trial {} ...'.format(triali))
 
@@ -476,16 +475,13 @@ class Optimizer:
                         raise   # Crash the whole training if there is only one trial
 
                 if cfg.train_nbtrials>1:
-                    ntrialline = [triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]
+                    # Save the results of each trial, but only the non-crashed trials
                     if not train_rets is None:
+                        ntrialline = [triali]+[getattr(cfg, field[0]) for field in cfg.train_hypers]
                         ntrialline = ntrialline+[train_rets[key] for key in sorted(train_rets.keys())]
-                        if train_rets_header is None:
-                            train_rets_header='trials '+' '.join([field[0] for field in cfg.train_hypers])+' '+' '.join(sorted(train_rets.keys()))
-                    if train_rets_header is None: header='trials '+' '.join([field[0] for field in cfg.train_hypers]) # Fall back header if all no trial went through yet
-                    else:                         header=train_rets_header
-                    trials.append(ntrialline)
-                    # Save results of each trial
-                    np.savetxt(os.path.splitext(params_savefile)[0]+'-trials.txt', np.vstack(trials), header=header)
+                        header='trials '+' '.join([field[0] for field in cfg.train_hypers])+' '+' '.join(sorted(train_rets.keys()))
+                        trials.append(ntrialline)
+                        np.savetxt(os.path.splitext(params_savefile)[0]+'-trials.txt', np.vstack(trials), header=header)
 
         except KeyboardInterrupt:                           # pragma: no cover
             print_log('WARNING: Training interrupted by user!')
