@@ -341,6 +341,7 @@ class Optimizer:
                 self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f}%)'.format(epoch, 100*cost_val/worst_val)) # TODO TODO TODO Ratio cost_val/worst_val is meaningless for WGAN
                 epochs_modelssaved.append(epoch)
                 best_val = cost_val
+                nbnodecepochs = 0
 
             if cfg.train_log_plot:
                 print_log('    saving plots')
@@ -356,9 +357,7 @@ class Optimizer:
                 else:                                                           plotsuffix='_last'
                 log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='epoch={}'.format(epoch), specsize=self._model.specsize)
 
-            if len(costs['model_rmse_validation'])<2 or costs['model_rmse_validation'][-1]<min(costs['model_rmse_validation'][:-1]):
-                nbnodecepochs = 0
-            elif epoch>cfg.train_cancel_nodecepochs:        # pragma: no cover
+            if epoch>cfg.train_force_train_nbepochs and nbnodecepochs>0:        # pragma: no cover
                 nbnodecepochs += 1
                 if nbnodecepochs>=cfg.train_cancel_nodecepochs:
                     print_log('WARNING: validation error did not decrease for {} epochs. Early stop!'.format(cfg.train_cancel_nodecepochs))
