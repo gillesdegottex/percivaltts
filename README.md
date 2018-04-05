@@ -121,7 +121,7 @@ $ make run
 ```
 
 ## Preparing a new voice
-You basically need the three following elements from any corpus:
+Like in Merlin, you basically need the three following elements from any corpus:
 * `label_state_align`
 
     The same directory that is imported in Merlin. It is produced by an
@@ -190,4 +190,4 @@ Before the waveform synthesis, there is currrently no post-processing of the gen
 Gilles Degottex <gad27@cam.ac.uk>
 
 ### Contact
-Please use the [issue managment](https://github.com/gillesdegottex/percival/issues) only to raise questions, suggestions, etc.
+To raise questions, suggestions, etc. please use the [issue managment](https://github.com/gillesdegottex/percival/issues) only.
