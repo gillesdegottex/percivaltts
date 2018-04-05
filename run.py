@@ -83,6 +83,8 @@ cfg.train_batch_lengthmax = int(3.0/0.005) # Maximum duration [frames] of each b
 cfg.train_LScoef = 0.25         # For WGANwLS [def. 0.25]
 
 
+# cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
+# cfg.train_nbtrials = 12
 
 cfg.print_content()
 
