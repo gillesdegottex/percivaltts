@@ -57,7 +57,7 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
 
 
 class ModelCNN(model.Model):
-    def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, prelayers_nb=1, prelayers_type='BLSTM', nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctxlayers_nb=1, ctxlayers_type='BLSTM', nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
         outsize = 1+specsize+nmsize
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
@@ -73,13 +73,13 @@ class ModelCNN(model.Model):
         layer = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
 
         # Start with a few layers that is supposed to gather the useful information in the context labels
-        if prelayers_type=='FC':     # TODO Generalize this crap by passing a function in argument
-            for layi in xrange(prelayers_nb):
+        if ctxlayers_type=='FC':     # TODO Generalize this crap by passing a function in argument
+            for layi in xrange(ctxlayers_nb):
                 layerstr = 'lfc'+str(1+layi)
                 layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
-        elif prelayers_type=='BLSTM':
+        elif ctxlayers_type=='BLSTM':
             grad_clipping = 50
-            for layi in xrange(prelayers_nb):
+            for layi in xrange(ctxlayers_nb):
                 layerstr = 'lblstm'+str(1+layi)
                 fwd = lasagne.layers.LSTMLayer(layer, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
                 bck = lasagne.layers.LSTMLayer(layer, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
