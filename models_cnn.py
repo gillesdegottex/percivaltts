@@ -57,12 +57,11 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
 
 
 class ModelCNN(model.Model):
-    def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbprelayers=2, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, prelayers_nb=1, prelayers_type='BLSTM', nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
         outsize = 1+specsize+nmsize
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
-        self._nbprelayers = nbprelayers
         self._nbcnnlayers = nbcnnlayers
         self._nbfilters = nbfilters
         self._spec_freqlen = spec_freqlen
@@ -73,10 +72,20 @@ class ModelCNN(model.Model):
 
         layer = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
 
-        for layi in xrange(nbprelayers):
-            layerstr = 'l'+str(1+layi)
-            layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
-        layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, 1+specsize+nmsize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
+        # Start with a few layers that is supposed to gather the useful information in the context labels
+        if prelayers_type=='FC':     # TODO Generalize this crap by passing a function in argument
+            for layi in xrange(prelayers_nb):
+                layerstr = 'lfc'+str(1+layi)
+                layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
+            layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, 1+specsize+nmsize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
+        elif prelayers_type=='BLSTM':
+            grad_clipping = 50
+            for layi in xrange(prelayers_nb):
+                layerstr = 'lblstm'+str(1+layi)
+                fwd = lasagne.layers.LSTMLayer(layer, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+                bck = lasagne.layers.LSTMLayer(layer, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+                layer = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
+
 
         # F0 - 1D Gated Conv layers
         if 0:   # TODO TODO TODO CNN or BLSTM for f0
@@ -144,7 +153,7 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, nbpostlayers=8, windur=0.100, bn_axes=None, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False): # TODO TODO TODO nbpostlayers
+def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, ctxlayers_type='BLSTM', postlayers_nb=8, windur=0.100, bn_axes=None, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False): # TODO TODO TODO nbpostlayers
     if bn_axes is None: bn_axes=[0,1]
     layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var)
 
@@ -185,13 +194,17 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
     stride_init = 1 # Make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
 
     layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
-    layer = lasagne.layers.Conv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
+    # layer = lasagne.layers.Conv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
+    layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
     if use_bn: layer=lasagne.layers.batch_norm(layer)
     if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-    for _ in xrange(nbcnnlayers):
+    layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
+    if use_bn: layer=lasagne.layers.batch_norm(layer)
+    if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
+    for _ in xrange(nbcnnlayers-2):
         layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity)
+        # layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
         if use_bn: layer=lasagne.layers.batch_norm(layer)
-        # layer = lasagne.layers.batch_norm(layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,freqlen], stride=1, pad='same', nonlinearity=nonlinearity))
         if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
     layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
     layer_spec = lasagne.layers.flatten(layer, outdim=3)
@@ -208,13 +221,18 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
         layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
-        layer = lasagne.layers.Conv2DLayer(layer, 1, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=None)
+        # layer = lasagne.layers.Conv2DLayer(layer, 1, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=None) # TODO nbfilters=1 ??
+        # layer = lasagne.layers.Conv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
+        layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
         if use_bn: layer=lasagne.layers.batch_norm(layer)
         if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-        for _ in xrange(nbcnnlayers):
+        layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
+        if use_bn: layer=lasagne.layers.batch_norm(layer)
+        if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
+        for _ in xrange(nbcnnlayers-2):
             layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=nonlinearity)
+            # layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
             if use_bn: layer=lasagne.layers.batch_norm(layer)
-            # layer = lasagne.layers.batch_norm(layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=nonlinearity))
             if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
         layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
         layer_bndnm = lasagne.layers.flatten(layer, outdim=3)
@@ -223,11 +241,20 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
     # Add the contexts
     layer_cond = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var)
 
-    layerstoconcats.append(layer_cond)
+    if ctxlayers_type=='BLSTM': # TODO Generalize this crap by passing a function in argument
+        layerstr = 'lblstm'
+        grad_clipping = 50
+        fwd = lasagne.layers.LSTMLayer(layer_cond, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+        bck = lasagne.layers.LSTMLayer(layer_cond, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+        # layer_cond = lasagne.layers.ConcatLayer((fwd, bck), axis=2) # It seems concat of concats doesn't work
+        layerstoconcats.append(fwd)
+        layerstoconcats.append(bck)
+    else:
+        layerstoconcats.append(layer_cond)
     layer = lasagne.layers.ConcatLayer(layerstoconcats, axis=2)
 
     # finalize with a common FC network
-    for _ in xrange(nbpostlayers):
+    for _ in xrange(postlayers_nb):
         layer = lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2)
         if use_bn: layer=lasagne.layers.batch_norm(layer, axes=_bn_axes)
         # if dropout_p>0.0: layer = lasagne.layers.dropout(layer, p=dropout_p) # Bad for FC
