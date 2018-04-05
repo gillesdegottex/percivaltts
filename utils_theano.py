@@ -107,5 +107,5 @@ def nonlin_sigmoidbinary(x):
 def nonlin_softsign(x):
     return x / (1.0+abs(x))
 
-def nonlin_sigmoidparm(x, c=0.0, f=1.0): # TODO TODO TODO np ?!?
+def nonlin_sigmoidparm(x, c=0.0, f=1.0):
   return 1.0 / (1.0 + np.exp(-(x-c)*f))
