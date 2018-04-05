@@ -77,7 +77,6 @@ class ModelCNN(model.Model):
             for layi in xrange(prelayers_nb):
                 layerstr = 'lfc'+str(1+layi)
                 layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
-            layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, 1+specsize+nmsize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
         elif prelayers_type=='BLSTM':
             grad_clipping = 50
             for layi in xrange(prelayers_nb):
@@ -86,6 +85,7 @@ class ModelCNN(model.Model):
                 bck = lasagne.layers.LSTMLayer(layer, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
                 layer = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
 
+        layer = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer, 1+specsize+nmsize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
 
         # F0 - 1D Gated Conv layers
         if 0:   # TODO TODO TODO CNN or BLSTM for f0
