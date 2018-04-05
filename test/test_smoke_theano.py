@@ -62,7 +62,7 @@ class TestSmokeTheano(unittest.TestCase):
 
 
         import optimizer
-        optigan = optimizer.Optimizer(model, errtype=None)
+        optigan = optimizer.Optimizer(model, errtype='LSE')
 
         optigan.saveTrainingState('test/test_made__smoke_theano_model/smokytrainingstate.pkl', cfg=cfg, extras={'cost_val':cost_val})
 
