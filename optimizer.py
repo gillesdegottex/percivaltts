@@ -342,6 +342,9 @@ class Optimizer:
                 epochs_modelssaved.append(epoch)
                 best_val = cost_val
                 nbnodecepochs = 0
+            else:
+                if epoch>cfg.train_force_train_nbepochs:
+                    nbnodecepochs += 1
 
             if cfg.train_log_plot:
                 print_log('    saving plots')
@@ -357,16 +360,14 @@ class Optimizer:
                 else:                                                           plotsuffix='_last'
                 log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='epoch={}'.format(epoch), specsize=self._model.specsize)
 
-            if epoch>cfg.train_force_train_nbepochs and nbnodecepochs>0:        # pragma: no cover
-                nbnodecepochs += 1
-                if nbnodecepochs>=cfg.train_cancel_nodecepochs:
-                    print_log('WARNING: validation error did not decrease for {} epochs. Early stop!'.format(cfg.train_cancel_nodecepochs))
-                    break
-
             epochs_durs.append(time.time()-timeepochstart)
             print_log('    epoch time: {}   max tot train ~time: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
 
             self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
+
+            if nbnodecepochs>=cfg.train_cancel_nodecepochs:
+                print_log('WARNING: validation error did not decrease for {} epochs. Early stop!'.format(cfg.train_cancel_nodecepochs))
+                break
 
         if best_val is None: raise ValueError('No model has been saved during training!')
         return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val} # TODO TODO TODO best_val/worst_val is meaningless for WGAN
