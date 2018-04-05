@@ -221,6 +221,8 @@ class Optimizer:
             self._optim_updates.append(updates)
             print("    compiling training function ...")
             train_fn = theano.function(self._model.inputs+[self._target_values], self.cost, updates=updates)
+        else:
+            raise ValueError('Unknown err type "'+self._errtype+'"')
 
         costs = defaultdict(list)
         epochs_modelssaved = []
