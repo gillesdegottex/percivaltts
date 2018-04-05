@@ -191,19 +191,10 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
         wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
         layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
-    stride_init = 1 # Make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
-
     layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
-    # layer = lasagne.layers.Conv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
-    layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
-    if use_bn: layer=lasagne.layers.batch_norm(layer)
-    if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-    layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
-    if use_bn: layer=lasagne.layers.batch_norm(layer)
-    if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-    for _ in xrange(nbcnnlayers-2):
-        layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity)
-        # layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,spec_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
+    for _ in xrange(nbcnnlayers):
+        # strides>1 make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
+        layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,spec_freqlen], pad='same', nonlinearity=nonlinearity)
         if use_bn: layer=lasagne.layers.batch_norm(layer)
         if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
     layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
@@ -221,17 +212,8 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
         layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
-        # layer = lasagne.layers.Conv2DLayer(layer, 1, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=None) # TODO nbfilters=1 ??
-        # layer = lasagne.layers.Conv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=None)
-        layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
-        if use_bn: layer=lasagne.layers.batch_norm(layer)
-        if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-        layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
-        if use_bn: layer=lasagne.layers.batch_norm(layer)
-        if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-        for _ in xrange(nbcnnlayers-2):
-            layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], stride=1, pad='same', nonlinearity=nonlinearity)
-            # layer = layer_GatedConv2DLayer(layer, stride_init*nbfilters, [_winlen,nm_freqlen], stride=[1,stride_init], pad='same', nonlinearity=nonlinearity)
+        for _ in xrange(nbcnnlayers):
+            layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlinearity)
             if use_bn: layer=lasagne.layers.batch_norm(layer)
             if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
         layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
