@@ -56,9 +56,9 @@ class Optimizer:
 
     _model = None # The model whose parameters will be optimised.
 
-    _errtype = 'WGAN' # None for LSE
-    _LSWGANtransflc = 0.5 # TODO TODO TODO
-    _LSWGANtransc = 1.0/8.0 # TODO TODO TODO ref.:1.0/8.0
+    _errtype = 'WGAN' # or 'LSE'
+    _LSWGANtransflc = 0.5 # Params hardcoded
+    _LSWGANtransc = 1.0/8.0 # Params hardcoded
 
     _target_values = None
     _params_trainable = None
@@ -209,7 +209,7 @@ class Optimizer:
             discri_train_fn = theano.function(discri_train_fn_ins, discri_loss, updates=discri_updates)
             discri_train_validation_fn = theano.function(discri_train_fn_ins, discri_loss, no_default_updates=True)
 
-        else:
+        elif self._errtype=='LSE':
             print('    LSE Training')
             predicttrain_values = lasagne.layers.get_output(self._model.net_out, deterministic=False)
             costout = (predicttrain_values - self._target_values)**2
@@ -272,11 +272,10 @@ class Optimizer:
 
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
-                    # TODO Tune this
-                    if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params
-                        discri_runs = 10 # TODO Params
+                    if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded
+                        discri_runs = 10 # TODO Params hardcoded
                     else:
-                        discri_runs = 5 # TODO Params
+                        discri_runs = 5 # TODO Params hardcoded
 
                     random_epsilon = np.random.uniform(size=(cfg.train_batchsize, 1,1)).astype('float32')
 
@@ -291,8 +290,7 @@ class Optimizer:
                         cost_tra = float(cost_tra)
                         generator_updates += 1
 
-                else:
-                    # LSE
+                elif self._errtype=='LSE':
                     train_returns = train_fn(X_trab, Y_trab)
                     cost_tra = np.sqrt(float(train_returns))
 
@@ -321,24 +319,23 @@ class Optimizer:
                 costs['discri_validation'].append(data.cost_model(discri_train_validation_fn, discri_train_validation_fn_args))
                 costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
 
-                # cost_val = costs['model_rmse_validation'][-1]
-                cost_val = costs['discri_validation_ltm'][-1]   # TODO TODO TODO
-            else:
+                cost_val = costs['discri_validation_ltm'][-1]
+            elif self._errtype=='LSE':
                 cost_val = costs['model_rmse_validation'][-1]
 
-            print_log("    epoch {} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}%)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_val/worst_val, nvidia_smi_gpu_memused(), proc_memresident())) # TODO TODO TODO Ratio cost_val/worst_val is meaningless for WGAN
+            print_log("    epoch {} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}% RMSE)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_validation_rmse/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
             sys.stdout.flush()
 
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
-            if cost_val>=cfg.train_cancel_validthresh*worst_val: raise ValueError('ERROR: Validation cost blew up! It is higher than {} times the worst possible values'.format(cfg.train_cancel_validthresh))
+            if (self._errtype=='LSE') and (cost_val>=cfg.train_cancel_validthresh*worst_val): raise ValueError('ERROR: Validation cost blew up! It is higher than {} times the worst possible values'.format(cfg.train_cancel_validthresh))
 
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
             if epoch>cfg.train_force_train_nbepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_force_train_nbepochs epoch
-                self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f}%)'.format(epoch, 100*cost_val/worst_val)) # TODO TODO TODO Ratio cost_val/worst_val is meaningless for WGAN
-                epochs_modelssaved.append(epoch)
                 best_val = cost_val
+                self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f})'.format(epoch, best_val))
+                epochs_modelssaved.append(epoch)
                 nbnodecepochs = 0
             else:
                 if epoch>cfg.train_force_train_nbepochs:
@@ -368,7 +365,7 @@ class Optimizer:
                 break
 
         if best_val is None: raise ValueError('No model has been saved during training!')
-        return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val, 'best_val_percent':100*best_val/worst_val} # TODO TODO TODO best_val/worst_val is meaningless for WGAN
+        return {'epoch_stopped':epoch, 'worst_val':worst_val, 'best_epoch':epochs_modelssaved[-1] if len(epochs_modelssaved)>0 else -1, 'best_val':best_val}
 
 
     @classmethod
@@ -403,10 +400,10 @@ class Optimizer:
         cfg.train_adam_epsilon_log10 = -8       # [potential hyper-parameter]
         # WGAN
         cfg.train_D_learningrate = 0.0001       # [potential hyper-parameter]
-        cfg.train_D_adam_beta1 = 0.5            # [potential hyper-parameter] # TODO TODO TODO 0.5 ??
+        cfg.train_D_adam_beta1 = 0.5            # [potential hyper-parameter]
         cfg.train_D_adam_beta2 = 0.9            # [potential hyper-parameter]
         cfg.train_G_learningrate = 0.001        # [potential hyper-parameter]
-        cfg.train_G_adam_beta1 = 0.5            # [potential hyper-parameter] # TODO TODO TODO 0.5 ??
+        cfg.train_G_adam_beta1 = 0.5            # [potential hyper-parameter]
         cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
         cfg.train_pg_lambda = 10                # [potential hyper-parameter]
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
