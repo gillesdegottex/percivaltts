@@ -105,6 +105,8 @@ class ModelCNN(model.Model):
             for layi in xrange(2): # TODO params
                 layerstr = 'f0_l'+str(1+layi)
 
+                # TODO TODO TODO Replace this!!
+
                 ingate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
                 forgetgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
                 outgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
