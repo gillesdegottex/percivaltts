@@ -68,12 +68,12 @@ cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model architecture options
 cfg.model_hiddensize = 512      # All arch
-cfg.model_nbprelayers = 2       # CNN only
 cfg.model_nbcnnlayers = 4       # CNN only
 cfg.model_nbfilters = 8         # CNN only
-cfg.model_spec_freqlen = 13     # CNN only
-cfg.model_nm_freqlen = 7        # CNN only
-cfg.model_windur = 0.100        # CNN only
+cfg.model_nbfilters = 16        # CNN only
+cfg.model_spec_freqlen = 5      # [bins] CNN only
+cfg.model_nm_freqlen = 5        # [bins] CNN only
+cfg.model_windur = 0.025        # [s] 0.025/0.005=5 frames. CNN only
 
 # Training options
 cfg.fparams_fullset = 'model.pkl'
