@@ -401,7 +401,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
                 if verif_stds is None: verif_stds =((Y-verif_means)**2).sum(axis=0).astype('float64')
                 else:                  verif_stds+=((Y-verif_means)**2).sum(axis=0).astype('float64')
             verif_stds /= verif_nbframes-1
-            if verbose>1: # TODO 
+            if verbose>1: # TODO
                 print('verif_min={}'.format(verif_mins))
                 print('verif_max={}'.format(verif_maxs))
                 print('verif_means={}'.format(verif_means))
