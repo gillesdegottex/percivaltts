@@ -49,6 +49,6 @@ setup(name='percival-tts',
     packages=['percival-tts', 'percival-tts/external/Lasagne/lasagne', 'percival-tts/external/merlin', 'percival-tts/external/pulsemodel', 'percival-tts/external/pfs'], #find_packages(), #exclude=['docs', 'tests']
     data_files=[('.',['LICENSE.md'])],
     package_data={'percival-tts': ['Makefile', 'clone.sh', 'setenv*.sh', 'external/*.py', 'external/*.hed', 'tests/slt_arctic_merlin_test.tar.gz']},
-    # include_package_data=True, # TODO Needed ?
+    include_package_data=True,
     zip_safe=False
     )
