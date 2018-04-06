@@ -62,14 +62,18 @@ fi
 rsync -qav $CODESRCDIR/ $EXPDIR/$CODEDIR/ --exclude .git --exclude .git/
 
 
-# Copy a shallow version of any .git directory in the code directory
-if [[ -d '.git/' ]] ; then
+# Copy a shallow version of any .git directory in the code sub-directory
+# The sub-directory is thus assumed to hold the .git dir !
+# (sub-directory bcs a python module is supposed to be package with module dir
+#  as a sub-module of the package dir. It's okay bcs the package dir becomes
+#  the EXPDIR directory and the git tree is thus still consistent).
+if [[ -d '../.git/' ]] ; then
     echo "Copy a shallow git in the code directory"
     rm -fr tmp_clone_gitstatedepth1;
     mkdir -p tmp_clone_gitstatedepth1;
     cd tmp_clone_gitstatedepth1;
-    git clone --depth 1 --quiet file://$CODESRCDIR gitstatedepth1;
-    rsync -qav gitstatedepth1/.git/ $EXPDIR/$CODEDIR/.git/;
+    git clone --depth 1 --quiet file://$CODESRCDIR/../ gitstatedepth1;
+    rsync -qav gitstatedepth1/.git/ $EXPDIR/.git/;
     cd ..;
     rm -fr tmp_clone_gitstatedepth1;
 fi
