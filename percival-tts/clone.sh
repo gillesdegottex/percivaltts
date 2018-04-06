@@ -38,7 +38,7 @@ EXPDIR=$1
 
 # This two variables are hard coded because all the arguments after $1 is
 # the command to run.
-CODEDIR=percival
+CODEDIR=percival-tts
 OUTDIR=out
 
 # The source code is where clone.sh is. Hack CODESRCDIR if you want otherwise.
