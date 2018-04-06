@@ -7,5 +7,5 @@ setup(name='percival-tts',
       author='Gilles Degottex',
       author_email='gad27@cam.ac.uk',
       license='Apache License (2.0)',
-      packages=['funniest'],
+      packages=['percival-tts'],
       zip_safe=False)
