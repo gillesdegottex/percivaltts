@@ -242,8 +242,8 @@ class Model:
 
             return f0sgen, SPEC, nm, CMP_spec, CMP_nm
 
-        import pulsemodel
-        import pulsemodel.sigproc as sp
+        from external import pulsemodel
+        from external.pulsemodel import sigproc as sp
         if not os.path.isdir(syndir): os.makedirs(syndir)
         features_err = dict()
 

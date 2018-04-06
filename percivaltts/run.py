@@ -92,7 +92,7 @@ cfg.print_content()
 
 
 # Feature extraction -----------------------------------------------------------
-import pulsemodel
+from external import pulsemodel
 
 def pml_analysis(fid):
     print('Extracting features from: '+fid)
@@ -103,7 +103,7 @@ def features_extraction():
         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
 
         # Use this tool for parallel extraction of the acoustic features ...
-        import pfs
+        from external import pfs
         pfs.map(pml_analysis, fids, processes=7)   # Change number of processes
 
         # ... or uncomment these line to extract them file by file.
@@ -115,7 +115,7 @@ def features_extraction():
 def contexts_extraction():
     # Let's use Merlin's code for this
 
-    from merlin.label_normalisation import HTSLabelNormalisation
+    from external.merlin.label_normalisation import HTSLabelNormalisation
     label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full')
 
     makedirs(os.path.dirname(labbin_path))

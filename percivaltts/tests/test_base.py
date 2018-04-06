@@ -47,7 +47,7 @@ class TestBase(unittest.TestCase):
 
     def test_contexts_features_extractions_and_composition(self):
 
-        from merlin.label_normalisation import HTSLabelNormalisation
+        from external.merlin.label_normalisation import HTSLabelNormalisation
         label_normaliser = HTSLabelNormalisation(question_file_name='external/merlin/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full')
 
         makedirs(os.path.dirname(label_path))
@@ -56,7 +56,7 @@ class TestBase(unittest.TestCase):
             for fid in fids:
                 label_normaliser.perform_normalisation([label_state_align_path.replace('*',fid)], [label_path.replace('*',fid)])
 
-        import pulsemodel
+        from external import pulsemodel
         with open(cfg.fileids) as f:
             fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
             for fid in fids:
@@ -93,7 +93,7 @@ class TestBase(unittest.TestCase):
         print("    Y 0-pred validation RMSE = {} (100%)".format(worst_val))
 
     # def test_vocoder_pulsemodel_features_extraction_and_composition_fwcep(self):
-    #     import pulsemodel
+    #     from external import pulsemodel
     #     with open(cfg.fileids) as f:
     #         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
     #         for fid in fids:

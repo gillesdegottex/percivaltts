@@ -36,7 +36,7 @@ numpy_force_random_seed()
 from utils_theano import *
 import theano
 import theano.tensor as T
-# sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
+
 import lasagne
 # lasagne.random.set_rng(np.random)
 
