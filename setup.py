@@ -1,8 +1,7 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
-def readme():
-    with open('README.md') as f:
-        long_description =  f.read()
+with open('README.md') as f:
+    long_description =  f.read()
 
 setup(name='percival-tts',
     version='0.9.0',
@@ -31,12 +30,9 @@ setup(name='percival-tts',
 
         # Pick your license as you wish
         'License :: OSI Approved :: Apache Software License',
-
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',
     ],
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    package_data={'percival-tts': ['README.md', 'LICENSE.md']},
     zip_safe=False
     )
