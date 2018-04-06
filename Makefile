@@ -17,7 +17,7 @@
 
 # Maintenance targets ----------------------------------------------------------
 
-.PHONY: test test_clean
+.PHONY: test tests_clean
 
 all: build
 
@@ -32,10 +32,12 @@ build: submodule_init build_pulsemodel
 describe:
 	@git describe
 
-clean: test_clean
+clean:
+	rm -fr percivaltts/tests/slt_arctic_merlin_test
+	rm -fr percivaltts/tests/test_made__*
 	rm -fr percivaltts/tests/slt_arctic_merlin_full/wav_* percivaltts/tests/slt_arctic_merlin_full/label_state_align_*
 
-distclean: test_clean
+distclean: clean
 	cd percivaltts/external/pulsemodel; $(MAKE) distclean
 	# TODO Clean REAPER
 	# TODO Clean WORLD
