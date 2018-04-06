@@ -36,7 +36,7 @@ print_log('Global configurations')
 cfg = configuration() # Init configuration structure
 
 # Corpus/Voice(s) options
-cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
+cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
 cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 1032
 cfg.id_valid_nb = 50
