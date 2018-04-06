@@ -36,21 +36,14 @@ print_log('Global configurations')
 cfg = configuration() # Init configuration structure
 
 # Corpus/Voice(s) options
-# cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
-cp = '/home/daffy/CUED_local/db/BDL32/'
-# cp = '/home/daffy/CUED_local/db/LS/'
-# cp = '/home/daffy/CUED_local/db/Nancy/'
-# cp = '/home/daffy/CUED_local/db/Nick/'
-# cp = '/home/daffy/CUED_local/db/RMS/'
-# cp = '/home/daffy/CUED_local/db/SLT16_percival_demo/'
+cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
 cfg.fileids = cp+'/file_id_list.scp'
-# cfg.id_valid_start = 1032
-# cfg.id_valid_nb = 50
-# cfg.id_test_nb = 50
-cfg.mergefiles([cp+'info.py'])   # TODO Need to manage without []
+cfg.id_valid_start = 1032
+cfg.id_valid_nb = 50
+cfg.id_test_nb = 50
 
 # Input text labels
-lab_dir = 'label_state_align_merlin' # TODO _merlin
+lab_dir = 'label_state_align'
 lab_path = cp+lab_dir+'/*.lab'
 lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/questions-radio_dnn_416.hed')
 in_size = 416+9
@@ -59,12 +52,12 @@ cfg.indir = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_s
 
 
 # Output features
-# cfg.fs = 16000
+cfg.fs = 16000
 cfg.f0_min, cfg.f0_max = 70, 600 # TODO Put in info.py!
 spec_size = 129
 nm_size = 33
 out_size = 1+spec_size+nm_size
-# cfg.shift = 0.005
+cfg.shift = 0.005
 wav_dir = 'wav'
 wav_path = cp+wav_dir+'/*.wav'
 f0_path = cp+wav_dir+'_lf0/*.lf0'
@@ -75,7 +68,7 @@ cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model architecture options
 cfg.model_hiddensize = 512      # All arch
-cfg.model_nbcnnlayers = 8       # CNN only TODO TODO TODO 8
+cfg.model_nbcnnlayers = 8       # CNN only
 cfg.model_nbfilters = 16        # CNN only
 cfg.model_spec_freqlen = 5      # [bins] CNN only
 cfg.model_nm_freqlen = 5        # [bins] CNN only
@@ -198,8 +191,8 @@ def generate(fparams=cfg.fparams_fullset):
 
 
 if  __name__ == "__main__" :                                 # pragma: no cover
-    # features_extraction()
-    # contexts_extraction()
-    # composition_normalisation()
+    features_extraction()
+    contexts_extraction()
+    composition_normalisation()
     training(cont='--continue' in sys.argv)
     generate()
