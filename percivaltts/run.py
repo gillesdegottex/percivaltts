@@ -28,7 +28,7 @@ Author
 
 print('')
 
-from utils import *  # Always include this first to setup a few things for percival
+from percivaltts import *  # Always include this first to setup a few things for percival
 import data
 print_sysinfo()
 

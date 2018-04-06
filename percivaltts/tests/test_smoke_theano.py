@@ -2,7 +2,7 @@
 
 import os
 import sys
-from utils import *
+from percivaltts import *
 
 import unittest
 
@@ -149,27 +149,27 @@ class TestSmokeTheano(unittest.TestCase):
 
 
 
-    def test_utils_theano(self):
-        import utils_theano
+    def test_backend_theano(self):
+        import backend_theano
 
         import theano.tensor as T
 
         # Test the following if CUDA is available: (won't be tested on travis anyway since no GPU are available on travis)
-        if utils_theano.th_cuda_available():
+        if backend_theano.th_cuda_available():
             print('nvidia_smi_current_gpu={}'.format(nvidia_smi_current_gpu()))  # Can't test it because needs CUDA
             print('nvidia_smi_gpu_memused={}'.format(nvidia_smi_gpu_memused())) # Can't test it because needs CUDA
 
         x = T.ftensor3('x')
 
-        y = utils_theano.th_print('smoky debug message', x)
+        y = backend_theano.th_print('smoky debug message', x)
 
-        y = utils_theano.nonlin_tanh_saturated(x, coef=1.01)
-        y = utils_theano.nonlin_tanh_bysigmoid(x)
-        y = utils_theano.nonlin_tanhcm11(x)
-        y = utils_theano.nonlin_saturatedsigmoid(x, coef=1.01)
-        y = utils_theano.nonlin_sigmoidbinary(x)
-        y = utils_theano.nonlin_softsign(x)
-        y = utils_theano.nonlin_sigmoidparm(x, c=0.0, f=1.0)
+        y = backend_theano.nonlin_tanh_saturated(x, coef=1.01)
+        y = backend_theano.nonlin_tanh_bysigmoid(x)
+        y = backend_theano.nonlin_tanhcm11(x)
+        y = backend_theano.nonlin_saturatedsigmoid(x, coef=1.01)
+        y = backend_theano.nonlin_sigmoidbinary(x)
+        y = backend_theano.nonlin_softsign(x)
+        y = backend_theano.nonlin_sigmoidparm(x, c=0.0, f=1.0)
 
 
 if __name__ == '__main__':

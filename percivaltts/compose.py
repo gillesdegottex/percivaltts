@@ -17,7 +17,7 @@ Author
 '''
 
 
-from utils import *  # Always include this first to setup a few things
+from percivaltts import *  # Always include this first to setup a few things
 
 import sys
 import os

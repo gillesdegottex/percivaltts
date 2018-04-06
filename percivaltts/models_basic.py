@@ -20,7 +20,7 @@ Author
 
 from __future__ import print_function
 
-from utils import *  # Always include this first to setup a few things
+from percivaltts import *  # Always include this first to setup a few things
 
 import sys
 import os
@@ -35,7 +35,7 @@ numpy_force_random_seed()
 import lasagne
 # lasagne.random.set_rng(np.random)
 
-from utils_theano import *
+from backend_theano import *
 import model
 
 

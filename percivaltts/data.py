@@ -22,7 +22,7 @@ Author
 
 from __future__ import print_function
 
-from utils import *  # Always include this first to setup a few things
+from percivaltts import *  # Always include this first to setup a few things
 
 import os
 import copy
