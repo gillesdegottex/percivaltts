@@ -12,6 +12,10 @@ class TestRun(unittest.TestCase):
     def test_run(self):
         import run
 
+        os.system('ls')
+        os.system('ls tests')
+        os.system('ls tests/slt_arctic_merlin_full')
+
         # Fool the demo data with the test data
         # Because running the full demo on travis is not possible
         if not os.path.exists('tests/slt_arctic_merlin_full'):
