@@ -177,7 +177,7 @@ class Model:
             CMP = CMP*np.tile(Ystd, (CMP.shape[0], 1)) + np.tile(Ymean, (CMP.shape[0], 1))
 
             if do_mlpg:
-                from merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
+                from external.merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
                 mlpg_algo = MLParameterGeneration(delta_win=[-0.5, 0.0, 0.5], acc_win=[1.0, -2.0, 1.0])
                 var = np.tile(Ystd**2,(CMP.shape[0],1)) # Simplification!
                 CMP = mlpg_algo.generation(CMP, var, len(Ymean)/3)
