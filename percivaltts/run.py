@@ -28,7 +28,7 @@ Author
 
 print('')
 
-from utils import *  # Always include this first to setup a few things
+from utils import *  # Always include this first to setup a few things for percival
 import data
 print_sysinfo()
 
@@ -36,7 +36,7 @@ print_log('Global configurations')
 cfg = configuration() # Init configuration structure
 
 # Corpus/Voice(s) options
-cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'test/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
+cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
 cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 1032
 cfg.id_valid_nb = 50
@@ -45,15 +45,15 @@ cfg.id_test_nb = 50
 # Input text labels
 lab_dir = 'label_state_align'
 lab_path = cp+lab_dir+'/*.lab'
-lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/questions-radio_dnn_416.hed')
+lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/merlin/questions-radio_dnn_416.hed')
 in_size = 416+9
 labbin_path = cp+lab_dir+'_bin'+str(in_size)+'/*.lab'
 cfg.indir = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
 
+
 # Output features
 cfg.fs = 16000
-f0_min, f0_max = 60, 600
-cfg.f0_min, cfg.f0_max = 70, 600 # TODO TODO TODO Put in info.py!
+cfg.f0_min, cfg.f0_max = 70, 600 # TODO Put in info.py!
 spec_size = 129
 nm_size = 33
 out_size = 1+spec_size+nm_size
@@ -68,28 +68,31 @@ cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model architecture options
 cfg.model_hiddensize = 512      # All arch
-cfg.model_nbprelayers = 2       # CNN only
-cfg.model_nbcnnlayers = 4       # CNN only
-cfg.model_nbfilters = 8         # CNN only
-cfg.model_spec_freqlen = 13     # CNN only
-cfg.model_nm_freqlen = 7        # CNN only
-cfg.model_windur = 0.100        # CNN only
+cfg.model_nbcnnlayers = 8       # CNN only
+cfg.model_nbfilters = 16        # CNN only
+cfg.model_spec_freqlen = 5      # [bins] CNN only
+cfg.model_nm_freqlen = 5        # [bins] CNN only
+cfg.model_windur = 0.025        # [s] 0.025/0.005=5 frames. CNN only
 
 # Training options
 cfg.fparams_fullset = 'model.pkl'
 # The ones below will overwrite default options in model.py:train_multipletrials(.)
 cfg.train_batchsize = 5
-cfg.train_batch_lengthmax = int(3.0/0.005) # Maximum duration [frames] of each batch
-cfg.train_nbtrials = 1        # Just run one training only
-cfg.train_LScoef = 0.25 # For WGANwLS [def. 0.25]
+cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each batch through time
+                                           # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
+cfg.train_LScoef = 0.25         # For WGAN mixed with LS [def. 0.25]
+cfg.train_max_nbepochs = 300    # Can stop much earlier with 3 stacked BLSTM or 6 stacked FC
+cfg.train_cancel_nodecepochs = 50
 
+# cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
+# cfg.train_nbtrials = 12
 
 cfg.print_content()
 
 
 
 # Feature extraction -----------------------------------------------------------
-import pulsemodel
+from external import pulsemodel
 
 def pml_analysis(fid):
     print('Extracting features from: '+fid)
@@ -98,9 +101,12 @@ def pml_analysis(fid):
 def features_extraction():
     with open(cfg.fileids) as f:
         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
-        import pfs
+
+        # Use this tool for parallel extraction of the acoustic features ...
+        from external import pfs
         pfs.map(pml_analysis, fids, processes=7)   # Change number of processes
 
+        # ... or uncomment these line to extract them file by file.
         # for fid in fids:
         #     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
         #     fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
@@ -109,7 +115,7 @@ def features_extraction():
 def contexts_extraction():
     # Let's use Merlin's code for this
 
-    from label_normalisation import HTSLabelNormalisation
+    from external.merlin.label_normalisation import HTSLabelNormalisation
     label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full')
 
     makedirs(os.path.dirname(labbin_path))
@@ -138,7 +144,7 @@ def composition_normalisation():
 def build_model():
     # Build the model
     import models_cnn
-    model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbprelayers=cfg.model_nbprelayers, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     # import models_basic
     # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=6)
@@ -161,8 +167,7 @@ def training(cont=False):
     model = build_model()
 
     import optimizer
-    # optigan = optimizer.Optimizer(model, errtype='LSE')
-    optigan = optimizer.Optimizer(model, errtype='WGAN')
+    optigan = optimizer.Optimizer(model, errtype='WGAN') # 'WGAN' or 'LSE'
     optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 

@@ -2,7 +2,6 @@
 
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from utils import *
 
 import unittest
@@ -12,11 +11,15 @@ class TestRun(unittest.TestCase):
     def test_run(self):
         import run
 
+        os.system('ls -l')
+        os.system('ls -l tests')
+
         # Fool the demo data with the test data
         # Because running the full demo on travis is not possible
-        if not os.path.exists('test/slt_arctic_merlin_full'):
-            os.symlink('slt_arctic_merlin_test', 'test/slt_arctic_merlin_full')
-        os.listdir('test/slt_arctic_merlin_full')
+        if not os.path.exists('tests/slt_arctic_merlin_full'):
+            os.symlink('slt_arctic_merlin_test', 'tests/slt_arctic_merlin_full')
+        os.listdir('tests/slt_arctic_merlin_full')
+        os.system('ls -l tests/slt_arctic_merlin_full')
 
         print('Overwrite the configuration to run a smoke test')
         run.cfg.id_valid_start = 8
@@ -24,6 +27,7 @@ class TestRun(unittest.TestCase):
         run.cfg.id_test_nb = 1
         run.cfg.train_batchsize = 2
         run.cfg.train_max_nbepochs = 5
+        run.cfg.train_force_train_nbepochs = 2
         run.cfg.model_hiddensize = 4
         run.cfg.model_nbprelayers = 1
         run.cfg.model_nbcnnlayers = 1

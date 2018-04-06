@@ -102,7 +102,7 @@ class Model:
     def nbParams(self):
         return paramss_count(self.params_all)
 
-    def saveAllParams(self, fmodel, cfg=None, extras=None, printfn=print):
+    def saveAllParams(self, fmodel, cfg=None, extras=None, printfn=print, infostr=''):
         if extras is None: extras=dict()
         # https://github.com/Lasagne/Lasagne/issues/159
         printfn('    saving parameters in {} ...'.format(fmodel), end='')
@@ -110,7 +110,7 @@ class Model:
         paramsvalues = [(str(p), p.get_value()) for p in self.params_all]
         DATA = [paramsvalues, cfg, extras]
         cPickle.dump(DATA, open(fmodel, 'wb'))
-        print(' done')
+        print(' done '+infostr)
         sys.stdout.flush()
 
     def loadAllParams(self, fmodel, printfn=print):
@@ -177,7 +177,7 @@ class Model:
             CMP = CMP*np.tile(Ystd, (CMP.shape[0], 1)) + np.tile(Ymean, (CMP.shape[0], 1))
 
             if do_mlpg:
-                from mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
+                from external.merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
                 mlpg_algo = MLParameterGeneration(delta_win=[-0.5, 0.0, 0.5], acc_win=[1.0, -2.0, 1.0])
                 var = np.tile(Ystd**2,(CMP.shape[0],1)) # Simplification!
                 CMP = mlpg_algo.generation(CMP, var, len(Ymean)/3)
@@ -198,8 +198,8 @@ class Model:
                                     # nothing is guaranteed, this one even less.
                 # SPTK necessary here, but it doesn't bring better quality
                 # anyway, so no need to submodule SPTK nor test these lines.
-                import generate_pp
-                if pp_mcep: CMP_spec=generate_pp.mcep_postproc_sptk(CMP_spec, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
+                import merlin.generate_pp
+                if pp_mcep: CMP_spec=merlin.generate_pp.mcep_postproc_sptk(CMP_spec, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(CMP_spec, sp.bark_alpha(cfg.fs), dftlen=dftlen)
 
             # TODO Do some post-processing using SPTK?
@@ -242,8 +242,8 @@ class Model:
 
             return f0sgen, SPEC, nm, CMP_spec, CMP_nm
 
-        import pulsemodel
-        import pulsemodel.sigproc as sp
+        from external import pulsemodel
+        from external.pulsemodel import sigproc as sp
         if not os.path.isdir(syndir): os.makedirs(syndir)
         features_err = dict()
 

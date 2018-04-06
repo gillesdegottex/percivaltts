@@ -81,7 +81,7 @@ def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
 
         fX = dirpath.replace('*',fbase)
         if not os.path.isfile(fX):
-            raise ValueError('fX={} does not exists'.format(fX))# pragma: no cover
+            raise ValueError('{} does not exists'.format(fX))# pragma: no cover
 
         X = np.fromfile(fX, dtype='float32')
         if not shape is None:

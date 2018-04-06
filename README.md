@@ -1,10 +1,10 @@
-[![Build Status](https://travis-ci.org/gillesdegottex/percival.svg?branch=master)](https://travis-ci.org/gillesdegottex/percival)
-[![codecov](https://codecov.io/gh/gillesdegottex/percival/branch/master/graph/badge.svg)](https://codecov.io/gh/gillesdegottex/percival)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f910efb5168a4569acea88ee0011e394)](https://www.codacy.com/app/gillesdegottex/percival?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gillesdegottex/percival&amp;utm_campaign=Badge_Grade)
+[![Build Status](https://travis-ci.org/gillesdegottex/percival.svg?branch=master)](https://travis-ci.org/gillesdegottex/percivaltts)
+[![codecov](https://codecov.io/gh/gillesdegottex/percivaltts/branch/master/graph/badge.svg)](https://codecov.io/gh/gillesdegottex/percivaltts)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f910efb5168a4569acea88ee0011e394)](https://www.codacy.com/app/gillesdegottex/percivaltts?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gillesdegottex/percivaltts&amp;utm_campaign=Badge_Grade)
 
 ## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
-<img align="right" width="300" src="./doc/spec_sample.png">
+<img align="right" width="300" src="./docs/spec_sample.png">
 
 <br/><br/>
 
@@ -88,31 +88,21 @@ $ sudo pip install bandmat
 
 ### Install/Demo
 
-It is best to first make an experiment directory somewhere:
+First clone the git repository:
 ```
-$ mkdir exp
+$ git clone git@github.com:gillesdegottex/percivaltts.git
 ```
-and clone Percival's code inside.
+Then, compile the various tools Neccessary to run Percival:
 ```
-cd exp
-git clone git@github.com:gillesdegottex/percival.git
-```
-That's because the output of the experiment (the demo of Percival here) will
-appear in a sub-directory of ```exp``` and not within the git repository of the
-code. This keeps the code neat and out of generated files.
-
-Then, to compile the various tools imported in Percival, go in the root
-directory of the source code, and run:
-```
-$ cd percival
-$ make
+$ make build
 ```
 
 Edit `setenv.sh` according to your CUDA/Theano installation (see above).
 
-Download the demo data:
+Go into the source code and download the demo data:
 ```
-$ make test/slt_arctic_merlin_full
+$ cd percivaltts
+$ make tests/slt_arctic_merlin_full
 ```
 
 And finally run the demo!
@@ -121,7 +111,7 @@ $ make run
 ```
 
 ## Preparing a new voice
-You basically need the three following elements from any corpus:
+Like in Merlin, you basically need the three following elements from any corpus:
 * `label_state_align`
 
     The same directory that is imported in Merlin. It is produced by an
@@ -190,4 +180,4 @@ Before the waveform synthesis, there is currrently no post-processing of the gen
 Gilles Degottex <gad27@cam.ac.uk>
 
 ### Contact
-Please use the [issue managment](https://github.com/gillesdegottex/percival/issues) only to raise questions, suggestions, etc.
+To raise questions, suggestions, etc. please use the [issue managment](https://github.com/gillesdegottex/percivaltts/issues) only.

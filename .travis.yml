@@ -19,10 +19,9 @@ branches:
 
 before_install:
     - echo "before_install..."
-    - git submodule update --init --recursive
-    - git fetch --tags
-    - sleep 1
     - git checkout $TRAVIS_BRANCH
+    - git fetch --tags
+    - git submodule update --init --recursive
     - export PROJECTGITVERSION=`git describe --tags --always |sed 's/^v//'`
     - echo $PROJECTGITVERSION
     - echo $TRAVIS_OS_NAME
@@ -56,12 +55,13 @@ install:
     - conda info -a
 
 script:
-    - make
-    - tar xvf test/slt_arctic_merlin_test.tar.gz -C test/
-    - coverage run --source=. --omit="test/*","external/*" test/test_base.py
-    - coverage run -a --source=. --omit="test/*","external/*" test/test_smoke.py
-    - bash setenv_travis.sh coverage run -a --source=. --omit="test/*","external/*" test/test_smoke_theano.py
-    - bash setenv_travis.sh coverage run -a --source=. --omit="test/*","external/*" test/test_run.py
+    - make build
+    - cd percivaltts
+    - tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
+    - coverage run --source=. --omit="tests/*","external/*" -m tests.test_base
+    - coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke
+    - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke_theano
+    - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_run
 
 after_success:
     - codecov
