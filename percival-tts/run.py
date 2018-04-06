@@ -45,7 +45,7 @@ cfg.id_test_nb = 50
 # Input text labels
 lab_dir = 'label_state_align'
 lab_path = cp+lab_dir+'/*.lab'
-lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/questions-radio_dnn_416.hed')
+lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/merlin/questions-radio_dnn_416.hed')
 in_size = 416+9
 labbin_path = cp+lab_dir+'_bin'+str(in_size)+'/*.lab'
 cfg.indir = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
