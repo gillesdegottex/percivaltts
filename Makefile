@@ -25,7 +25,7 @@ submodule_init:
 	git submodule update --init --recursive
 
 build_pulsemodel: submodule_init
-	cd percival-tts/external/pulsemodel; make
+	cd percivaltts/external/pulsemodel; make
 
 build: submodule_init build_pulsemodel
 
@@ -33,10 +33,10 @@ describe:
 	@git describe
 
 clean: test_clean
-	rm -fr percival-tts/tests/slt_arctic_merlin_full/wav_* percival-tts/tests/slt_arctic_merlin_full/label_state_align_*
+	rm -fr percivaltts/tests/slt_arctic_merlin_full/wav_* percivaltts/tests/slt_arctic_merlin_full/label_state_align_*
 
 distclean: test_clean
-	cd percival-tts/external/pulsemodel; $(MAKE) distclean
+	cd percivaltts/external/pulsemodel; $(MAKE) distclean
 	# TODO Clean REAPER
 	# TODO Clean WORLD
 	# TODO Clean sigproc

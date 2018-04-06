@@ -1,9 +1,9 @@
-[submodule "percival-tts/external/Lasagne"]
-	path = percival-tts/external/Lasagne
+[submodule "percivaltts/external/Lasagne"]
+	path = percivaltts/external/Lasagne
 	url = https://github.com/Lasagne/Lasagne.git
-[submodule "percival-tts/external/pfs"]
-	path = percival-tts/external/pfs
+[submodule "percivaltts/external/pfs"]
+	path = percivaltts/external/pfs
 	url = https://github.com/gillesdegottex/pfs.git
-[submodule "percival-tts/external/pulsemodel"]
-	path = percival-tts/external/pulsemodel
+[submodule "percivaltts/external/pulsemodel"]
+	path = percivaltts/external/pulsemodel
 	url = https://github.com/gillesdegottex/pulsemodel.git

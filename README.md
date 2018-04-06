@@ -90,9 +90,9 @@ $ sudo pip install bandmat
 
 First clone the git repository:
 ```
-$ git clone git@github.com:gillesdegottex/percival-tts.git
+$ git clone git@github.com:gillesdegottex/percivaltts.git
 ```
-Then, compile the various tools Neccessary to run Percival-TTS:
+Then, compile the various tools Neccessary to run Percival:
 ```
 $ make build
 ```
@@ -101,7 +101,7 @@ Edit `setenv.sh` according to your CUDA/Theano installation (see above).
 
 Go into the source code and download the demo data:
 ```
-$ cd percival-tts
+$ cd percivaltts
 $ make tests/slt_arctic_merlin_full
 ```
 

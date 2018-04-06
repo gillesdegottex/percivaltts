@@ -19,7 +19,7 @@ FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 
-CODEDIR=percival-tts
+CODEDIR=percivaltts
 
 # Maintenance targets ----------------------------------------------------------
 
@@ -63,9 +63,9 @@ clone_run_grid:
 
 # Download the full demo data (~1000 sentences)
 tests/slt_arctic_merlin_full.tar.gz:
-	git clone git@github.com:gillesdegottex/percival-tts-demodata.git
-	mv percival-tts-demodata/* tests/
-	rm -fr percival-tts-demodata
+	git clone git@github.com:gillesdegottex/percivaltts_demodata.git
+	mv percivaltts_demodata/* tests/
+	rm -fr percivaltts_demodata
 
 # Decompress the full demo data (~1000 sentences)
 tests/slt_arctic_merlin_full: tests/slt_arctic_merlin_full.tar.gz

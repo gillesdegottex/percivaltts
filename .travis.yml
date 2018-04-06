@@ -56,7 +56,7 @@ install:
 
 script:
     - make build
-    - cd percival-tts
+    - cd percivaltts
     - make run
     - tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
     - coverage run --source=. --omit="tests/*","external/*" tests/test_base.py
