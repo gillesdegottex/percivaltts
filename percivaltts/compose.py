@@ -29,7 +29,7 @@ numpy_force_random_seed()
 
 import data
 
-def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange=None, keepidx=None):
+def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange=None, keepidx=None, verbose=1):
     '''
 
     '''
@@ -46,8 +46,9 @@ def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange
     mins = mins[keepidx]
     maxs = maxs[keepidx]
 
-    print('    mins={}'.format(mins))
-    print('    maxs={}'.format(maxs))
+    if verbose>1:
+        print('    mins={}'.format(mins))
+        print('    maxs={}'.format(maxs))
 
     # Write the statistics that are used for the normalisation
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
@@ -78,7 +79,7 @@ def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange
         Y.astype('float32').tofile(foutpath)
     print_tty('\r                                                           \r')
 
-def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None):
+def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None, verbose=1):
 
     if outfilepath is None: outfilepath=filepath
     print('Normalise data using mean and standard-deviation (in={}, out={})'.format(filepath,outfilepath))
@@ -88,8 +89,9 @@ def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepi
 
     if keepidx is None: keepidx=np.arange(len(means))
 
-    print('    means4norm={}'.format(means))
-    print('    stds4norm={}'.format(stds))
+    if verbose>1:
+        print('    means4norm={}'.format(means))
+        print('    stds4norm={}'.format(stds))
 
     # Write the statistics that are used for the normalisation
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
@@ -109,7 +111,7 @@ def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepi
         Y.astype('float32').tofile(foutpath)
     print_tty('\r                                                           \r')
 
-def normalise_meanstd_bndminmaxm11(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None):
+def normalise_meanstd_bndminmaxm11(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None, verbose=1):
 
     if outfilepath is None: outfilepath=filepath
     print('Normalise data using mean and standard-deviation (in={}, out={})'.format(filepath,outfilepath))
@@ -166,8 +168,9 @@ def normalise_meanstd_bndminmaxm11(filepath, fids, featurepaths=None, outfilepat
                     #stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 2.0*2.0 # in [-2,+2] even though mostly in [-1,+1]
                     stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 1.0 # Mostly in [-1,+1]
 
-    print('    means4norm={}'.format(means))
-    print('    stds4norm={}'.format(stds))
+    if verbose>1:
+        print('    means4norm={}'.format(means))
+        print('    stds4norm={}'.format(stds))
 
     # Write the statistics that are used for the normalisation
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
@@ -186,7 +189,7 @@ def normalise_meanstd_bndminmaxm11(filepath, fids, featurepaths=None, outfilepat
         Y.astype('float32').tofile(foutpath)
     print_tty('\r                                                           \r')
 
-def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None):
+def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepath=None, keepidx=None, verbose=1):
 
     if outfilepath is None: outfilepath=filepath
     print('Normalise data using mean and standard-deviation (in={}, out={})'.format(filepath,outfilepath))
@@ -216,8 +219,9 @@ def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepat
                 means[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 0.0
                 stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 1.0
 
-    print('    means4norm={}'.format(means))
-    print('    stds4norm={}'.format(stds))
+    if verbose>1:
+        print('    means4norm={}'.format(means))
+        print('    stds4norm={}'.format(stds))
 
     # Write the statistics that are used for the normalisation in seperate files
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
@@ -236,7 +240,7 @@ def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepat
     print_tty('\r                                                           \r')
 
 
-def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1, normfn=None, do_finalcheck=False, dropzerovardims=False):
+def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1, normfn=None, do_finalcheck=False, dropzerovardims=False, verbose=1):
     '''
     wins: default values are wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]] (as in Merlin)
     '''
@@ -321,11 +325,11 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
         zerovaridx = np.where((maxs-mins)==0.0)[0]  # Indices of dimensions having zero-variance
 
         mins.astype('float32').tofile(os.path.dirname(outfilepath)+'/min.dat')
-        print('    mins={}'.format(mins))
+        if verbose>1: print('    mins={}'.format(mins))
         maxs.astype('float32').tofile(os.path.dirname(outfilepath)+'/max.dat')
-        print('    maxs={}'.format(maxs))
+        if verbose>1: print('    maxs={}'.format(maxs))
         means.astype('float32').tofile(os.path.dirname(outfilepath)+'/mean.dat')
-        print('    means={}'.format(means))
+        if verbose>1: print('    means={}'.format(means))
 
         # Now that we have the mean, we can do the std
         stds = None
@@ -339,7 +343,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
         stds = np.sqrt(stds)
 
         stds.astype('float32').tofile(os.path.dirname(outfilepath)+'/std.dat')
-        print('    stds={}'.format(stds))
+        if verbose>1: print('    stds={}'.format(stds))
 
         keepidx = np.arange(len(means))
         if dropzerovardims:
@@ -349,7 +353,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
             print('Dropped dimensions with zero variance. Remains {} dims'.format(size))
 
         if normfn is not None: # TODO This shouldn't be called within compose, it should come afterwards
-            normfn(outfilepath, fids, featurepaths=featurepaths, keepidx=keepidx)
+            normfn(outfilepath, fids, featurepaths=featurepaths, keepidx=keepidx, verbose=verbose)
 
         print('{} files'.format(len(fids)))
         print('{} frames ({}s assuming 5ms time shift)'.format(nbframes, datetime.timedelta(seconds=nbframes*0.005)))
@@ -397,10 +401,11 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
                 if verif_stds is None: verif_stds =((Y-verif_means)**2).sum(axis=0).astype('float64')
                 else:                  verif_stds+=((Y-verif_means)**2).sum(axis=0).astype('float64')
             verif_stds /= verif_nbframes-1
-            print('verif_min={}'.format(verif_mins))
-            print('verif_max={}'.format(verif_maxs))
-            print('verif_means={}'.format(verif_means))
-            print('verif_stds={}'.format(verif_stds))
+            if verbose>1: # TODO 
+                print('verif_min={}'.format(verif_mins))
+                print('verif_max={}'.format(verif_maxs))
+                print('verif_means={}'.format(verif_means))
+                print('verif_stds={}'.format(verif_stds))
 
 
 def create_weights(specfeaturepath, fileidspath, outfilepath, thresh=-32, dftlen=4096, spec_type='fwlspec'):
