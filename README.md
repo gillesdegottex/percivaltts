@@ -92,25 +92,17 @@ First clone the git repository:
 ```
 $ git clone git@github.com:gillesdegottex/percival-tts.git
 ```
-and clone Percival's code inside.
+Then, compile the various tools Neccessary to run Percival-TTS:
 ```
-git clone git@github.com:gillesdegottex/percival.git
-```
-Then, to compile the various tools imported in Percival-TTS: go in the root
-directory of the source code:
-```
-$ cd percival-tts
-```
-and run:
-```
-$ make
+$ make build
 ```
 
 Edit `setenv.sh` according to your CUDA/Theano installation (see above).
 
-Download the demo data:
+Go into the source code and download the demo data:
 ```
-$ make test/slt_arctic_merlin_full
+$ cd percival-tts
+$ make tests/slt_arctic_merlin_full
 ```
 
 And finally run the demo!
