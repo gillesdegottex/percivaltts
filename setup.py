@@ -50,5 +50,10 @@ setup(name='percival-tts',
     data_files=[('.',['LICENSE.md'])],
     package_data={'percival-tts': ['Makefile', 'clone.sh', 'setenv*.sh', 'external/*.py', 'external/*.hed', 'tests/slt_arctic_merlin_test.tar.gz']},
     include_package_data=True,
-    zip_safe=False
-    )
+    zip_safe=False,
+
+    project_urls={  # Optional
+        'Bug Reports': 'https://github.com/gillesdegottex/percival-tts/issues',
+        'Source': 'https://github.com/gillesdegottex/percival-tts',
+    },
+)
