@@ -89,11 +89,11 @@ tests/slt_arctic_merlin_full.tar.gz:
 
 # Decompress the full demo data (~1000 sentences)
 tests/slt_arctic_merlin_full: tests/slt_arctic_merlin_full.tar.gz
-	tar xvzf tests/slt_arctic_merlin_full.tar.gz -C test/
+	tar xvzf tests/slt_arctic_merlin_full.tar.gz -C tests/
 
 # Decompress the test data (10 sentences)
 tests/slt_arctic_merlin_test: tests/slt_arctic_merlin_test.tar.gz
-	tar xvf tests/slt_arctic_merlin_test.tar.gz -C test/
+	tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
 
 tests: build tests/slt_arctic_merlin_test
 	python tests/test_base.py
