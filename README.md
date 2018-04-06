@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/gillesdegottex/percival.svg?branch=master)](https://travis-ci.org/gillesdegottex/percival)
-[![codecov](https://codecov.io/gh/gillesdegottex/percival/branch/master/graph/badge.svg)](https://codecov.io/gh/gillesdegottex/percival)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f910efb5168a4569acea88ee0011e394)](https://www.codacy.com/app/gillesdegottex/percival?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gillesdegottex/percival&amp;utm_campaign=Badge_Grade)
+[![Build Status](https://travis-ci.org/gillesdegottex/percival.svg?branch=master)](https://travis-ci.org/gillesdegottex/percivaltts)
+[![codecov](https://codecov.io/gh/gillesdegottex/percivaltts/branch/master/graph/badge.svg)](https://codecov.io/gh/gillesdegottex/percivaltts)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f910efb5168a4569acea88ee0011e394)](https://www.codacy.com/app/gillesdegottex/percivaltts?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gillesdegottex/percivaltts&amp;utm_campaign=Badge_Grade)
 
 ## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
@@ -180,4 +180,4 @@ Before the waveform synthesis, there is currrently no post-processing of the gen
 Gilles Degottex <gad27@cam.ac.uk>
 
 ### Contact
-To raise questions, suggestions, etc. please use the [issue managment](https://github.com/gillesdegottex/percival/issues) only.
+To raise questions, suggestions, etc. please use the [issue managment](https://github.com/gillesdegottex/percivaltts/issues) only.
