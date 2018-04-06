@@ -16,9 +16,14 @@
 #
 
 FILETORUN=run.py
-SETENVSCRIPT=setenv.sh
+# SETENVSCRIPT=setenv.sh
+SETENVSCRIPT=setenv_home.sh
+# SETENVSCRIPT=setenv_cued.sh
 # SETENVSCRIPT=setenv_travis.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
+# QSUBCMD=qsub_hiveproc.sh
+# QSUBCMD="qsubcudagad.sh"
+
 CODEDIR=percival
 
 # Maintenance targets ----------------------------------------------------------

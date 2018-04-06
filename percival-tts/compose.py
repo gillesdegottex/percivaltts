@@ -30,6 +30,9 @@ numpy_force_random_seed()
 import data
 
 def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange=None, keepidx=None):
+    '''
+    
+    '''
     if nrange is None: nrange=[-1,1]
     if outfilepath is None: outfilepath=filepath
     print('Normalise data using min and max values (in={}, out={})'.format(filepath,outfilepath))

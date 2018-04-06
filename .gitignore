@@ -1,6 +1,6 @@
 # Testing
-test/slttest/
-test/test_made__*
+percival-tts/tests/slttest/
+percival-tts/tests/test_made__*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

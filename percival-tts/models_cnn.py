@@ -101,7 +101,6 @@ class ModelCNN(model.Model):
             layer_f0 = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
         layer_f0 = lasagne.layers.DenseLayer(layer_f0, num_units=1, nonlinearity=None, num_leading_axes=2, name='f0_lout_projection')
 
-
         # Amplitude spectrum - 2D Gated Conv layers
         layer_spec = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, specsize, nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
         # layer_spec = lasagne.layers.SliceLayer(layer_ctx, indices=slice(1,1+specsize), axis=2) # TODO TODO TODO rm ?
