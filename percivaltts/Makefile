@@ -20,6 +20,7 @@ SETENVSCRIPT=setenv.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 
 CODEDIR=percivaltts
+CMDTORUN=../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
 
 # Maintenance targets ----------------------------------------------------------
 
@@ -36,16 +37,16 @@ clean: tests_clean
 # Run targets ------------------------------------------------------------------
 
 run:
-	mkdir -p ../out; cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
+	mkdir -p ../out; cd ../out; bash ${CMDTORUN}
 
 run_continue:
-	cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN} --continue
+	cd ../out; bash ${CMDTORUN} --continue
 
 run_grid:
-	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
+	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ${CMDTORUN}
 
 run_grid_continue:
-	cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN} --continue
+	cd ../out; "$(QSUBCMD)" ${CMDTORUN} --continue
 
 clone:
 	@test "$(DEST)"
@@ -53,11 +54,11 @@ clone:
 
 clone_run:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" bash ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
+	./clone.sh "$(DEST)" bash ${CMDTORUN}
 
 clone_run_grid:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
+	./clone.sh "$(DEST)" "$(QSUBCMD)" ${CMDTORUN}
 
 # Testing ----------------------------------------------------------------------
 

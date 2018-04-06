@@ -20,7 +20,7 @@ Author
 
 from __future__ import print_function
 
-from utils import *  # Always include this first to setup a few things
+from percivaltts import *  # Always include this first to setup a few things
 
 import sys
 import os
@@ -30,7 +30,7 @@ import numpy as np
 numpy_force_random_seed()
 
 print('\nLoading Theano')
-from utils_theano import *
+from backend_theano import *
 print_sysinfo_theano()
 import theano
 import theano.tensor as T

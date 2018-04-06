@@ -18,12 +18,12 @@ Author
     Gilles Degottex <gad27@cam.ac.uk>
 '''
 
-import utils  # Always include this first to setup a few things
+import percivaltts  # Always include this first to setup a few things
 
 import os
 
 import numpy as np
-utils.numpy_force_random_seed()
+percivaltts.numpy_force_random_seed()
 
 import theano
 import theano.tensor as T
@@ -37,7 +37,7 @@ def print_sysinfo_theano():
     print('    CUDA_ROOT={}'.format(theano.config.cuda.root))
     try:    print('    cuDNN={}'.format(theano.gpuarray.dnn.version()))
     except RuntimeError: print('    cuDNN=Unavailable')
-    print('    GID={}'.format(utils.nvidia_smi_current_gpu()))
+    print('    GID={}'.format(percivaltts.nvidia_smi_current_gpu()))
     print('')
 
 def th_cuda_available():

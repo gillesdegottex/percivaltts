@@ -20,7 +20,7 @@ Author
 
 from __future__ import print_function
 
-from utils import *  # Always include this first to setup a few things
+from percivaltts import *  # Always include this first to setup a few things
 
 import sys
 import os
@@ -33,7 +33,7 @@ from collections import defaultdict
 import numpy as np
 numpy_force_random_seed()
 
-from utils_theano import *
+from backend_theano import *
 import theano
 import theano.tensor as T
 
@@ -222,7 +222,7 @@ class Optimizer:
             print("    compiling training function ...")
             train_fn = theano.function(self._model.inputs+[self._target_values], self.cost, updates=updates)
         else:
-            raise ValueError('Unknown err type "'+self._errtype+'"')
+            raise ValueError('Unknown err type "'+self._errtype+'"')    # pragma: no cover
 
         costs = defaultdict(list)
         epochs_modelssaved = []
@@ -362,7 +362,7 @@ class Optimizer:
 
             self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
-            if nbnodecepochs>=cfg.train_cancel_nodecepochs:
+            if nbnodecepochs>=cfg.train_cancel_nodecepochs: # pragma: no cover
                 print_log('WARNING: validation error did not decrease for {} epochs. Early stop!'.format(cfg.train_cancel_nodecepochs))
                 break
 

@@ -17,7 +17,7 @@ Author
 '''
 
 
-from utils import *  # Always include this first to setup a few things
+from percivaltts import *  # Always include this first to setup a few things
 
 import sys
 import os
@@ -46,7 +46,7 @@ def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange
     mins = mins[keepidx]
     maxs = maxs[keepidx]
 
-    if verbose>1:
+    if verbose>1:                                           # pragma: no cover
         print('    mins={}'.format(mins))
         print('    maxs={}'.format(maxs))
 
@@ -89,7 +89,7 @@ def normalise_meanstd(filepath, fids, featurepaths=None, outfilepath=None, keepi
 
     if keepidx is None: keepidx=np.arange(len(means))
 
-    if verbose>1:
+    if verbose>1:                                           # pragma: no cover
         print('    means4norm={}'.format(means))
         print('    stds4norm={}'.format(stds))
 
@@ -168,7 +168,7 @@ def normalise_meanstd_bndminmaxm11(filepath, fids, featurepaths=None, outfilepat
                     #stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 2.0*2.0 # in [-2,+2] even though mostly in [-1,+1]
                     stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 1.0 # Mostly in [-1,+1]
 
-    if verbose>1:
+    if verbose>1:                                           # pragma: no cover
         print('    means4norm={}'.format(means))
         print('    stds4norm={}'.format(stds))
 
@@ -219,7 +219,7 @@ def normalise_meanstd_bndnmnoscale(filepath, fids, featurepaths=None, outfilepat
                 means[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 0.0
                 stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+bndnmsize] = 1.0
 
-    if verbose>1:
+    if verbose>1:                                           # pragma: no cover
         print('    means4norm={}'.format(means))
         print('    stds4norm={}'.format(stds))
 
@@ -325,11 +325,11 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
         zerovaridx = np.where((maxs-mins)==0.0)[0]  # Indices of dimensions having zero-variance
 
         mins.astype('float32').tofile(os.path.dirname(outfilepath)+'/min.dat')
-        if verbose>1: print('    mins={}'.format(mins))
+        if verbose>1: print('    mins={}'.format(mins))     # pragma: no cover
         maxs.astype('float32').tofile(os.path.dirname(outfilepath)+'/max.dat')
-        if verbose>1: print('    maxs={}'.format(maxs))
+        if verbose>1: print('    maxs={}'.format(maxs))     # pragma: no cover
         means.astype('float32').tofile(os.path.dirname(outfilepath)+'/mean.dat')
-        if verbose>1: print('    means={}'.format(means))
+        if verbose>1: print('    means={}'.format(means))   # pragma: no cover
 
         # Now that we have the mean, we can do the std
         stds = None
@@ -401,7 +401,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
                 if verif_stds is None: verif_stds =((Y-verif_means)**2).sum(axis=0).astype('float64')
                 else:                  verif_stds+=((Y-verif_means)**2).sum(axis=0).astype('float64')
             verif_stds /= verif_nbframes-1
-            if verbose>1: # TODO
+            if verbose>1: # TODO                            # pragma: no cover
                 print('verif_min={}'.format(verif_mins))
                 print('verif_max={}'.format(verif_maxs))
                 print('verif_means={}'.format(verif_means))

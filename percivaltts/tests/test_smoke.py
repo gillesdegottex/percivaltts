@@ -1,8 +1,6 @@
 # http://pymbook.readthedocs.io/en/latest/testing.html
 
-import os
-import sys
-from utils import *
+from percivaltts import *
 
 import unittest
 
@@ -16,10 +14,10 @@ nm_size = 17
 
 
 class TestSmoke(unittest.TestCase):
-    def test_utils(self):
-        import utils
+    def test_percivaltts(self):
+        import percivaltts
 
-        cfg = utils.configuration()
+        cfg = percivaltts.configuration()
 
         text_file = open(cptest+'/info.py', "w")
         text_file.write("fs = 32000\n")
@@ -27,32 +25,32 @@ class TestSmoke(unittest.TestCase):
         text_file.close()
         cfg.mergefiles([cptest+'/info.py'])
 
-        utils.print_log('print_log')
+        percivaltts.print_log('print_log')
 
-        utils.print_tty('print_tty', end='\n')
+        percivaltts.print_tty('print_tty', end='\n')
 
-        print(utils.datetime2str(sec=1519426184))
+        print(percivaltts.datetime2str(sec=1519426184))
 
-        print(utils.time2str(sec=1519426184))
+        print(percivaltts.time2str(sec=1519426184))
 
-        utils.makedirs('/dev/null')
+        percivaltts.makedirs('/dev/null')
 
-        self.assertTrue(utils.is_int('74324'))
-        self.assertFalse(utils.is_int('743.24'))
+        self.assertTrue(percivaltts.is_int('74324'))
+        self.assertFalse(percivaltts.is_int('743.24'))
 
         rng = np.random.RandomState(123)
-        utils.weights_normal_ortho(32, 64, 1.0, rng, dtype=np.float32)
+        percivaltts.weights_normal_ortho(32, 64, 1.0, rng, dtype=np.float32)
 
-        memres = utils.proc_memresident()
+        memres = percivaltts.proc_memresident()
         print(memres)
         self.assertNotEqual(memres, -1)
 
-        utils.print_sysinfo()
+        percivaltts.print_sysinfo()
 
-        # utils.print_sysinfo_theano() TODO
-        # utils.log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_discri=[]) TODO
-        # utils.log_plot_costs(costs, worst_val, fname, epochs_modelssaved) TODO
-        # utils.log_plot_samples() TODO
+        # percivaltts.print_sysinfo_theano() TODO
+        # percivaltts.log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_discri=[]) TODO
+        # percivaltts.log_plot_costs(costs, worst_val, fname, epochs_modelssaved) TODO
+        # percivaltts.log_plot_samples() TODO
 
     def test_data(self):
         import data
