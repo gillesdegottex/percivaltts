@@ -44,7 +44,7 @@ describe:
 	@git describe
 
 clean: test_clean
-	rm -fr test/slt_arctic_merlin_full/wav_* test/slt_arctic_merlin_full/label_state_align_*
+	rm -fr tests/slt_arctic_merlin_full/wav_* tests/slt_arctic_merlin_full/label_state_align_*
 
 distclean: test_clean
 	cd external/pulsemodel; $(MAKE) distclean
@@ -82,25 +82,25 @@ clone_run_grid:
 # Testing ----------------------------------------------------------------------
 
 # Download the full demo data (~1000 sentences)
-test/slt_arctic_merlin_full.tar.gz:
-	git clone git@github.com:gillesdegottex/percival_demo_data.git
-	mv percival_demo_data/* test/
-	rm -fr percival_demo_data
+tests/slt_arctic_merlin_full.tar.gz:
+	git clone git@github.com:gillesdegottex/percival-tts-demodata.git
+	mv percival-tts-demodata/* test/
+	rm -fr percival-tts-demodata
 
 # Decompress the full demo data (~1000 sentences)
-test/slt_arctic_merlin_full: test/slt_arctic_merlin_full.tar.gz
-	tar xvzf test/slt_arctic_merlin_full.tar.gz -C test/
+tests/slt_arctic_merlin_full: tests/slt_arctic_merlin_full.tar.gz
+	tar xvzf tests/slt_arctic_merlin_full.tar.gz -C test/
 
 # Decompress the test data (10 sentences)
-test/slt_arctic_merlin_test: test/slt_arctic_merlin_test.tar.gz
-	tar xvf test/slt_arctic_merlin_test.tar.gz -C test/
+tests/slt_arctic_merlin_test: tests/slt_arctic_merlin_test.tar.gz
+	tar xvf tests/slt_arctic_merlin_test.tar.gz -C test/
 
-test: build test/slt_arctic_merlin_test
-	python test/test_base.py
-	python test/test_smoke.py
-	bash "$(SETENVSCRIPT)" test/test_smoke_theano.py
-	bash "$(SETENVSCRIPT)" test/test_run.py
+tests: build tests/slt_arctic_merlin_test
+	python tests/test_base.py
+	python tests/test_smoke.py
+	bash "$(SETENVSCRIPT)" tests/test_smoke_theano.py
+	bash "$(SETENVSCRIPT)" tests/test_run.py
 
 test_clean:
-	rm -fr test/slt_arctic_merlin_test
-	rm -fr test/test_made__*
+	rm -fr tests/slt_arctic_merlin_test
+	rm -fr tests/test_made__*
