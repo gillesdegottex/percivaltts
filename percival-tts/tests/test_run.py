@@ -12,15 +12,15 @@ class TestRun(unittest.TestCase):
     def test_run(self):
         import run
 
-        os.system('ls')
-        os.system('ls tests')
-        os.system('ls tests/slt_arctic_merlin_full')
+        os.system('ls -l')
+        os.system('ls -l tests')
 
         # Fool the demo data with the test data
         # Because running the full demo on travis is not possible
         if not os.path.exists('tests/slt_arctic_merlin_full'):
             os.symlink('slt_arctic_merlin_test', 'tests/slt_arctic_merlin_full')
         os.listdir('tests/slt_arctic_merlin_full')
+        os.system('ls -l tests/slt_arctic_merlin_full')
 
         print('Overwrite the configuration to run a smoke test')
         run.cfg.id_valid_start = 8
