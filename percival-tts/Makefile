@@ -64,7 +64,7 @@ clone_run_grid:
 # Download the full demo data (~1000 sentences)
 tests/slt_arctic_merlin_full.tar.gz:
 	git clone git@github.com:gillesdegottex/percival-tts-demodata.git
-	mv percival-tts-demodata/* test/
+	mv percival-tts-demodata/* tests/
 	rm -fr percival-tts-demodata
 
 # Decompress the full demo data (~1000 sentences)
