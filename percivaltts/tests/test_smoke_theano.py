@@ -103,6 +103,9 @@ class TestSmokeTheano(unittest.TestCase):
         fid_lst = data.loadids(cfg.fileids)
 
         model.saveAllParams('tests/test_made__smoke_theano_model_train/smokymodelparams.pkl')
+
+        model.generate_cmp(cfg.indir, 'tests/test_made__smoke_theano_model_train/smokymodelparams-cmp', fid_lst_val)
+
         model.generate_wav('tests/test_made__smoke_theano_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
         model.generate_wav('tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_extrapfreq', fid_lst, cfg, do_objmeas=True, do_resynth=True, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size, pp_spec_extrapfreq=8000)
         model.generate_wav('tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_pf_coef', fid_lst, cfg, do_objmeas=True, do_resynth=True, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size, pp_spec_pf_coef=1.2)
