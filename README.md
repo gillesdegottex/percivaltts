@@ -4,7 +4,7 @@
 
 ## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
-<img align="right" width="300" src="./doc/spec_sample.png">
+<img align="right" width="300" src="./docs/spec_sample.png">
 
 <br/><br/>
 
