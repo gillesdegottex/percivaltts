@@ -23,14 +23,14 @@ CODEDIR=percivaltts
 
 # Maintenance targets ----------------------------------------------------------
 
-.PHONY: test test_clean
+.PHONY: tests tests_clean
 
 all: run
 
 describe:
 	@git describe
 
-clean: test_clean
+clean: tests_clean
 	rm -fr tests/slt_arctic_merlin_full/wav_* tests/slt_arctic_merlin_full/label_state_align_*
 
 # Run targets ------------------------------------------------------------------
@@ -76,11 +76,11 @@ tests/slt_arctic_merlin_test: tests/slt_arctic_merlin_test.tar.gz
 	tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
 
 tests: tests/slt_arctic_merlin_test
-	# python -m tests.test_base
-	# python -m tests.test_smoke
+	python -m tests.test_base
+	python -m tests.test_smoke
 	bash "$(SETENVSCRIPT)" python -m tests.test_smoke_theano
 	bash "$(SETENVSCRIPT)" python -m tests.test_run
 
-test_clean:
+tests_clean:
 	rm -fr tests/slt_arctic_merlin_test
 	rm -fr tests/test_made__*
