@@ -19,10 +19,9 @@ branches:
 
 before_install:
     - echo "before_install..."
-    - git submodule update --init --recursive
-    - git fetch --tags
-    - sleep 1
     - git checkout $TRAVIS_BRANCH
+    - git fetch --tags
+    - git submodule update --init --recursive
     - export PROJECTGITVERSION=`git describe --tags --always |sed 's/^v//'`
     - echo $PROJECTGITVERSION
     - echo $TRAVIS_OS_NAME
