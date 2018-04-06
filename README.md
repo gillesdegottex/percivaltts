@@ -97,11 +97,15 @@ Then, compile the various tools Neccessary to run Percival:
 $ make build
 ```
 
-Edit `setenv.sh` according to your CUDA/Theano installation (see above).
-
-Go into the source code and download the demo data:
+Go into the source code:
 ```
 $ cd percivaltts
+```
+
+Edit `setenv.sh` according to your CUDA/Theano installation (see above).
+
+Download the demo data:
+```
 $ make tests/slt_arctic_merlin_full
 ```
 
