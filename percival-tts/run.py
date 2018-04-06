@@ -115,7 +115,7 @@ def features_extraction():
 def contexts_extraction():
     # Let's use Merlin's code for this
 
-    from label_normalisation import HTSLabelNormalisation
+    from merlin.label_normalisation import HTSLabelNormalisation
     label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full')
 
     makedirs(os.path.dirname(labbin_path))

@@ -31,7 +31,7 @@ import data
 
 def normalise_minmax(filepath, fids, featurepaths=None, outfilepath=None, nrange=None, keepidx=None):
     '''
-    
+
     '''
     if nrange is None: nrange=[-1,1]
     if outfilepath is None: outfilepath=filepath
@@ -293,7 +293,7 @@ def compose(featurepaths, fileidspath, outfilepath, wins=None, id_valid_start=-1
                 Y = np.hstack(YWs)
 
                 #if 0:
-                    #from mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
+                    #from merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
                     #mlpg_algo = MLParameterGeneration()
                     #var = np.tile(np.ones(CMP.shape[1]),(CMP.shape[0],1)) # Simplification!
                     #YGEN = mlpg_algo.generation(CMP, var, 1)

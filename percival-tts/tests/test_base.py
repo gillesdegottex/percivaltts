@@ -48,8 +48,8 @@ class TestBase(unittest.TestCase):
 
     def test_contexts_features_extractions_and_composition(self):
 
-        from label_normalisation import HTSLabelNormalisation
-        label_normaliser = HTSLabelNormalisation(question_file_name='external/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full')
+        from merlin.label_normalisation import HTSLabelNormalisation
+        label_normaliser = HTSLabelNormalisation(question_file_name='external/merlin/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full')
 
         makedirs(os.path.dirname(label_path))
         with open(cfg.fileids) as f:
