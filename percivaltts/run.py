@@ -81,7 +81,7 @@ cfg.train_batchsize = 5
 cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each batch through time
                                            # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
 cfg.train_LScoef = 0.25         # For WGAN mixed with LS [def. 0.25]
-cfg.train_max_nbepochs = 400    # Can stop much earlier with 3 stacked BLSTM or 6 stacked FC
+cfg.train_max_nbepochs = 300    # Can stop much earlier with 3 stacked BLSTM or 6 stacked FC
 cfg.train_cancel_nodecepochs = 50
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
