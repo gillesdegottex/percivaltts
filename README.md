@@ -88,23 +88,21 @@ $ sudo pip install bandmat
 
 ### Install/Demo
 
-It is best to first make an experiment directory somewhere:
+First clone the git repository:
 ```
-$ mkdir exp
+$ git clone git@github.com:gillesdegottex/percival-tts.git
 ```
 and clone Percival's code inside.
 ```
-cd exp
 git clone git@github.com:gillesdegottex/percival.git
 ```
-That's because the output of the experiment (the demo of Percival here) will
-appear in a sub-directory of ```exp``` and not within the git repository of the
-code. This keeps the code neat and out of generated files.
-
-Then, to compile the various tools imported in Percival, go in the root
-directory of the source code, and run:
+Then, to compile the various tools imported in Percival-TTS: go in the root
+directory of the source code:
 ```
-$ cd percival
+$ cd percival-tts
+```
+and run:
+```
 $ make
 ```
 
