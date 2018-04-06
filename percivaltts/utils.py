@@ -164,7 +164,7 @@ def print_sysinfo():
     print('  Numpy: {} {}'.format(np.version.version, np.__file__))
 
     # Check for the presence of git
-    codedir = os.path.dirname(os.path.realpath(__file__))
+    codedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     diropts = ['--git-dir={}/.git'.format(codedir), '--work-tree={}'.format(codedir)]
     ret = os.system('git {} {} status > /dev/null 2>&1'.format(diropts[0], diropts[1]))
     if ret!=0:
