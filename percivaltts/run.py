@@ -94,7 +94,7 @@ cfg.print_content()
 # Feature extraction -----------------------------------------------------------
 from external import pulsemodel
 
-def pml_analysis(fid):
+def pml_analysis(fid):              # pragma: no cover  coverage not detected
     print('Extracting features from: '+fid)
     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True, fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 

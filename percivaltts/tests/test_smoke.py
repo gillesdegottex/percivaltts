@@ -1,7 +1,6 @@
 # http://pymbook.readthedocs.io/en/latest/testing.html
 
 import os
-import sys
 from percivaltts import *
 
 import unittest
