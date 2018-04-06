@@ -48,5 +48,5 @@ fi
 
 unset LD_PRELOAD
 
-# Finally, run the scripts' arguments as a python command
-python $@
+# Finally, run the scripts' arguments as a command
+$@

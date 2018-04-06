@@ -36,16 +36,16 @@ clean: test_clean
 # Run targets ------------------------------------------------------------------
 
 run:
-	mkdir -p ../out; cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
+	mkdir -p ../out; cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
 
 run_continue:
-	cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN} --continue
+	cd ../out; bash ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN} --continue
 
 run_grid:
-	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
+	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
 
 run_grid_continue:
-	cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN} --continue
+	cd ../out; "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN} --continue
 
 clone:
 	@test "$(DEST)"
@@ -53,11 +53,11 @@ clone:
 
 clone_run:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" bash ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
+	./clone.sh "$(DEST)" bash ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
 
 clone_run_grid:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" ../${CODEDIR}/${FILETORUN}
+	./clone.sh "$(DEST)" "$(QSUBCMD)" ../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
 
 # Testing ----------------------------------------------------------------------
 
@@ -75,11 +75,11 @@ tests/slt_arctic_merlin_full: tests/slt_arctic_merlin_full.tar.gz
 tests/slt_arctic_merlin_test: tests/slt_arctic_merlin_test.tar.gz
 	tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
 
-tests: build tests/slt_arctic_merlin_test
-	python tests/test_base.py
-	python tests/test_smoke.py
-	bash "$(SETENVSCRIPT)" tests/test_smoke_theano.py
-	bash "$(SETENVSCRIPT)" tests/test_run.py
+tests: tests/slt_arctic_merlin_test
+	# python -m tests.test_base
+	# python -m tests.test_smoke
+	bash "$(SETENVSCRIPT)" python -m tests.test_smoke_theano
+	bash "$(SETENVSCRIPT)" python -m tests.test_run
 
 test_clean:
 	rm -fr tests/slt_arctic_merlin_test
