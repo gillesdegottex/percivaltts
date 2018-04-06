@@ -25,28 +25,13 @@ CODEDIR=percival
 
 .PHONY: test test_clean
 
-all: build
-
-submodule_init:
-	git submodule update --init --recursive
-
-build: submodule_init build_pulsemodel
-
-build_pulsemodel: submodule_init
-	cd external/pulsemodel; make
+all: run
 
 describe:
 	@git describe
 
 clean: test_clean
 	rm -fr tests/slt_arctic_merlin_full/wav_* tests/slt_arctic_merlin_full/label_state_align_*
-
-distclean: test_clean
-	cd external/pulsemodel; $(MAKE) distclean
-	# TODO Clean REAPER
-	# TODO Clean WORLD
-	# TODO Clean sigproc
-	find . -name '*.pyc' -delete
 
 # Run targets ------------------------------------------------------------------
 

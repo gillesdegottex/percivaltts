@@ -55,8 +55,9 @@ install:
     - conda info -a
 
 script:
+    - make build
     - cd percival-tts
-    - make
+    - make run
     - tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
     - coverage run --source=. --omit="tests/*","external/*" tests/test_base.py
     - coverage run -a --source=. --omit="tests/*","external/*" tests/test_smoke.py
