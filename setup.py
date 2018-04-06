@@ -32,7 +32,8 @@ setup(name='percival-tts',
         'License :: OSI Approved :: Apache Software License',
     ],
 
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    package_data={'percival-tts': ['README.md', 'LICENSE.md']},
+    packages=find_packages(), #exclude=['docs', 'tests']
+    data_files=[('.',['LICENSE.md'])],
+    package_data={'percival-tts': ['Makefile', 'clone.sh', 'setenv*.sh', 'tests/slt_arctic_merlin_test.tar.gz']},
     zip_safe=False
     )
