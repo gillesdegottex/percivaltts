@@ -37,20 +37,31 @@ import runpy
 import defusedxml.ElementTree as ET # safer version
 
 
+def readids(fileids):
+    with open(fileids) as f:
+        fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
+    return fids
+
+
 class configuration(object):
+    """
+    Configuration object that is carried across many functions along the pipeline.
+    """
 
     def __eq__(self, other):
+        """Equality test with another configuration object"""
         return self.__dict__ == other.__dict__
 
     def __ne__(self, other):
+        """Inequality test with another configuration object"""
         return not self.__eq__(other)
 
     def id_train_nb(self):
-        # Number of samples used for training, equal or slightly lower than self.id_valid_start
+        """Return the size of the training set (equal or slightly lower than self.id_valid_start)."""
         return self.train_batchsize* int(np.floor(self.id_valid_start/self.train_batchsize))
 
     def print_content(self):
-        # Print the configuration variables
+        """Print the configuration variables"""
         for key in sorted(dir(self)):
             if callable(getattr(self, key)) or key.startswith("__"):
                 continue
@@ -64,7 +75,7 @@ class configuration(object):
         print('')
 
     def mergefiles(self, filenames):
-
+        """Merge the content of a configuration file (variables dropped in a Python file) into this configuration object."""
         files_global = dict()
         for fname in filenames:
             files_global.update(runpy.run_path(fname))
@@ -73,39 +84,52 @@ class configuration(object):
             setattr(self, fg, files_global[fg])
 
     def merge(self, cfgtoadd):
-
+        """Merge the content of configuration object into this one."""
         for k in cfgtoadd.__dict__.keys():
             if k[:2]!='__':
                 setattr(self, k, cfgtoadd.__dict__[k])
 
 
 def print_log(txt, end='\n'):
-
+    """Print txt with a loging format (could use the Python logging system ...))."""
     print(datetime2str()+': '+txt, end=end)
     sys.stdout.flush()
 
-def print_nnl(txt, end=''):
-    print(txt, end=end)
-    sys.stdout.flush()
-
 def print_tty(txt, end=''):
-
+    """Print txt only if this is a TTY."""
     if not sys.stdout.isatty():
         return                                              # pragma: no cover
 
     print_nnl(txt, end=end)
 
 def datetime2str(sec=None):
+    """A format of date and time in this pipeline."""
     return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(sec))
 
 def time2str(sec=None):
+    """A format of time duration in this pipeline (with potential number of days)."""
     nbdays = int(sec/(60*60*24))
     if nbdays>0:
         return str(nbdays)+'d'+time.strftime('%H:%M:%S',time.gmtime(sec))
     else:
         return time.strftime('%H:%M:%S',time.gmtime(sec))
 
+def is_int(v):
+    """Return True of v is an integer, False otherwise."""
+    # From https://stackoverflow.com/questions/1265665/python-check-if-a-string-represents-an-int-without-using-try-except
+    v = str(v).strip()
+    return v=='0' or (v if v.find('..') > -1 else v.lstrip('-+').rstrip('0').rstrip('.')).isdigit()
+
+
+# TODO Likely to be dropped when stop supporting old Python versions
+def print_nnl(txt, end=''):
+    """Print without new line."""
+    print(txt, end=end)
+    sys.stdout.flush()
+
+# TODO Likely to be dropped when stop supporting old Python versions
 def makedirs(path):
+    """Create a directory."""
     import errno
     try:
         os.makedirs(path)
@@ -113,13 +137,13 @@ def makedirs(path):
         if exception.errno != errno.EEXIST:
             raise                                           # pragma: no cover
 
-def is_int(v):
-    # From https://stackoverflow.com/questions/1265665/python-check-if-a-string-represents-an-int-without-using-try-except
-    v = str(v).strip()
-    return v=='0' or (v if v.find('..') > -1 else v.lstrip('-+').rstrip('0').rstrip('.')).isdigit()
+
+# Backend independent functions ------------------------------------------------
 
 def weights_normal_ortho(insiz, outsiz, std, rng, dtype):
     '''
+    Orthogonal initialization of weight matrix.
+
     dtype : theano.config.floatX
     '''
     # Preserve std!
@@ -129,8 +153,11 @@ def weights_normal_ortho(insiz, outsiz, std, rng, dtype):
     u = u.reshape((insiz, outsiz))
     return np.asarray(u, dtype=dtype)
 
+
+# System -----------------------------------------------------------------------
+
 def proc_memresident():
-    # retuned unit in MiB
+    """Return something close to RAM used by the process [MiB]"""
     PID_memsize = subprocess.Popen(['ps', 'h', '-p', str(os.getpid()), '-o', 'rssize'], stdout=subprocess.PIPE).communicate()[0].rstrip()
     if len(PID_memsize)>0:
         return int(PID_memsize)/1024
@@ -138,6 +165,7 @@ def proc_memresident():
     return -1                                               # pragma: no cover
 
 def print_sysinfo():
+    """Print some information about the system."""
     print_log('System information')
     print('  Working directory: '+os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)))
     print('  PATH:')
@@ -193,10 +221,15 @@ def print_sysinfo():
     print('')
 
 def nvidia_smi_current_gpu():                               # pragma: no cover
-    '''
-        return : [MiB]
-    (tested locally, no need of CI testing and coverage)
-    '''
+    """Returns GPU ID used by the process.
+
+    (tested locally, cannot be tested on Travis CI bcs no GPU available)
+
+    Returns
+    -------
+    int
+        [MiB]
+    """
 
     # if theano.config.device=='cpu': return -2
 
@@ -212,10 +245,15 @@ def nvidia_smi_current_gpu():                               # pragma: no cover
     return -1
 
 def nvidia_smi_gpu_memused():                               # pragma: no cover
-    '''
-        return : [MiB]
-    (tested locally, no need of CI testing and coverage)
-    '''
+    """Returns the GPU memory used by the process.
+
+    (tested locally, cannot be tested on Travis CI bcs no GPU available)
+
+    Returns
+    -------
+    int
+        [MiB]
+    """
 
     # if theano.config.device=='cpu': return -2
 
@@ -233,6 +271,19 @@ def nvidia_smi_gpu_memused():                               # pragma: no cover
 # Logging plot functions -------------------------------------------------------
 
 def log_plot_costs(costs, worst_val, fname, epochs_modelssaved):
+    """
+    Plot cost functions.
+
+    Parameters
+    ----------
+    costs : dict
+        A dictionary of cost functions. Each entry will be ploted on the same axis.
+    worst_val : float
+        Worst/Upper limit of the costs values (mainly useful when using LSE).
+
+    fname : str
+        File name to save the plots (e.g. costs.png)
+    """
     import matplotlib
     matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend.
     import matplotlib.pyplot as plt
@@ -255,6 +306,9 @@ def log_plot_costs(costs, worst_val, fname, epochs_modelssaved):
     plt.close()
 
 def log_plot_samples(Y_vals, Y_preds, nbsamples, shift, fname, fs=-1, specsize=256, title=None):
+    """
+    Plot generated samples.
+    """
     # Plot predicted/generated data without denormalisation
 
     if specsize>Y_vals[0].shape[1]: raise ValueError('specsize {} is bigger than the feature size {}. specsize argument has to be set properly'.format(specsize, Y_vals[0].shape[1]))

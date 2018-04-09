@@ -7,7 +7,7 @@ This script coordinates the overall pipeline execution:
 If you want to skip a step, it's very complicate: comment the lines concerned at
 the very end of this script.
 
-This file is meant to be widely modified depending on the experiment you run.
+This file is meant to be savagely modified depending on the experiment you run.
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
@@ -99,17 +99,16 @@ def pml_analysis(fid):              # pragma: no cover  coverage not detected
     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True, fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 def features_extraction():
-    with open(cfg.fileids) as f:
-        fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
+    fids = readids(cfg.fileids)
 
-        # Use this tool for parallel extraction of the acoustic features ...
-        from external import pfs
-        pfs.map(pml_analysis, fids, processes=7)   # Change number of processes
+    # Use this tool for parallel extraction of the acoustic features ...
+    from external import pfs
+    pfs.map(pml_analysis, fids, processes=7)   # Change number of processes
 
-        # ... or uncomment these line to extract them file by file.
-        # for fid in fids:
-        #     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
-        #     fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+    # ... or uncomment these line to extract them file by file.
+    # for fid in fids:
+    #     pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+    #     fspec=spec_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 
 def contexts_extraction():
@@ -119,26 +118,26 @@ def contexts_extraction():
     label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full')
 
     makedirs(os.path.dirname(labbin_path))
-    with open(cfg.fileids) as f:
-        fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
-        for fid in fids:
-            label_normaliser.perform_normalisation([lab_path.replace('*',fid)], [labbin_path.replace('*',fid)])
+    for fid in readids(cfg.fileids):
+        label_normaliser.perform_normalisation([lab_path.replace('*',fid)], [labbin_path.replace('*',fid)])
 
 
 # DNN data composition ---------------------------------------------------------
 def composition_normalisation():
+    fids = readids(cfg.fileids)
+
     import compose
 
     # Compose the inputs
     # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
-    compose.compose([labbin_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
+    compose.compose([labbin_path+':(-1,'+str(in_size)+')'], fids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[])
 
     # Compose the outputs
-    compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], cfg.fileids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_bndnmnoscale)
+    compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_nmnoscale)
 
     # Create time weights (column vector in [0,1]). The frames at begining or end of
     # each file whose weights are smaller than 0.5 will be ignored by the training
-    compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir)
+    compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir)
 
 
 def build_model():
@@ -156,7 +155,7 @@ def build_model():
 # Training ---------------------------------------------------------------------
 def training(cont=False):
     print('\nData profile')
-    fid_lst = data.loadids(cfg.fileids)
+    fid_lst = data.readids(cfg.fileids)
     in_size = data.getlastdim(cfg.indir)
     out_size = data.getlastdim(cfg.outdir)
     print('    in_size={} out_size={}'.format(in_size,out_size))
@@ -176,7 +175,7 @@ def generate(fparams=cfg.fparams_fullset):
     model = build_model()           # Rebuild the model from scratch
     model.loadAllParams(fparams)    # Load the model's parameters
 
-    fid_lst = data.loadids(cfg.fileids)
+    fid_lst = data.readids(cfg.fileids)
 
     # Generate the network outputs (without any decomposition), for potential re-use for another network's input
     # model.generate_cmp(cfg.indir, os.path.splitext(fparams)[0]+'-gen/*.cmp', fid_lst)

@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/gillesdegottex/percival.svg?branch=master)](https://travis-ci.org/gillesdegottex/percivaltts)
+[![Build Status](https://travis-ci.org/gillesdegottex/percivaltts.svg?branch=master)](https://travis-ci.org/gillesdegottex/percivaltts)
 [![codecov](https://codecov.io/gh/gillesdegottex/percivaltts/branch/master/graph/badge.svg)](https://codecov.io/gh/gillesdegottex/percivaltts)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f910efb5168a4569acea88ee0011e394)](https://www.codacy.com/app/gillesdegottex/percivaltts?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gillesdegottex/percivaltts&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3a6a54997f8e44ba9230fbd278e00d8a)](https://www.codacy.com/app/gillesdegottex/percivaltts?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gillesdegottex/percivaltts&amp;utm_campaign=Badge_Grade)
 
 ## Percival: CNN-WGAN acoustic model for text-to-speech synthesis
 
@@ -97,11 +97,15 @@ Then, compile the various tools Neccessary to run Percival:
 $ make build
 ```
 
-Edit `setenv.sh` according to your CUDA/Theano installation (see above).
-
-Go into the source code and download the demo data:
+Go into the source code:
 ```
 $ cd percivaltts
+```
+
+Edit `setenv.sh` according to your CUDA/Theano installation (see above).
+
+Download the demo data:
+```
 $ make tests/slt_arctic_merlin_full
 ```
 
@@ -173,6 +177,21 @@ However, when using the GPU and 2D Convolutional layers, the results will differ
 It should be possible to make them repeatable by uncommenting some lines in '''setenv.sh''' under repeatability section, at the expense of some computational time.
 
 
+### Cloning
+
+Managing multiple experiments in parallel, fixing bugs and try new ideas while keeping track of all the changes this can imply can become quite problematic. There is a simple script in Percival '''clone.sh''' that allows you to clone the whole code source and place it in an experiment directory:
+'''
+$ ./clone.sh /path/to/experiment1
+'''
+or clone and run the '''run.py''' script file directly:
+'''
+$ ./clone.sh /path/to/experiment1 bash ../percivaltts/setenv.sh python ../percivaltts/run.py
+'''
+when a script is runned using '''clone.sh''', the working directory is '''/path/to/experiment1/out''' so that all of the experiment results are in this '''out''' sub-directory and all the code is in a separate sub-directory '''percivaltts'''
+You can also replace the '''bash''' command by a script for submitting Sun Grid Engine (SGE) job.
+The '''Makefile''' has also all the corresponding commands (clone, run, clone_run_grid, etc.)
+
+
 ### Notes
 Before the waveform synthesis, there is currrently no post-processing of the generated spectral amplitudes.
 
@@ -180,4 +199,4 @@ Before the waveform synthesis, there is currrently no post-processing of the gen
 Gilles Degottex <gad27@cam.ac.uk>
 
 ### Contact
-To raise questions, suggestions, etc. please use the [issue managment](https://github.com/gillesdegottex/percivaltts/issues) only.
+To raise bug reports, questions, suggestions, etc. please use the [issue managment](https://github.com/gillesdegottex/percivaltts/issues) only.

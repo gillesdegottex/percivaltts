@@ -49,45 +49,42 @@ class TestBase(unittest.TestCase):
         from external.merlin.label_normalisation import HTSLabelNormalisation
         label_normaliser = HTSLabelNormalisation(question_file_name='external/merlin/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full')
 
+        fids = readids(cfg.fileids)
+
         makedirs(os.path.dirname(label_path))
-        with open(cfg.fileids) as f:
-            fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
-            for fid in fids:
-                label_normaliser.perform_normalisation([label_state_align_path.replace('*',fid)], [label_path.replace('*',fid)])
+        for fid in fids:
+            label_normaliser.perform_normalisation([label_state_align_path.replace('*',fid)], [label_path.replace('*',fid)])
 
         from external import pulsemodel
-        with open(cfg.fileids) as f:
-            fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
-            for fid in fids:
-                print('Extracting features from: '+fid)
-                pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
-                fspec=spec_fw_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
+        for fid in fids:
+            print('Extracting features from: '+fid)
+            pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+            fspec=spec_fw_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 
         import compose
 
         # Compose the inputs
         # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
-        compose.compose([label_path+':(-1,'+str(in_size)+')'], cfg.fileids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
+        compose.compose([label_path+':(-1,'+str(in_size)+')'], fids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
         # Compose the outputs
-        compose.compose([f0_path, spec_fw_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], cfg.fileids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_bndnmnoscale)
+        compose.compose([f0_path, spec_fw_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_nmnoscale)
 
         # Create time weights (column vector in [0,1]). The frames at begining or end of
         # each file whose weights are smaller than 0.5 will be ignored by the training
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='fwlspec')  # Overwrite with the good one
+        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
+        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
+        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwlspec')  # Overwrite with the good one
 
         import data
-        fid_lst = data.loadids(cfg.fileids)
-        fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
+        fid_lst_val = fids[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
         X_vals = data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
         worst_val = data.cost_0pred_rmse(X_vals) # RMSE
         print("    X 0-pred validation RMSE = {} (100%)".format(worst_val))
 
         Y_vals = data.load(cfg.outdir, fid_lst_val, verbose=1, label='Output features: ')
-        # X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
+        # X_vals, Y_vals = data.croplen([X_vals, Y_vals])
         worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
         print("    Y 0-pred validation RMSE = {} (100%)".format(worst_val))
 
@@ -103,7 +100,7 @@ class TestBase(unittest.TestCase):
     #     import compose
     #
     #     # Compose the outputs for fwcep
-    #     compose.compose([f0_path, spec_fwcep_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], cfg.fileids, cp+wav_dir+'_cmp_lf0_fwcep'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')', id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_bndnmnoscale)
+    #     compose.compose([f0_path, spec_fwcep_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], cfg.fileids, cp+wav_dir+'_cmp_lf0_fwcep'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')', id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_nmnoscale)
     #
     #     # Create time weights (column vector in [0,1]). The frames at begining or end of
     #     # each file whose weights are smaller than 0.5 will be ignored by the training

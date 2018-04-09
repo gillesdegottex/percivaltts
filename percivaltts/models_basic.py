@@ -38,6 +38,16 @@ import lasagne
 from backend_theano import *
 import model
 
+def addPMLNMDeltas(l_in, layers_toconcat, outsize, specsize, nmsize):
+    if outsize>(1+specsize+nmsize):
+        l_out_f0spec = lasagne.layers.DenseLayer(l_in, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
+        l_out_nm = lasagne.layers.DenseLayer(l_in, num_units=nmsize, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
+        layers_toconcat.extend([l_out_f0spec, l_out_nm])
+        if outsize>2*(1+specsize+nmsize):
+            l_out_f0spec = lasagne.layers.DenseLayer(l_in, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
+            l_out_nm = lasagne.layers.DenseLayer(l_in, num_units=nmsize, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')
+            layers_toconcat.extend([l_out_f0spec, l_out_nm])
+
 
 class ModelFC(model.Model):
     def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, dropout_p=-1.0):
@@ -52,7 +62,8 @@ class ModelFC(model.Model):
             ## This one without batch normalisation, because we want the traditional bias term.
 
         for layi in xrange(nblayers):
-            layerstr = 'l'+str(1+layi)
+            layerstr = 'l'+str(1+layi)+'_FC{}'.format(hiddensize)
+
             l_hid = lasagne.layers.DenseLayer(l_hid, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
 
             # Add batch normalisation
@@ -66,17 +77,10 @@ class ModelFC(model.Model):
         l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
         layers_toconcat.extend([l_out_f0spec, l_out_nm])
 
-        # TODO fn
-        if outsize>(1+specsize+nmsize):
-            l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
-            l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
-            layers_toconcat.extend([l_out_f0spec, l_out_nm])
-            if outsize>2*(1+specsize+nmsize):
-                l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
-                l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')
-                layers_toconcat.extend([l_out_f0spec, l_out_nm])
+        addPMLNMDeltas(l_hid, layers_toconcat, outsize, specsize, nmsize)
 
-        l_out = lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
+        if len(layers_toconcat)==1: l_out=layers_toconcat
+        else:                       l_out=lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
@@ -91,7 +95,7 @@ class ModelBGRU(model.Model):
         l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
 
         for layi in xrange(nblayers):
-            layerstr = 'l'+str(1+layi)
+            layerstr = 'l'+str(1+layi)+'_BGRU{}'.format(hiddensize)
 
             fwd = lasagne.layers.GRULayer(l_hid, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
             bck = lasagne.layers.GRULayer(l_hid, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
@@ -108,17 +112,10 @@ class ModelBGRU(model.Model):
         l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
         layers_toconcat.extend([l_out_f0spec, l_out_nm])
 
-        # TODO fn
-        if outsize>(1+specsize+nmsize):
-            l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
-            l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
-            layers_toconcat.extend([l_out_f0spec, l_out_nm])
-            if outsize>2*(1+specsize+nmsize):
-                l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
-                l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')
-                layers_toconcat.extend([l_out_f0spec, l_out_nm])
+        addPMLNMDeltas(l_hid, layers_toconcat, outsize, specsize, nmsize)
 
-        l_out = lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
+        if len(layers_toconcat)==1: l_out=layers_toconcat
+        else:                       l_out=lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
@@ -133,7 +130,7 @@ class ModelBLSTM(model.Model):
         l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
 
         for layi in xrange(nblayers):
-            layerstr = 'l'+str(1+layi)
+            layerstr = 'l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
 
             fwd = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
             bck = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
@@ -150,16 +147,9 @@ class ModelBLSTM(model.Model):
         l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
         layers_toconcat.extend([l_out_f0spec, l_out_nm])
 
-        # TODO fn
-        if outsize>(1+specsize+nmsize):
-            l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
-            l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
-            layers_toconcat.extend([l_out_f0spec, l_out_nm])
-            if outsize>2*(1+specsize+nmsize):
-                l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
-                l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')
-                layers_toconcat.extend([l_out_f0spec, l_out_nm])
+        addPMLNMDeltas(l_hid, layers_toconcat, outsize, specsize, nmsize)
 
-        l_out = lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
+        if len(layers_toconcat)==1: l_out=layers_toconcat
+        else:                       l_out=lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
