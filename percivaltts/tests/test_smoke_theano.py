@@ -165,7 +165,6 @@ class TestSmokeTheano(unittest.TestCase):
         y = backend_theano.nonlin_tanh_bysigmoid(x)
         y = backend_theano.nonlin_tanhcm11(x)
         y = backend_theano.nonlin_saturatedsigmoid(x, coef=1.01)
-        y = backend_theano.nonlin_sigmoidbinary(x)
         y = backend_theano.nonlin_softsign(x)
         y = backend_theano.nonlin_sigmoidparm(x, c=0.0, f=1.0)
 
