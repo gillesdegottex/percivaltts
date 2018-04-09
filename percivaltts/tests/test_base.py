@@ -69,7 +69,7 @@ class TestBase(unittest.TestCase):
         compose.compose([label_path+':(-1,'+str(in_size)+')'], fids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
         # Compose the outputs
-        compose.compose([f0_path, spec_fw_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_bndnmnoscale)
+        compose.compose([f0_path, spec_fw_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_nmnoscale)
 
         # Create time weights (column vector in [0,1]). The frames at begining or end of
         # each file whose weights are smaller than 0.5 will be ignored by the training
@@ -100,7 +100,7 @@ class TestBase(unittest.TestCase):
     #     import compose
     #
     #     # Compose the outputs for fwcep
-    #     compose.compose([f0_path, spec_fwcep_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], cfg.fileids, cp+wav_dir+'_cmp_lf0_fwcep'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')', id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_bndnmnoscale)
+    #     compose.compose([f0_path, spec_fwcep_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], cfg.fileids, cp+wav_dir+'_cmp_lf0_fwcep'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')', id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_nmnoscale)
     #
     #     # Create time weights (column vector in [0,1]). The frames at begining or end of
     #     # each file whose weights are smaller than 0.5 will be ignored by the training
