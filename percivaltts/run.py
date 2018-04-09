@@ -53,7 +53,7 @@ cfg.indir = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_s
 
 # Output features
 cfg.fs = 16000
-cfg.f0_min, cfg.f0_max = 70, 600 # TODO Put in info.py!
+cfg.f0_min, cfg.f0_max = 70, 600
 spec_size = 129
 nm_size = 33
 out_size = 1+spec_size+nm_size
@@ -67,7 +67,7 @@ cfg.outdir = cp+wav_dir+'_cmp_lf0_fwlspec'+str(spec_size)+'_fwnm'+str(nm_size)+'
 cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model architecture options
-cfg.model_hiddensize = 512      # All arch
+cfg.model_hiddensize = 256      # All arch # TODO TODO TODO changed
 cfg.model_nbcnnlayers = 8       # CNN only
 cfg.model_nbfilters = 16        # CNN only
 cfg.model_spec_freqlen = 5      # [bins] CNN only

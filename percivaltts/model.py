@@ -144,9 +144,6 @@ class Model:
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
             ):
-        '''
-            TODO Make fn to generate one arbitrary sample
-        '''
 
         # Options dependent on features composition
         outsize_wodeltas = 1+spec_size+nm_size    # 1+: logf0
@@ -202,7 +199,7 @@ class Model:
                 if pp_mcep: CMP_spec=merlin.generate_pp.mcep_postproc_sptk(CMP_spec, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(CMP_spec, sp.bark_alpha(cfg.fs), dftlen=dftlen)
 
-            # TODO Do some post-processing using SPTK?
+            # TODO Do some post-processing using SPTK
 
             if 0:
                 import matplotlib.pyplot as plt
@@ -279,7 +276,6 @@ class Model:
             sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
         for key in features_err:
-            # np.mean(np.vstack(features_err[key]), 0) TODO Per dimension
             print('{} err={}'.format(key, np.mean(np.vstack(features_err[key]))))
 
         print_log('Generation finished')

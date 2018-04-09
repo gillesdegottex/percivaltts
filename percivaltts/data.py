@@ -245,7 +245,7 @@ def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=No
         [Y_val], W_val = croplen_weight([Y_val], W_val)
         Y_val = addstop(Y_val)
 
-    # Maskify the validation data according to the batchsize TODO rm
+    # Maskify the validation data according to the batchsize
     if inouttimesync:
         [X_val, Y_val], MX_val = maskify([X_val, Y_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
         MY_val = MX_val
@@ -275,7 +275,7 @@ def cost_0pred_rmse(Y_val):
         worst_val = np.sqrt(np.mean(Y_val**2))
     return worst_val
 
-def cost_model(fn, Xs):
+def cost_model_mfn(fn, Xs):
     """Run a function on on the argument Xs and average the returned values."""
     cost = 0.0
     if isinstance(Xs[0], list):
@@ -288,7 +288,6 @@ def cost_model(fn, Xs):
             cost += fn(*ins) # TODO Put [0] in an anonymous fn  # TODO without a square errors could compensate on bi-directionlal errors (as in GAN)
 
         cost /= len(Xs[0])
-    # else: # TODO
 
     return cost
 

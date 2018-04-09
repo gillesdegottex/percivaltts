@@ -52,9 +52,12 @@ def th_print(msg, op):
     op = print_val(print_shape(op))
     return op
 
-# TODO Check bcs returned value looks really wrong.
 def paramss_count(paramss):
-    """Returns the number of parameters in the set of parameters (TODO CHECK)"""
+    """
+    Returns the number of parameters in the set of parameters.
+
+    (counting verified on a FC512 only)
+    """
     nbparams = 0
     for p in paramss:
         shap = p.get_value().shape
@@ -87,23 +90,3 @@ def nonlin_softsign(x):
 def nonlin_sigmoidparm(x, c=0.0, f=1.0):
     """Parametrized sigmoid in order to chose its center and smoothness."""
     return 1.0 / (1.0 + np.exp(-(x-c)*f))
-
-# def linear_and_bndnmoutput_deltas_tanh(x, specsize, nmsize):
-#
-#     #coef = 1.01*(1.0/(2.0*0.288675135))
-#     coef = 1.01*1.0
-#
-#     y = T.set_subtensor(x[:,:,1+specsize:1+specsize+nmsize], coef*T.tanh(x[:,:,1+specsize:1+specsize+nmsize])) # TODO sigmoid
-#     y = T.set_subtensor(y[:,:,85+61:85+61+24], coef*T.tanh(y[:,:,85+61:85+61+24]))
-#     y = T.set_subtensor(y[:,:,2*85+61:2*85+61+24], coef*T.tanh(y[:,:,2*85+61:2*85+61+24]))
-#
-#     return y
-
-# def linear_nmsigmoid(x, specsize, nmsize):
-#
-#     #coef = 1.01*(1.0/(2.0*0.288675135))
-#     coef = 1.01*1.0
-#
-#     y = T.set_subtensor(x[:,:,1+specsize:1+specsize+nmsize], coef*T.nnet.nnet.sigmoid(x[:,:,1+specsize:1+specsize+nmsize]))
-#
-#     return y

@@ -109,12 +109,12 @@ class TestSmoke(unittest.TestCase):
         worst_val = data.cost_0pred_rmse(Ys[0])
         print('worst_val={}'.format(worst_val))
 
-        def data_cost_model(Xs, Ys):
+        def data_cost_model_mfn(Xs, Ys):
             return np.std(Ys) # TODO More usefull
         X_vals = data.load(indir, fids)
         Y_vals = data.load(outdir, fids)
         X_vals, Y_vals = data.croplen([X_vals, Y_vals])
-        cost = data.cost_model(data_cost_model, [X_vals, Y_vals])
+        cost = data.cost_model_mfn(data_cost_model_mfn, [X_vals, Y_vals])
         print(cost)
 
         class SmokyModel:
