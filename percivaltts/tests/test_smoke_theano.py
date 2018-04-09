@@ -17,7 +17,7 @@ cfg.shift = 0.005   # Time shift between 2 frames
 cfg.fs = 32000      # Sampling frequency of the samples used for testing
 
 cfg.fileids = cptest+'/file_id_list.scp'
-fid_lst = data.loadids(cfg.fileids)
+fid_lst = readids(cfg.fileids)
 cfg.id_valid_start = 8
 cfg.id_valid_nb = 1
 cfg.id_test_nb = 1
@@ -98,7 +98,7 @@ class TestSmokeTheano(unittest.TestCase):
 
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=True)
 
-        fid_lst = data.loadids(cfg.fileids)
+        fid_lst = readids(cfg.fileids)
 
         model.saveAllParams('tests/test_made__smoke_theano_model_train/smokymodelparams.pkl')
 

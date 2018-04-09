@@ -55,7 +55,7 @@ class TestSmoke(unittest.TestCase):
     def test_data(self):
         import data
 
-        fbases = data.loadids(cptest+'file_id_list.scp')
+        fbases = readids(cptest+'file_id_list.scp')
 
         path, shape = data.getpathandshape('dummy.fwlspec')
         self.assertTrue(path=='dummy.fwlspec')
@@ -94,9 +94,9 @@ class TestSmoke(unittest.TestCase):
         Ws = data.load(wdir, fbases, shape=None, frameshift=0.005, verbose=1, label='Ws: ')
         self.assertTrue(len(Ws)==10)
 
-        Xs, Ys, Ws = data.cropsize([Xs, Ys, Ws])
+        Xs, Ys, Ws = data.croplen([Xs, Ys, Ws])
 
-        [Xs, Ys], Ws = data.cropsilences([Xs, Ys], Ws, thresh=0.5)
+        [Xs, Ys], Ws = data.croplen_weight([Xs, Ys], Ws, thresh=0.5)
 
         Xs_w_stop = data.addstop(Xs)
 
@@ -113,7 +113,7 @@ class TestSmoke(unittest.TestCase):
             return np.std(Ys) # TODO More usefull
         X_vals = data.load(indir, fbases)
         Y_vals = data.load(outdir, fbases)
-        X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
+        X_vals, Y_vals = data.croplen([X_vals, Y_vals])
         cost = data.cost_model(data_cost_model, [X_vals, Y_vals])
         print(cost)
 

@@ -32,15 +32,11 @@ import re
 import numpy as np
 numpy_force_random_seed()
 
-def loadids(fileids):
-    with open(fileids, 'r') as f:
-    #with open(cp+'/file_id_list.scp', 'r') as f:
-        lines = f.readlines()
-        lines = [x for x in map(str.strip, lines) if x]
-        lines = filter(None, lines)
-    return lines
-
 def getpathandshape(path, shape=None):
+    """
+    Split a path into a standard UNIX-style path and an optional 'shape extension' that defines the shape of the data in each file.
+    E.g. /data/supervoice/spectra/*.spec:(-1,60)
+    """
     matches = re.findall(r'(.*):\((.*)\)', path)
     if len(matches)>0:
         path = matches[0][0]
@@ -63,11 +59,17 @@ def getpathandshape(path, shape=None):
     return path, shape
 
 def getlastdim(path):
+    """
+    Return the last dimension of the optional shape extension of a given path.
+    """
     _, size = getpathandshape(path)
     if size is None: return 1
     else:            return size[-1]
 
 def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
+    """
+    Load data into a list of matrices.
+    """
     Xs = []
 
     totlen = 0
@@ -104,14 +106,24 @@ def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
     return Xs
 
 def gettotallen(Xs, axis=0):
+    """Return the sum of the length matrices in a given list of matrices, on a given axis."""
     # for batched data, use axis=1
     l = 0
     for i in xrange(len(Xs)):
         l += Xs[i].shape[axis]
     return l
 
-def cropsize(xs, axis=0): # TODO croplen, no ?
-    # Attention! It modifies the argument
+def croplen(xs, axis=0):
+    """
+    Crop each matrices of a list of matrices to the same length among other matching list of matrices (Attention: Argument xs modified!)
+    E.g.
+    A = [zeros(134, 60), zeros(542, 60)]
+    B = [zeros(135, 12), zeros(538, 12)]
+    [A, B] = croplen([A, B])
+    Ensures:
+    A: [zeros(134, 60), zeros(538, 60)]
+    B: [zeros(134, 12), zeros(538, 12)]
+    """
 
     if axis>2:
         raise ValueError('Do not manage axis values bigger than 2') # pragma: no cover
@@ -120,10 +132,10 @@ def cropsize(xs, axis=0): # TODO croplen, no ?
 
     # ys = [[] for i in range(len(xs))]
     for ki in xrange(len(xs[0])):   # For each sample of the data set
-        # print('cropsize: {}'.format([x[ki].shape[axis] for x in xs]))
+        # print('croplen: {}'.format([x[ki].shape[axis] for x in xs]))
         siz = np.min([x[ki].shape[axis] for x in xs])
         for x in xs:
-            # print('cropsize: {} {}'.format(x[ki].shape, siz))
+            # print('croplen: {} {}'.format(x[ki].shape, siz))
             if axis==0:   x[ki] = x[ki][:siz,]
             elif axis==1: x[ki] = x[ki][:,:siz,]            # pragma: no cover
             elif axis==2: x[ki] = x[ki][:,:,:siz,]          # pragma: no cover
@@ -131,7 +143,10 @@ def cropsize(xs, axis=0): # TODO croplen, no ?
 
     return xs
 
-def cropsilences(xs, w, thresh=0.5):
+def croplen_weight(xs, w, thresh=0.5):
+    """
+    Similar to croplen(xs), but crop according to some weight w and a threshold on this weight (only at beginning and end of file).
+    """
 
     if len(set([len(w)]+[len(x) for x in xs]))>1:
         raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
@@ -154,7 +169,16 @@ def cropsilences(xs, w, thresh=0.5):
     return xs, w
 
 
-def maskify(xs, length=None, lengthmax=None, padtype='padright'):
+def maskify(xs, length=None, lengthmax=None, padtype='randshift'):
+    """
+    Create a batched composition of multiple matrices in xs (resulting of 3D matrices for each sentence).
+    Various pading types are supported, the most common being 'padright', which add zeros at the end of matrices that are too short.
+
+    Returns
+    -------
+    xbs : list of the batched composition of the elements of xs.
+    MB : A mask with 1 at meaningfull values in elements of xbs and 0 where the matrice was too short.
+    """
 
     if len(set([len(x) for x in xs]))>1:
         raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
@@ -194,6 +218,7 @@ def maskify(xs, length=None, lengthmax=None, padtype='padright'):
     return xbs, MB
 
 def addstop(X, value=1.0):
+    """Add a stop symbol to inputs"""
     X = copy.deepcopy(X)
     framestop = np.zeros(X[0].shape[1]+1)
     framestop[-1] = value
@@ -204,18 +229,20 @@ def addstop(X, value=1.0):
     return X
 
 def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=None, lengthmax=None, maskpadtype='padright', verbose=0):
+    """Directly load batches of input and corresponding outputs (crop the lengths)."""
+
     X_val = load(indir, fid_lst, verbose=verbose, label='Context labels: ')
     Y_val = load(outdir, fid_lst, verbose=verbose, label='Output features: ')
     W_val = load(outwdir, fid_lst, verbose=verbose, label='Time weights: ')
 
     # Crop time sequences according to model type
     if inouttimesync:
-        X_val, Y_val, W_val = cropsize([X_val, Y_val, W_val])
-        [X_val, Y_val], W_val = cropsilences([X_val, Y_val], W_val)
+        X_val, Y_val, W_val = croplen([X_val, Y_val, W_val])
+        [X_val, Y_val], W_val = croplen_weight([X_val, Y_val], W_val)
     else:
         X_val = addstop(X_val)
-        Y_val, W_val = cropsize([Y_val, W_val])
-        [Y_val], W_val = cropsilences([Y_val], W_val)
+        Y_val, W_val = croplen([Y_val, W_val])
+        [Y_val], W_val = croplen_weight([Y_val], W_val)
         Y_val = addstop(Y_val)
 
     # Maskify the validation data according to the batchsize TODO rm
@@ -232,10 +259,10 @@ def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=No
 # Evaluation functions ---------------------------------------------------------
 
 def cost_0pred_rmse(Y_val):
-    '''
+    """
     Compute the Root Mean Square Error (RMSE), assuming the prediction is always zero (i.e. worst predictor RMSE).
-    This is the true RMSE of the data in Y_val (not some mean of sub-RMSEs).
-    '''
+    This is the true RMSE of the data in Y_val (not the mean of sub-RMSEs).
+    """
     if isinstance(Y_val, list):
         worst_val = 0.0
         nbel = 0
@@ -249,6 +276,7 @@ def cost_0pred_rmse(Y_val):
     return worst_val
 
 def cost_model(fn, Xs):
+    """Run a function on on the argument Xs and average the returned values."""
     cost = 0.0
     if isinstance(Xs[0], list):
         for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory TODO still even a single one might be too big
@@ -265,8 +293,7 @@ def cost_model(fn, Xs):
     return cost
 
 def cost_model_prediction_rmse(mod, Xs, Y_val, inouttimesync=True):
-    '''
-    '''
+    """Compute the RMSE between prediction from Xs and ground truth values Y_val."""
     cost = 0.0
     if isinstance(Xs[0], list):
         nbel = 0
@@ -284,9 +311,7 @@ def cost_model_prediction_rmse(mod, Xs, Y_val, inouttimesync=True):
     return cost
 
 def prediction_mstd(mod, Xs):
-    '''
-    Mean of standard-deviation of each sample
-    '''
+    """Mean of standard-deviation of each sample"""
     init_pred_std = 0.0
     if isinstance(Xs[0], list):
         for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory
@@ -300,6 +325,7 @@ def prediction_mstd(mod, Xs):
     return init_pred_std
 
 def prediction_rms(mod, Xs):
+    """Return RMS of the predicted values (used for verification purposes)"""
     init_pred_rms = 0.0
     if isinstance(Xs[0], list):
         nbel = 0

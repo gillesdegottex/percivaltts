@@ -301,7 +301,7 @@ class Optimizer:
                 print_tty('err={:.4f} ({:.4f}s)                  '.format(cost_tra,train_times[-1]))
                 if np.isnan(cost_tra):                      # pragma: no cover
                     print_log('    previous costs: {}'.format(costs_tra_batches))
-                    print_log('    epoch {} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
+                    print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
                     raise ValueError('ERROR: Training cost is nan!')
                 costs_tra_batches.append(cost_tra)
             print_tty('\r                                                           \r')
@@ -325,7 +325,7 @@ class Optimizer:
             elif self._errtype=='LSE':
                 cost_val = costs['model_rmse_validation'][-1]
 
-            print_log("    epoch {} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}% RMSE)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_validation_rmse/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
+            print_log("    E{} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}% RMSE)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_validation_rmse/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
             sys.stdout.flush()
 
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
@@ -355,7 +355,7 @@ class Optimizer:
                 plotsuffix = ''
                 if len(epochs_modelssaved)>0 and epochs_modelssaved[-1]==epoch: plotsuffix='_best'
                 else:                                                           plotsuffix='_last'
-                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='epoch={}'.format(epoch), specsize=self._model.specsize)
+                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='E{}'.format(epoch), specsize=self._model.specsize)
 
             epochs_durs.append(time.time()-timeepochstart)
             print_log('    epoch time: {}   max tot train ~time: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
@@ -411,7 +411,7 @@ class Optimizer:
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
 
         cfg.train_max_nbepochs = 100
-        cfg.train_force_train_nbepochs = 10
+        cfg.train_force_train_nbepochs = 20
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
         cfg.train_cancel_nodecepochs = 50
         cfg.train_batchsize = 5                 # [potential hyper-parameter] # TODO Rename batch_size ?
@@ -435,7 +435,7 @@ class Optimizer:
         # X_val, Y_val = data.load_inoutset(indir, outdir, wdir, fid_lst_val, verbose=1)
         X_vals = data.load(indir, fid_lst_val, verbose=1, label='Context labels: ')
         Y_vals = data.load(outdir, fid_lst_val, verbose=1, label='Output features: ')
-        X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
+        X_vals, Y_vals = data.croplen([X_vals, Y_vals])
 
         if cfg.train_nbtrials>1:
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-init.pkl', cfg=cfg, printfn=print_log)

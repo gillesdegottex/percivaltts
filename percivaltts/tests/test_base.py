@@ -80,14 +80,14 @@ class TestBase(unittest.TestCase):
         compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', cfg.fileids, cfg.wdir, spec_type='fwlspec')  # Overwrite with the good one
 
         import data
-        fid_lst = data.loadids(cfg.fileids)
+        fid_lst = readids(cfg.fileids)
         fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
         X_vals = data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
         worst_val = data.cost_0pred_rmse(X_vals) # RMSE
         print("    X 0-pred validation RMSE = {} (100%)".format(worst_val))
 
         Y_vals = data.load(cfg.outdir, fid_lst_val, verbose=1, label='Output features: ')
-        # X_vals, Y_vals = data.cropsize([X_vals, Y_vals])
+        # X_vals, Y_vals = data.croplen([X_vals, Y_vals])
         worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
         print("    Y 0-pred validation RMSE = {} (100%)".format(worst_val))
 
