@@ -63,7 +63,7 @@ wav_path = cp+wav_dir+'/*.wav'
 f0_path = cp+wav_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+'_fwlspec'+str(spec_size)+'/*.fwlspec'
 nm_path = cp+wav_dir+'_fwnm'+str(nm_size)+'/*.fwnm'
-cfg.outdir = cp+wav_dir+'_cmp_lf0_fwlspec'+str(spec_size)+'_fwnm'+str(nm_size)+'_bndnmnoscale/*.cmp:(-1,'+str(out_size)+')'
+cfg.outdir = cp+wav_dir+'_cmp_lf0_fwlspec'+str(spec_size)+'_fwnm'+str(nm_size)+'_nmnoscale/*.cmp:(-1,'+str(out_size)+')'
 cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model architecture options
