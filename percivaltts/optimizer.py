@@ -130,16 +130,15 @@ class Optimizer:
         best_val = None
         print("    initial validation RMSE = {} ({:.4f}%)".format(init_val, 100.0*init_val/worst_val))
 
-        nbbatches = int(len(fid_lst_tra)/cfg.train_batchsize)
-        print('    using {} batches of {} sentences each'.format(nbbatches, cfg.train_batchsize))
+        nbbatches = int(len(fid_lst_tra)/cfg.train_batch_size)
+        print('    using {} batches of {} sentences each'.format(nbbatches, cfg.train_batch_size))
         print('    model #parameters={}'.format(self._model.nbParams()))
-        print('    #parameters/#frame={:.2f}'.format(float(self._model.nbParams())/(nbbatches*cfg.train_batchsize)))
+        print('    #parameters/#frame={:.2f}'.format(float(self._model.nbParams())/(nbbatches*cfg.train_batch_size)))
 
         if self._errtype=='WGAN':
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
-            # TODO Might drop discri_input_var and replace it with self._target_values
-            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur, LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
+            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur, use_LSweighting=cfg.train_LScoef>0.0, LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
@@ -153,7 +152,7 @@ class Optimizer:
             fake_out = lasagne.layers.get_output(discri, indict)
 
             # Create generator's loss expression
-            if cfg.train_LScoef>0.0:    # TODO This might be 0 but low freq still needs LS
+            if cfg.train_LScoef>0.0:
                 if 0:
                     # Use Standard WGAN+LS (no special weighting curve in spectral domain)
                     print('Overall additive LS solution')
@@ -180,7 +179,7 @@ class Optimizer:
             discri_loss = fake_out.mean() - real_out.mean()
 
             # Improved training for Wasserstein GAN
-            epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))() # TODO Test necessity
+            epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
             mixed_X = (epsi * genout) + (1-epsi) * discri_input_var
             indict = {layer_discri:mixed_X, layer_cond:self._model._input_values}
             output_D_mixed = lasagne.layers.get_output(discri, inputs=indict)
@@ -247,7 +246,7 @@ class Optimizer:
         print_log("    start training ...")
         for epoch in range(epochstart,1+cfg.train_max_nbepochs):
             timeepochstart = time.time()
-            rndidx = np.arange(int(nbbatches*cfg.train_batchsize))    # Need to restart from ordered state to make the shuffling repeatable after reloading training state, the shuffling will be different anyway
+            rndidx = np.arange(int(nbbatches*cfg.train_batch_size))    # Need to restart from ordered state to make the shuffling repeatable after reloading training state, the shuffling will be different anyway
             np.random.shuffle(rndidx)
             rndidxb = np.split(rndidx, nbbatches)
             costs_tra_batches = []
@@ -279,7 +278,7 @@ class Optimizer:
                     else:
                         discri_runs = 5 # TODO Params hardcoded
 
-                    random_epsilon = np.random.uniform(size=(cfg.train_batchsize, 1,1)).astype('float32')
+                    random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
 
                     discri_returns = discri_train_fn(X_trab, Y_trab, random_epsilon)        # Train the discrimnator
                     costs_tra_discri_batches.append(float(discri_returns))
@@ -314,11 +313,11 @@ class Optimizer:
             if self._errtype=='WGAN':
                 train_validation_fn_args = [X_vals]
                 if cfg.train_LScoef>0.0: train_validation_fn_args.append(Y_vals)
-                costs['model_validation'].append(data.cost_model(train_validation_fn, train_validation_fn_args))
+                costs['model_validation'].append(data.cost_model_mfn(train_validation_fn, train_validation_fn_args))
                 costs['discri_training'].append(np.mean(costs_tra_discri_batches))
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
                 discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
-                costs['discri_validation'].append(data.cost_model(discri_train_validation_fn, discri_train_validation_fn_args))
+                costs['discri_validation'].append(data.cost_model_mfn(discri_train_validation_fn, discri_train_validation_fn_args))
                 costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
 
                 cost_val = costs['discri_validation_ltm'][-1]
@@ -414,14 +413,14 @@ class Optimizer:
         cfg.train_force_train_nbepochs = 20
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
         cfg.train_cancel_nodecepochs = 50
-        cfg.train_batchsize = 5                 # [potential hyper-parameter] # TODO Rename batch_size ?
+        cfg.train_batch_size = 5                # [potential hyper-parameter] # TODO Rename batch_size ?
         cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
         cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
         cfg.train_batch_lengthmax = None        # Maximum duration [frames] of each batch
         cfg.train_nbtrials = 1                  # Just run one training only
         cfg.train_hypers=[]
         #cfg.train_hypers = [('learningrate_log10', -6.0, -2.0), ('adam_beta1', 0.8, 1.0)] # For ADAM
-        #cfg.train_hyper = [('train_D_learningrate', 0.0001, 0.1), ('train_D_adam_beta1', 0.8, 1.0), ('train_D_adam_beta2', 0.995, 1.0), ('train_batchsize', 1, 200)] # For ADAM
+        #cfg.train_hyper = [('train_D_learningrate', 0.0001, 0.1), ('train_D_adam_beta1', 0.8, 1.0), ('train_D_adam_beta2', 0.995, 1.0), ('train_batch_size', 1, 200)] # For ADAM
         cfg.train_log_plot=True
         # ... add/overwrite configuration from cfgtomerge ...
         if not cfgtomerge is None: cfg.merge(cfgtomerge)

@@ -58,7 +58,7 @@ class configuration(object):
 
     def id_train_nb(self):
         """Return the size of the training set (equal or slightly lower than self.id_valid_start)."""
-        return self.train_batchsize* int(np.floor(self.id_valid_start/self.train_batchsize))
+        return self.train_batch_size* int(np.floor(self.id_valid_start/self.train_batch_size))
 
     def print_content(self):
         """Print the configuration variables"""
@@ -77,8 +77,11 @@ class configuration(object):
     def mergefiles(self, filenames):
         """Merge the content of a configuration file (variables dropped in a Python file) into this configuration object."""
         files_global = dict()
-        for fname in filenames:
-            files_global.update(runpy.run_path(fname))
+        if isinstance(filenames, list):
+            for fname in filenames:
+                files_global.update(runpy.run_path(fname))
+        else:
+            files_global.update(runpy.run_path(filenames))
 
         for fg in files_global.keys():
             setattr(self, fg, files_global[fg])

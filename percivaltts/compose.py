@@ -376,8 +376,7 @@ def compose(featurepaths, fids, outfilepath, wins=None, id_valid_start=-1, normf
         print('no normalisation called')
     print('output path: {}'.format(outfilepath))
 
-    # TODO Maybe this shouldn't be called within compose, it should come afterwards
-    #      But in doing so we check the final composition, whatever the normalisation function used.
+    # Maybe this shouldn't be called within compose, it should come afterwards. No see #30
     if not normfn is None:
         normfn(outfilepath, fids, featurepaths=featurepaths, keepidx=keepidx, verbose=verbose)
 
@@ -409,7 +408,7 @@ def compose(featurepaths, fids, outfilepath, wins=None, id_valid_start=-1, normf
             if verif_stds is None: verif_stds =((Y-verif_means)**2).sum(axis=0).astype('float64')
             else:                  verif_stds+=((Y-verif_means)**2).sum(axis=0).astype('float64')
         verif_stds /= verif_nbframes-1
-        if verbose>1: # TODO                            # pragma: no cover
+        if verbose>0:                                       # pragma: no cover
             print('verif_min={}'.format(verif_mins))
             print('verif_max={}'.format(verif_maxs))
             print('verif_means={}'.format(verif_means))

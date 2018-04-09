@@ -24,7 +24,7 @@ CMDTORUN=../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
 
 # Maintenance targets ----------------------------------------------------------
 
-.PHONY: tests tests_clean
+.PHONY: clean describe tests tests_clean
 
 all: run
 

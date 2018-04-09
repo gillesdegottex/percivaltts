@@ -25,7 +25,7 @@ cfg.indir = cptest+'binary_label_'+str(lab_size)+'_norm_minmaxm11/*.lab:(-1,'+st
 cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 cfg.wdir = cptest+'wav_fwlspec65_weights/*.w:(-1,1)'
 
-cfg.train_batchsize = 2
+cfg.train_batch_size = 2
 cfg.train_force_train_nbepochs = 2
 
 fid_lst_tra = fid_lst[:cfg.id_train_nb()]
@@ -36,14 +36,20 @@ cfg.dummyattribute = -1
 class TestSmokeTheano(unittest.TestCase):
     def test_model(self):
         makedirs('tests/test_made__smoke_theano_model')
+        makedirs('tests/test_made__smoke_theano_model_train')
 
         import models_basic
         model = models_basic.ModelFC(lab_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=2)
-        modelwdeltas = models_basic.ModelFC(lab_size, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=2) # TODO Should train it too
-
-
         print("modgan.nbParams={}".format(model.nbParams()))
-        # self.assertEqual(model.nbParams(), TODO) # TODO Check number of params. Should be known.
+        self.assertEqual(model.nbParams(), 2163)
+
+        modelwdeltas = models_basic.ModelFC(lab_size, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=2)
+        import optimizer
+        cfg.train_max_nbepochs = 5
+        cfg.train_nbtrials = 5        # Just run one training only
+        optigan = optimizer.Optimizer(model, errtype='LSE')
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+
 
         global cfg
         cfg.train_nbtrials = 1        # Just run one training only
@@ -71,7 +77,7 @@ class TestSmokeTheano(unittest.TestCase):
         print('randomize_hyper: hyperstr='+hyperstr)
         cfg.print_content()
 
-        cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0), ('train_batchsize', 1, 4)] # For ADAM
+        cfg.train_hypers = [('train_learningrate_log10', -6.0, -2.0), ('train_adam_beta1', 0.8, 1.0), ('train_batch_size', 1, 4)] # For ADAM
         cfg_hyprnd1, hyperstr1 = optigan.randomize_hyper(cfg)
         print('randomize_hyper: hyperstr1='+hyperstr1)
         cfg_hyprnd1.print_content()
@@ -80,7 +86,6 @@ class TestSmokeTheano(unittest.TestCase):
         cfg_hyprnd2.print_content()
         self.assertNotEqual(cfg_hyprnd1, cfg_hyprnd2)
 
-        makedirs('tests/test_made__smoke_theano_model_train')
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 5        # Just run one training only
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)

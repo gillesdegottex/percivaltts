@@ -51,13 +51,13 @@ class CstMulLayer(lasagne.layers.Layer):
 
 def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pad=0, nonlinearity=lasagne.nonlinearities.rectify, name=''):
     la = lasagne.layers.Conv2DLayer(incoming, num_filters=num_filters, filter_size=filter_size, stride=stride, pad=pad, nonlinearity=nonlinearity, name=name+'.activation')
-    lg = lasagne.layers.Conv2DLayer(incoming, num_filters=num_filters, filter_size=filter_size, stride=stride, pad=pad, nonlinearity=theano.tensor.nnet.nnet.sigmoid, name=name+'.gate') # TODO Could use ultra fast sigmoid
+    lg = lasagne.layers.Conv2DLayer(incoming, num_filters=num_filters, filter_size=filter_size, stride=stride, pad=pad, nonlinearity=theano.tensor.nnet.nnet.sigmoid, name=name+'.gate')
     lout = lasagne.layers.ElemwiseMergeLayer([la, lg], T.mul, cropping=None, name=name+'.mul_merge')
     return lout
 
 
 class ModelCNN(model.Model):
-    def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctxlayers_nb=1, ctxlayers_type='BLSTM', nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctxlayers_nb=1, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
         outsize = 1+specsize+nmsize
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
@@ -72,39 +72,32 @@ class ModelCNN(model.Model):
 
         layer_ctx = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx_input')
 
-        # Start with a few layers that is supposed to gather the useful information in the context labels
-        if ctxlayers_type=='FC':     # TODO Generalize this crap by passing a function in argument
-            for layi in xrange(ctxlayers_nb):
-                layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
-                layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
-        elif ctxlayers_type=='BLSTM':
-            grad_clipping = 50
-            for layi in xrange(ctxlayers_nb):
-                layerstr = 'ctx_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
-                fwd = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-                bck = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
-                layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
+        # Start with a few layers that is supposed to gather the useful information from the context labels
+        for layi in xrange(2*ctxlayers_nb): # TODO TODO TODO  Changed 2x->1x
+            layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
+            layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
+        grad_clipping = 50
+        for layi in xrange(ctxlayers_nb):
+            layerstr = 'ctx_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
+            fwd = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+            bck = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+            layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
 
-        # layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, 1+specsize+nmsize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection to final output size'), axes=bn_axes)
 
         # F0 - 1D Gated Conv layers
-        # layer_f0 = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, 1, nonlinearity=nonlinearity, num_leading_axes=2, name='f0_projection'), axes=bn_axes)
         layer_f0 = layer_ctx
-        # layer_f0 = lasagne.layers.SliceLayer(layer, indices=slice(0,1), axis=2)
-        # layer_f0 = layer_ctx
         grad_clipping = 50
-        for layi in xrange(2):  # TODO Params hardcoded 2
-            layerstr = 'f0_l'+str(1+layi)+'_BLSTM'
+        for layi in xrange(1):  # TODO Params hardcoded 1 layer
+            layerstr = 'f0_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
             fwd = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
             bck = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
 
             layer_f0 = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
         layer_f0 = lasagne.layers.DenseLayer(layer_f0, num_units=1, nonlinearity=None, num_leading_axes=2, name='f0_lout_projection')
 
+
         # Amplitude spectrum - 2D Gated Conv layers
         layer_spec = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, specsize, nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
-        # layer_spec = lasagne.layers.SliceLayer(layer_ctx, indices=slice(1,1+specsize), axis=2) # TODO TODO TODO rm ?
-        # layer_spec = layer_ctx
         layer_spec = lasagne.layers.dimshuffle(layer_spec, [0, 'x', 1, 2], name='spec_dimshuffle')
         for layi in xrange(nbcnnlayers):
             layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,spec_freqlen)
@@ -114,10 +107,9 @@ class ModelCNN(model.Model):
         layer_spec = lasagne.layers.dimshuffle(layer_spec, [0, 2, 3, 1], name='spec_dimshuffle')
         layer_spec = lasagne.layers.flatten(layer_spec, outdim=3, name='spec_flatten')
 
+
         # Noise mask - 2D Gated Conv layers
         layer_noise = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, nmsize, nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
-        # layer_noise = lasagne.layers.SliceLayer(layer_ctx, indices=slice(1+specsize,1+specsize+nmsize), axis=2) # TODO TODO TODO rm ?
-        # layer_noise = layer_ctx
         layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 'x', 1, 2], name='nm_dimshuffle')
         for layi in xrange(nbcnnlayers):
             layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,nm_freqlen)
@@ -133,7 +125,7 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, ctxlayers_type='BLSTM', postlayers_nb=6, windur=0.100, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
+def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, ctxlayers_nb=1, postlayers_nb=6, windur=0.100, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
     if bn_axes is None: bn_axes=[0,1]
     layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var, name='input')
 
@@ -198,21 +190,27 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
         layerstoconcats.append(layer_bndnm)
 
     # Add the contexts
-    layer_cond = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
+    layer_ctx_input = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
+    layer_ctx = layer_ctx_input
+    for layi in xrange(2*ctxlayers_nb): # TODO TODO TODO  Changed 2x->1x
+        layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
+        layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
+    grad_clipping = 50
+    for layi in xrange(ctxlayers_nb):
+        layerstr = 'ctx_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
+        fwd = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+        bck = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+        # layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2) # It seems concat of concats doesn't work
+        if layi==ctxlayers_nb-1:
+            layerstoconcats.append(fwd)
+            layerstoconcats.append(bck)
+        else:
+            layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
 
-    if ctxlayers_type=='BLSTM': # TODO Generalize this crap by passing a function in argument
-        layerstr = 'ctx_l1_blstm'
-        grad_clipping = 50
-        fwd = lasagne.layers.LSTMLayer(layer_cond, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-        bck = lasagne.layers.LSTMLayer(layer_cond, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
-        # layer_cond = lasagne.layers.ConcatLayer((fwd, bck), axis=2) # It seems concat of concats doesn't work
-        layerstoconcats.append(fwd)
-        layerstoconcats.append(bck)
-    else:
-        layerstoconcats.append(layer_cond)
+    # Concatenate the features analysis with the contexts...
     layer = lasagne.layers.ConcatLayer(layerstoconcats, axis=2, name='ctx_features_concat')
 
-    # finalize with a common FC network
+    # ... and finalize with a common FC network
     for layi in xrange(postlayers_nb):
         layerstr = 'post_l'+str(1+layi)+'_FC'+str(hiddensize)
         layer = lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
@@ -222,4 +220,4 @@ def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctx
     # output layer (linear)
     layer = lasagne.layers.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
     print ("discri output:", layer.output_shape)
-    return [layer, layer_discri, layer_cond]
+    return [layer, layer_discri, layer_ctx_input]
