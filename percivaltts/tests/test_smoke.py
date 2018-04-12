@@ -24,6 +24,7 @@ class TestSmoke(unittest.TestCase):
         text_file.write("shift = 0.005\n")
         text_file.close()
         cfg.mergefiles([cptest+'/info.py'])
+        cfg.mergefiles(cptest+'/info.py')
 
         percivaltts.print_log('print_log')
 
