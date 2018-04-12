@@ -67,7 +67,7 @@ cfg.outdir = cp+wav_dir+'_cmp_lf0_fwlspec'+str(spec_size)+'_fwnm'+str(nm_size)+'
 cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model architecture options
-cfg.model_hiddensize = 256      # All arch # TODO TODO TODO changed
+cfg.model_hiddensize = 256      # All arch
 cfg.model_nbcnnlayers = 8       # CNN only
 cfg.model_nbfilters = 16        # CNN only
 cfg.model_spec_freqlen = 5      # [bins] CNN only
@@ -146,9 +146,8 @@ def build_model():
     model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     # import models_basic
-    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=6)
-    # model = models_basic.ModelBGRU(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
-    # model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
+    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nblayers=6)
+    # model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nblayers=3)
 
     return model
 

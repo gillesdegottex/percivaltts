@@ -50,7 +50,7 @@ def addPMLNMDeltas(l_in, layers_toconcat, outsize, specsize, nmsize):
 
 
 class ModelFC(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
@@ -86,7 +86,7 @@ class ModelFC(model.Model):
 
 
 class ModelBGRU(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
         if bn_axes is None: bn_axes=[] # Recurrent nets don't like batch norm [ref. needed]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
@@ -121,7 +121,7 @@ class ModelBGRU(model.Model):
 
 
 class ModelBLSTM(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
         if bn_axes is None: bn_axes=[] # Recurrent nets don't like batch norm [ref needed]
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
 
