@@ -22,8 +22,6 @@ from __future__ import print_function
 
 from percivaltts import *  # Always include this first to setup a few things
 
-import sys
-import os
 import warnings
 from functools import partial
 

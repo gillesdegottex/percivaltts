@@ -48,9 +48,6 @@ if th_cuda_available():
 else:
     class GpuArrayException(Exception): pass       # declare a dummy one if pygpu is not loaded
 
-# import model
-
-import models_cnn # For GAN discriminator
 
 class Optimizer:
 

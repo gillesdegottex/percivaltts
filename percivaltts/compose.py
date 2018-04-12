@@ -19,7 +19,6 @@ Author
 
 from percivaltts import *  # Always include this first to setup a few things
 
-import sys
 import os
 import datetime
 import re

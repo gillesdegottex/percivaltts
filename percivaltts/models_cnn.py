@@ -22,9 +22,6 @@ from __future__ import print_function
 
 from percivaltts import *  # Always include this first to setup a few things
 
-import sys
-import os
-
 import numpy as np
 numpy_force_random_seed()
 
@@ -116,7 +113,7 @@ class ModelCNN(model.Model):
             layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
             if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
         # layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], pad='same', nonlinearity=None)
-        layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlin_saturatedsigmoid, name='nm_lout_2DC') # Force the output to [0,1] lasagne.nonlinearities.sigmoid
+        layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlin_saturatedsigmoid, name='nm_lout_2DC') # Force the output to [-0.005,1.005] lasagne.nonlinearities.sigmoid TODO TODO TODO
         layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 2, 3, 1], name='nm_dimshuffle')
         layer_noise = lasagne.layers.flatten(layer_noise, outdim=3, name='nm_flatten')
 
