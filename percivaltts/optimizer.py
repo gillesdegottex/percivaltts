@@ -333,13 +333,13 @@ class Optimizer:
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
-            if epoch>cfg.train_force_train_nbepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_force_train_nbepochs epoch
+            if epoch>cfg.train_cancel_nodecepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_cancel_nodecepochs epoch
                 best_val = cost_val
                 self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f})'.format(epoch, best_val))
                 epochs_modelssaved.append(epoch)
                 nbnodecepochs = 0
             else:
-                if epoch>cfg.train_force_train_nbepochs:
+                if epoch>cfg.train_cancel_nodecepochs:
                     nbnodecepochs += 1
 
             if cfg.train_log_plot:
@@ -409,10 +409,9 @@ class Optimizer:
         cfg.train_pg_lambda = 10                # [potential hyper-parameter]
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
 
-        cfg.train_max_nbepochs = 100
-        cfg.train_force_train_nbepochs = 20
+        cfg.train_max_nbepochs = 300
+        cfg.train_cancel_nodecepochs = 100
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
-        cfg.train_cancel_nodecepochs = 50
         cfg.train_batch_size = 5                # [potential hyper-parameter] # TODO Rename batch_size ?
         cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
         cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
