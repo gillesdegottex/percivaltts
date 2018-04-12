@@ -24,6 +24,7 @@ class TestSmoke(unittest.TestCase):
         text_file.write("shift = 0.005\n")
         text_file.close()
         cfg.mergefiles([cptest+'/info.py'])
+        cfg.mergefiles(cptest+'/info.py')
 
         percivaltts.print_log('print_log')
 
@@ -152,10 +153,6 @@ class TestSmoke(unittest.TestCase):
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp1/*.cmp', id_valid_start=8, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp2/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd, do_finalcheck=True, wins=[])
-
-        compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp3/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_nmminmaxm11, do_finalcheck=True, wins=[])
-
-        compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp3_deltas/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_nmminmaxm11, do_finalcheck=True, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp4/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_nmnoscale, do_finalcheck=True, wins=[])
 

@@ -19,7 +19,6 @@ Author
 
 from percivaltts import *  # Always include this first to setup a few things
 
-import sys
 import os
 import datetime
 import re
@@ -118,72 +117,6 @@ def normalise_meanstd(filepath, fids, outfilepath=None, featurepaths=None, keepi
         Y.astype('float32').tofile(foutpath)
     print_tty('\r                                                           \r')
 
-def normalise_meanstd_nmminmaxm11(filepath, fids, outfilepath=None, featurepaths=None, keepidx=None, verbose=1):
-    """
-    Normalisation function for compose.compose(.): Normalise mean and standard-deviation values to 0 and 1, respectively, except last feature (Noise Mask), which is normalised between [-1,1] using [min,max] values.
-    """
-
-    print('Normalise data using mean and standard-deviation (in={}, out={})'.format(filepath,outfilepath))
-    if outfilepath is None:
-        outfilepath=filepath
-        print('Overwrite files in {}'.format(filepath))
-
-    means = np.fromfile(os.path.dirname(filepath)+'/mean.dat', dtype='float32')
-    stds = np.fromfile(os.path.dirname(filepath)+'/std.dat', dtype='float32')
-
-    if keepidx is None: keepidx=np.arange(len(means))
-
-    if 1:
-        # TODO Attention: This is specific to NM setup!
-        # Recover sizes
-        dummy, f0size = data.getpathandshape(featurepaths[0])
-        if f0size is None: f0size=1
-        dummy, specsize = data.getpathandshape(featurepaths[1])
-        specsize = specsize[1]
-        dummy, nmsize = data.getpathandshape(featurepaths[2])
-        nmsize = nmsize[1]
-        outsizeori = f0size+specsize+nmsize
-        print('sizes f0:{} spec:{} noise:{}'.format(f0size, specsize, nmsize))
-
-        # Hack for NM
-        # The following will normalise bnd output to zero centered and unit variance
-        means[f0size+specsize:f0size+specsize+nmsize] = 0.5
-        #stds[f0size+specsize:f0size+specsize+nmsize] = 1.0 # Already in [-0.5,+0.5] # *2 in order to have std 0.288675135 of uniform distrib
-        stds[f0size+specsize:f0size+specsize+nmsize] = 0.5 # Put in [-1,+1]
-
-        if len(means)>outsizeori:
-            #print('hack delta')
-            means[outsizeori+f0size+specsize:outsizeori+f0size+specsize+nmsize] = 0.0
-            #stds[outsizeori+f0size+specsize:outsizeori+f0size+specsize+nmsize] = 1.0 # Already in [-0.5,+0.5]
-            stds[outsizeori+f0size+specsize:outsizeori+f0size+specsize+nmsize] = 0.5 # Put in [-1,+1]
-
-            if len(means)>2*outsizeori:
-                #print('hack delta2')
-                means[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+nmsize] = 0.0
-                #stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+nmsize] = 2.0*2.0 # in [-2,+2] even though mostly in [-1,+1]
-                stds[2*outsizeori+f0size+specsize:2*outsizeori+f0size+specsize+nmsize] = 1.0 # Mostly in [-1,+1]
-
-    if verbose>1:                                           # pragma: no cover
-        print('    means4norm={}'.format(means))
-        print('    stds4norm={}'.format(stds))
-
-    # Write the statistics that are used for the normalisation
-    if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
-    means.astype('float32').tofile(os.path.dirname(outfilepath)+'/mean4norm.dat')
-    stds.astype('float32').tofile(os.path.dirname(outfilepath)+'/std4norm.dat')
-
-    stds[stds==0.0] = 1.0 # Force std to 1 for constant values to avoid division by zero
-    for nf, fid in enumerate(fids):
-        finpath = filepath.replace('*',fid)
-        Y = np.fromfile(finpath, dtype='float32')
-        Y = Y.reshape((-1,len(means)))
-        Y = (Y - means)/stds
-        print_tty('\r    Write normed data file {}: {}                '.format(nf, fid))
-        sys.stdout.flush()
-        foutpath = outfilepath.replace('*',fid)
-        Y.astype('float32').tofile(foutpath)
-    print_tty('\r                                                           \r')
-
 def normalise_meanstd_nmnoscale(filepath, fids, outfilepath=None, featurepaths=None, keepidx=None, verbose=1):
     """
     Normalisation function for compose.compose(.): Normalise mean and standard-deviation values to 0 and 1, respectively, except last feature (likely Noise Mask (NM)), which is not normalised (keept in [0,1] if NM values).
@@ -200,10 +133,10 @@ def normalise_meanstd_nmnoscale(filepath, fids, outfilepath=None, featurepaths=N
     if keepidx is None: keepidx=np.arange(len(means))
 
     if 1:
-        # Recover sizes of each feature
-        f0size = data.getlastdim(featurepaths[0])       # ATTENTION: This is specific to BNDNM usual ordering of usual PML features !!!
-        specsize = data.getlastdim(featurepaths[1])     # ATTENTION: This is specific to BNDNM usual ordering of usual PML features !!!
-        nmsize = data.getlastdim(featurepaths[2])    # ATTENTION: This is specific to BNDNM usual ordering of usual PML features !!!
+        # Recover sizes of each feature. TODO Attention: This is specific to NM setup!
+        f0size = data.getlastdim(featurepaths[0])
+        specsize = data.getlastdim(featurepaths[1])
+        nmsize = data.getlastdim(featurepaths[2])
         outsizeori = f0size+specsize+nmsize
         print('sizes f0:{} spec:{} noise:{}'.format(f0size, specsize, nmsize))
 

@@ -48,9 +48,6 @@ if th_cuda_available():
 else:
     class GpuArrayException(Exception): pass       # declare a dummy one if pygpu is not loaded
 
-# import model
-
-import models_cnn # For GAN discriminator
 
 class Optimizer:
 
@@ -138,7 +135,7 @@ class Optimizer:
         if self._errtype=='WGAN':
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
-            [discri, layer_discri, layer_cond] = models_cnn.ModelCNN_build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur, use_LSweighting=cfg.train_LScoef>0.0, LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
+            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur, use_LSweighting=cfg.train_LScoef>0.0, LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
@@ -273,6 +270,8 @@ class Optimizer:
 
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
+                    # TODO The params below are supposed to ensure the discri is "almost" fully converged
+                    #      when training the generator. How to evaluate this? Is it the case currently?
                     if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded
                         discri_runs = 10 # TODO Params hardcoded
                     else:
@@ -318,7 +317,7 @@ class Optimizer:
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
                 discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
                 costs['discri_validation'].append(data.cost_model_mfn(discri_train_validation_fn, discri_train_validation_fn_args))
-                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
+                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_cancel_nodecepochs:]))
 
                 cost_val = costs['discri_validation_ltm'][-1]
             elif self._errtype=='LSE':
@@ -333,13 +332,13 @@ class Optimizer:
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
-            if epoch>cfg.train_force_train_nbepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_force_train_nbepochs epoch
+            if epoch>cfg.train_cancel_nodecepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_cancel_nodecepochs epoch
                 best_val = cost_val
                 self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f})'.format(epoch, best_val))
                 epochs_modelssaved.append(epoch)
                 nbnodecepochs = 0
             else:
-                if epoch>cfg.train_force_train_nbepochs:
+                if epoch>cfg.train_cancel_nodecepochs:
                     nbnodecepochs += 1
 
             if cfg.train_log_plot:
@@ -357,7 +356,7 @@ class Optimizer:
                 log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='E{}'.format(epoch), specsize=self._model.specsize)
 
             epochs_durs.append(time.time()-timeepochstart)
-            print_log('    epoch time: {}   max tot train ~time: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
+            print_log('    ET: {}   max TT: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
 
             self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
@@ -409,10 +408,9 @@ class Optimizer:
         cfg.train_pg_lambda = 10                # [potential hyper-parameter]
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
 
-        cfg.train_max_nbepochs = 100
-        cfg.train_force_train_nbepochs = 20
+        cfg.train_max_nbepochs = 300
+        cfg.train_cancel_nodecepochs = 100
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
-        cfg.train_cancel_nodecepochs = 50
         cfg.train_batch_size = 5                # [potential hyper-parameter] # TODO Rename batch_size ?
         cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
         cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')

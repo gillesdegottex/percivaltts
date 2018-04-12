@@ -22,9 +22,6 @@ from __future__ import print_function
 
 from percivaltts import *  # Always include this first to setup a few things
 
-import sys
-import os
-
 import numpy as np
 numpy_force_random_seed()
 
@@ -57,7 +54,7 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
 
 
 class ModelCNN(model.Model):
-    def __init__(self, insize, specsize, nmsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctxlayers_nb=1, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, windur=0.100, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, specsize, nmsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctxlayers_nb=1, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, nm_freqlen=5, windur=0.025, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
         outsize = 1+specsize+nmsize
         model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
@@ -73,7 +70,7 @@ class ModelCNN(model.Model):
         layer_ctx = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx_input')
 
         # Start with a few layers that is supposed to gather the useful information from the context labels
-        for layi in xrange(2*ctxlayers_nb): # TODO TODO TODO  Changed 2x->1x
+        for layi in xrange(ctxlayers_nb):
             layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
             layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
         grad_clipping = 50
@@ -87,7 +84,7 @@ class ModelCNN(model.Model):
         # F0 - 1D Gated Conv layers
         layer_f0 = layer_ctx
         grad_clipping = 50
-        for layi in xrange(1):  # TODO Params hardcoded 1 layer
+        for layi in xrange(1):  # TODO TODO TODO Used 2 in most stable version; Params hardcoded 1 layer
             layerstr = 'f0_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
             fwd = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
             bck = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
@@ -116,7 +113,7 @@ class ModelCNN(model.Model):
             layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
             if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
         # layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], pad='same', nonlinearity=None)
-        layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], pad='same', nonlinearity=lasagne.nonlinearities.sigmoid, name='nm_lout_2DC') # Force the output to [0,1]
+        layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlin_saturatedsigmoid, name='nm_lout_2DC') # Force the output to [-0.005,1.005] lasagne.nonlinearities.sigmoid TODO TODO TODO
         layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 2, 3, 1], name='nm_dimshuffle')
         layer_noise = lasagne.layers.flatten(layer_noise, outdim=3, name='nm_flatten')
 
@@ -125,99 +122,99 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-def ModelCNN_build_discri(discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=512, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=4, nbfilters=8, spec_freqlen=13, nm_freqlen=7, ctxlayers_nb=1, postlayers_nb=6, windur=0.100, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
-    if bn_axes is None: bn_axes=[0,1]
-    layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var, name='input')
+    def build_discri(self, discri_input_var, condition_var, specsize, nmsize, ctxsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, nm_freqlen=5, ctxlayers_nb=1, postlayers_nb=6, windur=0.025, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
+        if bn_axes is None: bn_axes=[0,1]
+        layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var, name='input')
 
-    _winlen = int(0.5*windur/0.005)*2+1
+        _winlen = int(0.5*windur/0.005)*2+1
 
-    layerstoconcats = []
+        layerstoconcats = []
 
-    # F0
-    if 0: # Add f0 in discriminator. Disabled bcs it makes the f0 curve very noisy
-        print('f0 winlen={}'.format(_winlen))
-        layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(0,1), axis=2)
-        layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
-        layer = lasagne.layers.Conv2DLayer(layer, 1, [_winlen,1], stride=1, pad='same', nonlinearity=None)
-        if use_bn: layer=lasagne.layers.batch_norm(layer)
-        if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-        for _ in xrange(nbcnnlayers):
-            layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
-            # layer = layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
+        # F0
+        if 0: # Add f0 in discriminator. Disabled bcs it makes the f0 curve very noisy
+            print('f0 winlen={}'.format(_winlen))
+            layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(0,1), axis=2)
+            layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
+            layer = lasagne.layers.Conv2DLayer(layer, 1, [_winlen,1], stride=1, pad='same', nonlinearity=None)
             if use_bn: layer=lasagne.layers.batch_norm(layer)
             if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-        layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
-        layer_f0 = lasagne.layers.flatten(layer, outdim=3)
-        layerstoconcats.append(layer_f0)
+            for _ in xrange(nbcnnlayers):
+                layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
+                # layer = layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
+                if use_bn: layer=lasagne.layers.batch_norm(layer)
+                if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
+            layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
+            layer_f0 = lasagne.layers.flatten(layer, outdim=3)
+            layerstoconcats.append(layer_f0)
 
-    # Amplitude spectrum
-    layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1,1+specsize), axis=2, name='spec_slice')
-
-    if use_LSweighting: # Using weighted WGAN+LS
-        print('WGAN Weighted LS - Discri - SPEC')
-        wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(specsize, dtype=theano.config.floatX),  int(LSWGANtransflc*specsize), LSWGANtransc)
-        wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
-        layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
-
-    layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2], name='spec_dimshuffle')
-    for layi in xrange(nbcnnlayers):
-        layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,spec_freqlen)
-        # strides>1 make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
-        layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,spec_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
-        if use_bn: layer=lasagne.layers.batch_norm(layer)
-        if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-    layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1], name='spec_dimshuffle')
-    layer_spec = lasagne.layers.flatten(layer, outdim=3, name='spec_flatten')
-    layerstoconcats.append(layer_spec)
-
-    if 1: # Add Noise mask (NM) in discriminator
-        layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1+specsize,1+specsize+nmsize), axis=2, name='nm_slice')
+        # Amplitude spectrum
+        layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1,1+specsize), axis=2, name='spec_slice')
 
         if use_LSweighting: # Using weighted WGAN+LS
-            print('WGAN Weighted LS - Discri - NM')
-            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(nmsize, dtype=theano.config.floatX),  int(LSWGANtransflc*nmsize), LSWGANtransc)
+            print('WGAN Weighted LS - Discri - SPEC')
+            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(specsize, dtype=theano.config.floatX),  int(LSWGANtransflc*specsize), LSWGANtransc)
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
-        layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2], name='nm_dimshuffle')
+        layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2], name='spec_dimshuffle')
         for layi in xrange(nbcnnlayers):
-            layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,nm_freqlen)
-            layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
+            layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,spec_freqlen)
+            # strides>1 make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
+            layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,spec_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
             if use_bn: layer=lasagne.layers.batch_norm(layer)
             if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-        layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
-        layer_bndnm = lasagne.layers.flatten(layer, outdim=3, name='nm_flatten')
-        layerstoconcats.append(layer_bndnm)
+        layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1], name='spec_dimshuffle')
+        layer_spec = lasagne.layers.flatten(layer, outdim=3, name='spec_flatten')
+        layerstoconcats.append(layer_spec)
 
-    # Add the contexts
-    layer_ctx_input = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-    layer_ctx = layer_ctx_input
-    for layi in xrange(2*ctxlayers_nb): # TODO TODO TODO  Changed 2x->1x
-        layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
-        layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
-    grad_clipping = 50
-    for layi in xrange(ctxlayers_nb):
-        layerstr = 'ctx_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
-        fwd = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-        bck = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
-        # layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2) # It seems concat of concats doesn't work
-        if layi==ctxlayers_nb-1:
-            layerstoconcats.append(fwd)
-            layerstoconcats.append(bck)
-        else:
-            layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
+        if 1: # Add Noise mask (NM) in discriminator
+            layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1+specsize,1+specsize+nmsize), axis=2, name='nm_slice')
 
-    # Concatenate the features analysis with the contexts...
-    layer = lasagne.layers.ConcatLayer(layerstoconcats, axis=2, name='ctx_features_concat')
+            if use_LSweighting: # Using weighted WGAN+LS
+                print('WGAN Weighted LS - Discri - NM')
+                wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(nmsize, dtype=theano.config.floatX),  int(LSWGANtransflc*nmsize), LSWGANtransc)
+                wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
+                layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
-    # ... and finalize with a common FC network
-    for layi in xrange(postlayers_nb):
-        layerstr = 'post_l'+str(1+layi)+'_FC'+str(hiddensize)
-        layer = lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
-        if use_bn: layer=lasagne.layers.batch_norm(layer, axes=_bn_axes)
-        # if dropout_p>0.0: layer = lasagne.layers.dropout(layer, p=dropout_p) # Bad for FC
+            layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2], name='nm_dimshuffle')
+            for layi in xrange(nbcnnlayers):
+                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,nm_freqlen)
+                layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,nm_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
+                if use_bn: layer=lasagne.layers.batch_norm(layer)
+                if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
+            layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
+            layer_bndnm = lasagne.layers.flatten(layer, outdim=3, name='nm_flatten')
+            layerstoconcats.append(layer_bndnm)
 
-    # output layer (linear)
-    layer = lasagne.layers.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
-    print ("discri output:", layer.output_shape)
-    return [layer, layer_discri, layer_ctx_input]
+        # Add the contexts
+        layer_ctx_input = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
+        layer_ctx = layer_ctx_input
+        for layi in xrange(ctxlayers_nb):
+            layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
+            layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
+        grad_clipping = 50
+        for layi in xrange(ctxlayers_nb):
+            layerstr = 'ctx_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
+            fwd = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+            bck = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+            # layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2) # It seems concat of concats doesn't work
+            if layi==ctxlayers_nb-1:
+                layerstoconcats.append(fwd)
+                layerstoconcats.append(bck)
+            else:
+                layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
+
+        # Concatenate the features analysis with the contexts...
+        layer = lasagne.layers.ConcatLayer(layerstoconcats, axis=2, name='ctx_features_concat')
+
+        # ... and finalize with a common FC network
+        for layi in xrange(postlayers_nb):
+            layerstr = 'post_l'+str(1+layi)+'_FC'+str(hiddensize)
+            layer = lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
+            if use_bn: layer=lasagne.layers.batch_norm(layer, axes=_bn_axes)
+            # if dropout_p>0.0: layer = lasagne.layers.dropout(layer, p=dropout_p) # Bad for FC
+
+        # output layer (linear)
+        layer = lasagne.layers.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
+        print ("discri output:", layer.output_shape)
+        return [layer, layer_discri, layer_ctx_input]

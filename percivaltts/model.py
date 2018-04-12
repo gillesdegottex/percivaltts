@@ -54,7 +54,7 @@ class Model:
     params_trainable = None # Trainable parameters
     updates = []
 
-    _hiddensize = 512
+    _hiddensize = 256
 
     outsize = -1
     net_out = None  # Network output
@@ -62,7 +62,7 @@ class Model:
 
     predict = None  # Prection function
 
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=512):
+    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256):
         # Force additional random inputs is using anyform of GAN
         print("Building the model")
 
@@ -267,11 +267,11 @@ class Model:
 
                 if do_resynth:
                     # resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_forcebinary=True) # Prev version
-                    resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_cont=False)
+                    resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_cont=False, pp_atten1stharminsilences=-25)
                     sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             # syn = pulsemodel.synthesis.synthesize(cfg.fs, f0sgen, specgen, NM=nmgen, nm_forcebinary=True)
-            syn = pulsemodel.synthesis.synthesize(cfg.fs, f0sgen, specgen, NM=nmgen, nm_cont=False)
+            syn = pulsemodel.synthesis.synthesize(cfg.fs, f0sgen, specgen, NM=nmgen, nm_cont=False, pp_atten1stharminsilences=-25)
 
             sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 

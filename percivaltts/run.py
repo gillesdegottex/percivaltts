@@ -67,7 +67,7 @@ cfg.outdir = cp+wav_dir+'_cmp_lf0_fwlspec'+str(spec_size)+'_fwnm'+str(nm_size)+'
 cfg.wdir = cp+wav_dir+'_fwlspec'+str(spec_size)+'_weights/*.w:(-1,1)'
 
 # Model architecture options
-cfg.model_hiddensize = 256      # All arch # TODO TODO TODO changed
+cfg.model_hiddensize = 256      # All arch
 cfg.model_nbcnnlayers = 8       # CNN only
 cfg.model_nbfilters = 16        # CNN only
 cfg.model_spec_freqlen = 5      # [bins] CNN only
@@ -82,7 +82,7 @@ cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each b
                                            # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
 cfg.train_LScoef = 0.25         # For WGAN mixed with LS [def. 0.25]
 cfg.train_max_nbepochs = 300    # Can stop much earlier with 3 stacked BLSTM or 6 stacked FC
-cfg.train_cancel_nodecepochs = 50
+cfg.train_cancel_nodecepochs = 100
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
 # cfg.train_nbtrials = 12
@@ -146,9 +146,8 @@ def build_model():
     model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
 
     # import models_basic
-    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=6)
-    # model = models_basic.ModelBGRU(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
-    # model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=512, nblayers=3)
+    # model = models_basic.ModelFC(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nblayers=6)
+    # model = models_basic.ModelBLSTM(in_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nblayers=3)
 
     return model
 
