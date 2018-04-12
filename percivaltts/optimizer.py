@@ -318,7 +318,7 @@ class Optimizer:
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
                 discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
                 costs['discri_validation'].append(data.cost_model_mfn(discri_train_validation_fn, discri_train_validation_fn_args))
-                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation']))
+                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_cancel_nodecepochs:]))
 
                 cost_val = costs['discri_validation_ltm'][-1]
             elif self._errtype=='LSE':
