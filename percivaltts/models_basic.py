@@ -25,7 +25,6 @@ from percivaltts import *  # Always include this first to setup a few things
 import warnings
 from functools import partial
 
-import numpy as np
 numpy_force_random_seed()
 
 # import theano
