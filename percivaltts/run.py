@@ -77,7 +77,7 @@ cfg.model_windur = 0.025        # [s] 0.025/0.005=5 frames. CNN only
 # Training options
 cfg.fparams_fullset = 'model.pkl'
 # The ones below will overwrite default options in model.py:train_multipletrials(.)
-cfg.train_batchsize = 5
+cfg.train_batch_size = 5
 cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each batch through time
                                            # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
 cfg.train_LScoef = 0.25         # For WGAN mixed with LS [def. 0.25]
