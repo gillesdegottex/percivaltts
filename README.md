@@ -55,7 +55,9 @@ This project has received funding from the European Union's Horizon 2020
 research and innovation programme under the Marie Skłodowska-Curie grant
 agreement No 655764.
 
-### Dependencies and Working versions
+<br/>
+
+### Dependencies and working versions
 
 Percival is _not_ a standalone pipeline for TTS. It only trains an acoustic
 model. Technically, it is dependent on a text-to-audio alignment system, which
@@ -89,7 +91,7 @@ If you want to use MLPG (disabled by default), you will also need to install:
 $ sudo pip install bandmat
 ```
 
-### Install/Demo
+### Install and run the demo
 
 First clone the git repository:
 ```
