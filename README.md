@@ -11,8 +11,8 @@
 Based on Python/Theano/Lasagne, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
-It uses [Merlin](https://github.com/CSTR-Edinburgh/merlin) scripts to generate
-the text labels and features using festival. The [PML vocoder](https://github.com/gillesdegottex/pulsemodel) is used for the waveform synthesis.
+It uses [festival](http://festvox.org/festival/) and [Merlin](https://github.com/CSTR-Edinburgh/merlin) scripts to generate
+the input text labels. The [PML vocoder](https://github.com/gillesdegottex/pulsemodel) is used for the waveform synthesis.
 
 <br/><br/>
 
@@ -51,6 +51,9 @@ content of the 'external' directory, are under the same license. Please refer
 to the content of the 'external' directory for the legal issues related to those
 code source.
 
+This project has received funding from the European Union's Horizon 2020
+research and innovation programme under the Marie Skłodowska-Curie grant
+agreement No 655764.
 
 ### Dependencies and Working versions
 
@@ -60,7 +63,7 @@ usually provides context input labels (e.g. in HTS format; as label_state_align
 in Merlin).
 
 Dealing with the numerous dependencies between the libraries and tools can also
-be a nightmare. I strongly suggest to use a package manager
+be a nightmare. We strongly suggest to use a package manager
 [conda](https://conda.io/docs/) or [miniconda](https://conda.io/miniconda.html)
 on top of the OS package manager. Here are versions the are known to work using
 miniconda:
@@ -92,14 +95,14 @@ First clone the git repository:
 ```
 $ git clone git@github.com:gillesdegottex/percivaltts.git
 ```
-Then, go into this new directory and compile the various tools Neccessary to
-run Percival:
+Then, go into the repository directory and compile the various tools neccessary
+to run Percival:
 ```
 $ cd percivaltts
 $ make build
 ```
 
-Go into the source code:
+Go into the Python module directory:
 ```
 $ cd percivaltts
 ```
