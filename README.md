@@ -92,8 +92,10 @@ First clone the git repository:
 ```
 $ git clone git@github.com:gillesdegottex/percivaltts.git
 ```
-Then, compile the various tools Neccessary to run Percival:
+Then, go into this new directory and compile the various tools Neccessary to
+run Percival:
 ```
+$ cd percivaltts
 $ make build
 ```
 
