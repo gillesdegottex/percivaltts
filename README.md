@@ -121,7 +121,7 @@ And finally run the demo!
 $ make run
 ```
 
-## Preparing a new voice
+### Preparing a new voice
 Like in Merlin, you basically need the three following elements from any corpus:
 * `label_state_align`
 
