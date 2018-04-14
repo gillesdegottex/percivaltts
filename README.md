@@ -172,7 +172,7 @@ In Percival, the trick is to specify the shape of the data as a suffix of the fi
 A batch has a shape: [size, length, features_dim]. Because Theano/Lasagne needs a "channel" dimension (as in pictures), batches' shape often become temporarily [size, 1, length, features_dim] so that the last two dimensions define a picture of size [length, features_dim].
 
 
-### Results Repeatability
+### Results repeatability
 
 The seed of the random number generator is forced by default.
 In order to have non-deterministic runs, replace the line '''np.random.seed(123)''' in utils.py by '''pass'''
