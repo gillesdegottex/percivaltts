@@ -177,28 +177,28 @@ A batch has a shape: [size, length, features_dim], that represent the number of 
 ### Results repeatability
 
 The seed of the random number generator is forced by default.
-In order to have non-deterministic runs, replace the line '''np.random.seed(123)''' in utils.py by '''pass'''
+In order to have non-deterministic runs, replace the line `np.random.seed(123)` in utils.py by `pass`
 
 When the seed is forced, and while using the CPU, all training runs are supposed to output the exact same numerical results, no matter the model.
 
 When using the GPU, training a model that is based on Fully-Connected layers or Recurrent layers only should also output the exact same numerical results for each run.
 However, when using the GPU and 2D Convolutional layers, the results will differ (c.f. [Lasagne thread](https://github.com/Lasagne/Lasagne/issues/6) ).
-It should be possible to make them repeatable by uncommenting some lines in '''setenv.sh''' under repeatability section, at the expense of some computational time.
+It should be possible to make them repeatable by uncommenting some lines in `setenv.sh` under repeatability section, at the expense of some computational time.
 
 
 ### Cloning
 
-Managing multiple experiments in parallel, fixing bugs and try new ideas while keeping track of all the changes this can imply can become quite problematic. There is a simple script in Percival '''clone.sh''' that allows you to clone the whole code source and place it in an experiment directory:
-'''
+Managing multiple experiments in parallel, fixing bugs and try new ideas while keeping track of all the changes this can imply can become quite problematic. There is a simple script in Percival `clone.sh` that allows you to clone the whole code source and place it in an experiment directory:
+```
 $ ./clone.sh /path/to/experiment1
-'''
-or clone and run the '''run.py''' script file directly:
-'''
+```
+or clone and run the `run.py` script file directly:
+```
 $ ./clone.sh /path/to/experiment1 bash ../percivaltts/setenv.sh python ../percivaltts/run.py
-'''
-when a script is runned using '''clone.sh''', the working directory is '''/path/to/experiment1/out''' so that all of the experiment results are in this '''out''' sub-directory and all the code is in a separate sub-directory '''percivaltts'''
-You can also replace the '''bash''' command by a script for submitting Sun Grid Engine (SGE) job.
-The '''Makefile''' has also all the corresponding commands (clone, run, clone_run_grid, etc.)
+```
+when a script is runned using `clone.sh`, the working directory is `/path/to/experiment1/out` so that all of the experiment results are in this `out` sub-directory and all the code is in a separate sub-directory `percivaltts`
+You can also replace the `bash` command by a script for submitting Sun Grid Engine (SGE) job.
+The `Makefile` has also all the corresponding commands (clone, run, clone_run_grid, etc.)
 
 
 ### Notes
