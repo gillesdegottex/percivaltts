@@ -188,7 +188,7 @@ It should be possible to make them repeatable by uncommenting some lines in `set
 
 ### Cloning
 
-Managing multiple experiments in parallel, fixing bugs and try new ideas while keeping track of all the changes this can imply can become quite problematic. There is a simple script in Percival `clone.sh` that allows you to clone the whole code source and place it in an experiment directory:
+Managing multiple experiments in parallel, fixing bugs and try new ideas while keeping track of all the changes this can imply can become quite problematic. In Percival, there is a simple script `clone.sh` that allows you to clone the whole code source and place it in an experiment directory:
 ```
 $ ./clone.sh /path/to/experiment1
 ```
@@ -196,8 +196,8 @@ or clone and run the `run.py` script file directly:
 ```
 $ ./clone.sh /path/to/experiment1 bash ../percivaltts/setenv.sh python ../percivaltts/run.py
 ```
-when a script is runned using `clone.sh`, the working directory is `/path/to/experiment1/out` so that all of the experiment results are in this `out` sub-directory and all the code is in a separate sub-directory `percivaltts`
-You can also replace the `bash` command by a script for submitting Sun Grid Engine (SGE) job.
+when a script is runned using `clone.sh`, the working directory is `/path/to/experiment1/out` so that all of the experiment results are in this `out` sub-directory and all the code is in a separate sub-directory `percivaltts`.
+You can also replace the `bash` command by a script for submitting the job to a Sun Grid Engine (SGE).
 The `Makefile` has also all the corresponding commands (clone, run, clone_run_grid, etc.)
 
 
