@@ -121,6 +121,8 @@ And finally run the demo!
 $ make run
 ```
 
+[A web page with the expected resulting demonstration samples can be found here](http://gillesdegottex.eu/Demos/PercivalTTS/compare_percival_0.9.5/)
+
 ### Preparing a new voice
 Like in Merlin, you basically need the three following elements from any corpus:
 * `label_state_align`
@@ -200,7 +202,7 @@ The '''Makefile''' has also all the corresponding commands (clone, run, clone_ru
 
 
 ### Notes
-Before the waveform synthesis, there is currrently no post-processing of the generated spectral amplitudes.
+Before the waveform synthesis, there is no post-processing of the generated spectral amplitudes (e.g. no formant enhancement or similar).
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
