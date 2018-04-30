@@ -177,6 +177,18 @@ def print_sysinfo():
         env_PATHs = env_PATHs.split(':')
         for p in env_PATHs:
             if len(p)>0: print('      '+p)
+    print('  CPATH:')
+    env_CPATHs = os.getenv('CPATH')
+    if env_CPATHs:
+        env_CPATHs = env_CPATHs.split(':')
+        for p in env_CPATHs:
+            if len(p)>0: print('      '+p)
+    print('  LIBRARY_PATH:')
+    env_LIBRARY_PATHs = os.getenv('LIBRARY_PATH')
+    if env_LIBRARY_PATHs:
+        env_LIBRARY_PATHs = env_LIBRARY_PATHs.split(':')
+        for p in env_LIBRARY_PATHs:
+            if len(p)>0: print('      '+p)
     print('  LD_LIBRARY_PATH:')
     env_LD_LIBRARY_PATHs = os.getenv('LD_LIBRARY_PATH')
     if env_LD_LIBRARY_PATHs:
