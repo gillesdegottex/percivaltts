@@ -257,7 +257,7 @@ class Optimizer:
 
                 # Load training data online, because data is often too heavy to hold in memory
                 fid_lst_trab = [fid_lst_tra[bidx] for bidx in rndidxb[k]]
-                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype)
+                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype, cropmode=cfg.cropmode)
 
                 if 0: # Plot batch
                     import matplotlib.pyplot as plt
@@ -317,7 +317,7 @@ class Optimizer:
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
                 discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
                 costs['discri_validation'].append(data.cost_model_mfn(discri_train_validation_fn, discri_train_validation_fn_args))
-                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_cancel_nodecepochs:]))
+                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_validation_ltm_winlen:]))
 
                 cost_val = costs['discri_validation_ltm'][-1]
             elif self._errtype=='LSE':
@@ -353,10 +353,10 @@ class Optimizer:
                 plotsuffix = ''
                 if len(epochs_modelssaved)>0 and epochs_modelssaved[-1]==epoch: plotsuffix='_best'
                 else:                                                           plotsuffix='_last'
-                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='E{}'.format(epoch), specsize=self._model.specsize)
+                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', vocoder=self._model.vocoder, title='E{}'.format(epoch))
 
             epochs_durs.append(time.time()-timeepochstart)
-            print_log('    ET: {}   max TT: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
+            print_log('    ET: {}   max TT: {}s   train ~time left: {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
 
             self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
@@ -407,6 +407,7 @@ class Optimizer:
         cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
         cfg.train_pg_lambda = 10                # [potential hyper-parameter]
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
+        cfg.train_validation_ltm_winlen = 20
 
         cfg.train_max_nbepochs = 300
         cfg.train_cancel_nodecepochs = 100

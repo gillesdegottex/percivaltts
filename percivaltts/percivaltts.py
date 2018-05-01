@@ -320,13 +320,11 @@ def log_plot_costs(costs, worst_val, fname, epochs_modelssaved):
     fig.savefig(fname)
     plt.close()
 
-def log_plot_samples(Y_vals, Y_preds, nbsamples, shift, fname, fs=-1, specsize=256, title=None):
+def log_plot_samples(Y_vals, Y_preds, nbsamples, fname, vocoder, title=''):
     """
     Plot generated samples.
     """
     # Plot predicted/generated data without denormalisation
-
-    if specsize>Y_vals[0].shape[1]: raise ValueError('specsize {} is bigger than the feature size {}. specsize argument has to be set properly'.format(specsize, Y_vals[0].shape[1]))
 
     import matplotlib
     matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend.
@@ -336,7 +334,7 @@ def log_plot_samples(Y_vals, Y_preds, nbsamples, shift, fname, fs=-1, specsize=2
     for sidx in xrange(nbsamples):
         # maxidx = np.max(np.where(M[sidx,:]>0))
 
-        ts = np.arange(Y_vals[sidx].shape[0])*shift
+        ts = np.arange(Y_vals[sidx].shape[0])*vocoder.shift
 
         plt.subplot(5,nbsamples,1+sidx)
         f0_val = Y_vals[sidx][:,0]
@@ -345,25 +343,25 @@ def log_plot_samples(Y_vals, Y_preds, nbsamples, shift, fname, fs=-1, specsize=2
         plt.plot(ts, f0_pred, 'b')
         plt.axis('off')
 
-        SPEC_val = Y_vals[sidx][:,1:1+specsize]
-        SPEC_pred = Y_preds[sidx][:,1:1+specsize]
-        if fs==-1: fs=SPEC_val.shape[1]
+        SPEC_val = Y_vals[sidx][:,1:1+vocoder.spec_size]
+        SPEC_pred = Y_preds[sidx][:,1:1+vocoder.spec_size]
+        if vocoder.fs==-1: vocoder.fs=SPEC_val.shape[1]
         plt.subplot(5,nbsamples,nbsamples+1+sidx)
         spec_max = np.max(SPEC_val)
         spec_min = np.min(SPEC_val)
-        plt.imshow(SPEC_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
+        plt.imshow(SPEC_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=spec_min, vmax=spec_max)
         plt.axis('off')
         plt.subplot(5,nbsamples,2*nbsamples+1+sidx)
-        plt.imshow(SPEC_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=spec_min, vmax=spec_max)
+        plt.imshow(SPEC_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=spec_min, vmax=spec_max)
         plt.axis('off')
 
-        NM_val = Y_vals[sidx][:,1+specsize:]
-        NM_pred = Y_preds[sidx][:,1+specsize:]
+        NM_val = Y_vals[sidx][:,1+vocoder.spec_size:]
+        NM_pred = Y_preds[sidx][:,1+vocoder.spec_size:]
         plt.subplot(5,nbsamples,3*nbsamples+1+sidx)
-        plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=0.0, vmax=1.0)
+        plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)
         plt.axis('off')
         plt.subplot(5,nbsamples,4*nbsamples+1+sidx)
-        plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, fs/2], vmin=0.0, vmax=1.0)
+        plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)
         plt.axis('off')
 
     if not title is None: plt.suptitle(title)
