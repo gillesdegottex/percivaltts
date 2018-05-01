@@ -6,17 +6,15 @@
 
 
 # You might want to change these two paths according to your CONDA/CUDA install.
-CONDAPATH=$HOME/miniconda
 CUDA_ROOT=/usr/local/cuda-9.0
-
-# Use CONDA python libraries first
-export PYTHONPATH=$CONDAPATH/lib/python2.7/site-packages:$PYTHONPATH
+. $HOME/miniconda/etc/profile.d/conda.sh
+conda activate
 
 # Add CUDA
 export PATH=$CUDA_ROOT/bin:$PATH
-export LD_LIBRARY_PATH=$CUDA_ROOT/lib64:$CONDAPATH/lib:$LD_LIBRARY_PATH
-export LIBRARY_PATH=$CUDA_ROOT/lib64:$CONDAPATH/lib:$LIBRARY_PATH
-export CPATH="$CUDA_ROOT/include:$CONDAPATH/include:$CPATH"
+export LD_LIBRARY_PATH=$CUDA_ROOT/lib64:$LD_LIBRARY_PATH
+export LIBRARY_PATH=$CUDA_ROOT/lib64:$LIBRARY_PATH
+export CPATH="$CUDA_ROOT/include:$CPATH"
 
 # Basic Thenao flags
 export THEANO_FLAGS="floatX=float32,on_unused_input=ignore,"
