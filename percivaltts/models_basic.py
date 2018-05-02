@@ -42,15 +42,15 @@ def layer_final(l_hid, vocoder, mlpg_wins):
 
     if isinstance(vocoder, vocoders.VocoderPML):
         l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec')
-        l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=vocoder.nm_size, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # TODO TODO TODO Vocoder dep. # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
+        l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=vocoder.nm_size, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
         layers_toconcat.extend([l_out_f0spec, l_out_nm])
         if len(mlpg_wins)>0:
-            l_out_f0spec = lasagne.layers.DenseLayer(l_in, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
-            l_out_nm = lasagne.layers.DenseLayer(l_in, num_units=vocoder.nm_size, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d') # TODO TODO TODO Vocoder dep.
+            l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
+            l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=vocoder.nm_size, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
             layers_toconcat.extend([l_out_f0spec, l_out_nm])
             if len(mlpg_wins)>1:
-                l_out_f0spec = lasagne.layers.DenseLayer(l_in, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
-                l_out_nm = lasagne.layers.DenseLayer(l_in, num_units=vocoder.nm_size, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')# TODO TODO TODO Vocoder dep.
+                l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
+                l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=vocoder.nm_size, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')
                 layers_toconcat.extend([l_out_f0spec, l_out_nm])
 
     elif isinstance(vocoder, vocoders.VocoderWORLD):
@@ -60,7 +60,7 @@ def layer_final(l_hid, vocoder, mlpg_wins):
             if len(mlpg_wins)>1:
                 layers_toconcat.append(lasagne.layers.DenseLayer(l_hid, num_units=vocoder.featuressize(), nonlinearity=None, num_leading_axes=2, name='lo_f0specaper_dd'))
 
-    if len(layers_toconcat)==1: l_out = layers_toconcat
+    if len(layers_toconcat)==1: l_out = layers_toconcat[0]
     else:                       l_out = lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
 
     return l_out

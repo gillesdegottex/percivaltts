@@ -36,10 +36,9 @@ class Vocoder:
         self._name = _name
         self.fs = _fs
         self.shift = _shift
-        pass
 
         # if pp_spec_extrapfreq>0:
-        #     idxlim = int(dftlen*pp_spec_extrapfreq/cfg.fs)
+        #     idxlim = int(dftlen*pp_spec_extrapfreq/cfg.vocoder_fs)
         #     for n in xrange(SPEC.shape[0]):
         #         SPEC[n,idxlim:] = SPEC[n,idxlim]
         #
@@ -59,7 +58,7 @@ class Vocoder:
         #             import matplotlib.pyplot as plt
         #             plt.ion()
         #             plt.clf()
-        #             FF = cfg.fs*np.arange(dftlen/2+1)/dftlen
+        #             FF = cfg.vocoder_fs*np.arange(dftlen/2+1)/dftlen
         #             plt.plot(FF, sp.mag2db(SPEC[n,:]), 'k')
         #             plt.plot(FF, sp.mag2db(spec_pp), 'b')
         #             from IPython.core.debugger import  Pdb; Pdb().set_trace()
@@ -74,16 +73,66 @@ class Vocoder:
         raise ValueError('This member function needs to be re-implemented in the sub-classes')
 
 
-class VocoderPML(Vocoder):
+    # Objective measures member functions for any vocoder
+    features_err = dict()
+    def objmeasures_clear(self): self.features_err=dict()
+    def objmeasures_stats(self):
+        for key in self.features_err:
+            print('{}: {}'.format(key, np.mean(np.vstack(self.features_err[key]))))
+
+class VocoderF0Spec(Vocoder):
+    spec_type = None
     spec_size = None
+    dftlen = 4096
+
+    def __init__(self, name, fs, shift, _spec_size, _spec_type='fwbnd', _dftlen=4096):
+        Vocoder.__init__(self, name, fs, shift)
+        self.spec_size = _spec_size
+        self.spec_type = _spec_type # 'fwbnd' 'mcep'
+        self.dftlen = _dftlen
+
+    # Utility functions for this class of vocoder
+    def compress_spectrum(self, SPEC, spec_type, spec_size):
+
+        dftlen = (SPEC.shape[1]-1)*2
+
+        if self.spec_type=='fwbnd':
+            COMPSPEC = sp.linbnd2fwbnd(np.log(abs(SPEC)), fs, dftlen, spec_size)
+
+        elif self.spec_type=='mcep':
+            # TODO test
+            COMPSPEC = sp.spec2mcep(SPEC*fs, sp.bark_alpha(fs), spec_size-1)
+
+        return COMPSPEC
+
+    def decompress_spectrum(self, COMPSPEC, spec_type, pp_mcep=False):
+
+        if self.spec_type=='fwbnd':
+            SPEC = np.exp(sp.fwbnd2linbnd(COMPSPEC, self.fs, self.dftlen, smooth=True))
+            if pp_mcep:
+                print('        Merlin/SPTK Post-proc on MCEP')
+                import external.merlin.generate_pp
+                mcep = sp.spec2mcep(SPEC*self.fs, sp.bark_alpha(self.fs), 256)    # Arbitrary high order
+                mcep_pp = external.merlin.generate_pp.mcep_postproc_sptk(mcep, self.fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
+                SPEC = sp.mcep2spec(mcep_pp, sp.bark_alpha(self.fs), dftlen=self.dftlen)/self.fs
+
+        elif self.spec_type=='mcep':
+            # TODO test
+            if pp_mcep:
+                print('        Merlin/SPTK Post-proc on MCEP')
+                import external.merlin.generate_pp
+                COMPSPEC = external.merlin.generate_pp.mcep_postproc_sptk(COMPSPEC, self.fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
+            SPEC = sp.mcep2spec(COMPSPEC, sp.bark_alpha(self.fs), dftlen=self.dftlen)
+
+        return SPEC
+
+
+class VocoderPML(VocoderF0Spec):
     nm_size = None
 
     def __init__(self, fs, shift, _spec_size, _nm_size, _dftlen=4096):
-        Vocoder.__init__(self, 'PML', fs, shift)
-        self.spec_size = _spec_size
+        VocoderF0Spec.__init__(self, 'PML', fs, shift, _spec_size, 'fwbnd', _dftlen)
         self.nm_size = _nm_size
-        self.dftlen = _dftlen
-        pass
 
     def featuressize(self):
         return 1+self.spec_size+self.nm_size
@@ -92,35 +141,42 @@ class VocoderPML(Vocoder):
         print('Extracting PML features from: '+fwav)
         pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
 
-        # pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=f0_path.replace('*',fid), f0_log=True, fspec=cp+wav_dir+'_mcep60/*.mcep'.replace('*',fid), spec_mceporder=59, verbose=1)
-
-        # return [f0, SPEC, APER] # TODO
-
     def analysisfid(self, cfg, fid, wav_path, outputpathdicts):   # pragma: no cover  coverage not detected
         return self.analysisf(cfg, wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
 
-    def synthesis(self, fs, features):
+    def synthesis(self, fs, CMP, pp_mcep=False):
 
-        f0s = features[0]
-        SPEC = features[1]
-        NM = features[2]
+        f0 = CMP[:,0]
+        f0 = np.exp(f0)
 
-        syn = pulsemodel.synthesis.synthesize(fs, f0s, SPEC, NM=NM, nm_cont=False, pp_atten1stharminsilences=-25)
+        SPEC = self.decompress_spectrum(CMP[:,1:1+self.spec_size], self.spec_type, pp_mcep=pp_mcep)
+
+        NM = CMP[:,1+self.spec_size:1+self.spec_size+self.nm_size]
+        NM = sp.fwbnd2linbnd(NM, fs, self.dftlen)
+
+        syn = pulsemodel.synthesis.synthesize(fs, np.vstack((self.shift*np.arange(len(f0)), f0)).T, SPEC, NM=NM, nm_cont=False, pp_atten1stharminsilences=-25)
 
         return syn
 
+    # Objective measures
+    def objmeasures_add(self, CMP, REF):
+        f0trg = np.exp(REF[:,0])
+        f0gen = np.exp(CMP[:,0])
+        self.features_err.setdefault('F0[Hz]', []).append(np.sqrt(np.mean((f0trg-f0gen)**2)))
+        spectrg = sp.log2db(REF[:,1:1+self.spec_size])
+        specgen = sp.log2db(CMP[:,1:1+self.spec_size])
+        self.features_err.setdefault('SPEC[dB]', []).append(np.sqrt(np.mean((spectrg-specgen)**2, 0)))
+        nmtrg = REF[:,1+self.spec_size:1+self.spec_size+self.nm_size]
+        nmgen = CMP[:,1+self.spec_size:1+self.spec_size+self.nm_size]
+        self.features_err.setdefault('NM', []).append(np.sqrt(np.mean((nmtrg-nmgen)**2, 0)))
 
-class VocoderWORLD(Vocoder):
-    spec_size = None
+
+class VocoderWORLD(VocoderF0Spec):
     aper_size = None
 
     def __init__(self, fs, shift, _spec_size, _aper_size, _dftlen=4096):
-        Vocoder.__init__(self, 'WORLD', fs, shift)
-        self.spec_size = _spec_size
-        self.spec_type = 'fwbnd' # 'fwbnd' 'mcep'
+        VocoderF0Spec.__init__(self, 'WORLD', fs, shift, _spec_size, 'fwbnd', _dftlen)
         self.aper_size = _aper_size
-        self.dftlen = _dftlen
-        pass
 
     def featuressize(self):
         return 1+self.spec_size+self.aper_size+1
@@ -162,12 +218,7 @@ class VocoderWORLD(Vocoder):
         makedirs(os.path.dirname(fvuv))
         vuv.astype('float32').tofile(fvuv)
 
-        if self.spec_type=='fwbnd':
-            SPEC = sp.linbnd2fwbnd(np.log(abs(SPEC)), fs, self.dftlen, self.spec_size)
-        elif self.spec_type=='mcep':
-            # TODO test
-            SPEC = sp.spec2mcep(SPEC*fs, sp.bark_alpha(fs), self.spec_size-1)
-
+        SPEC = self.compress_spectrum(SPEC, fs, self.spec_size)
         makedirs(os.path.dirname(fspec))
         SPEC.astype('float32').tofile(fspec)
 
@@ -198,24 +249,7 @@ class VocoderWORLD(Vocoder):
         vuv = CMP[:,-1]
         f0[vuv<0.5] = 0
 
-        SPEC = CMP[:,1:1+self.spec_size]
-        if self.spec_type=='fwbnd':
-            SPEC = np.exp(sp.fwbnd2linbnd(SPEC, fs, self.dftlen, smooth=True))
-            if pp_mcep:
-                print('        Merlin/SPTK Post-proc on MCEP')
-                import external.merlin.generate_pp
-                mcep = sp.spec2mcep(SPEC*fs, sp.bark_alpha(fs), 256)    # Arbitrary high order
-                mcep_pp = external.merlin.generate_pp.mcep_postproc_sptk(mcep, fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
-                SPEC = sp.mcep2spec(mcep_pp, sp.bark_alpha(fs), dftlen=self.dftlen)/fs
-        elif self.spec_type=='mcep':
-            # TODO test
-            SPEC = sp.mcep2spec(SPEC, sp.bark_alpha(fs), dftlen=self.dftlen)
-            if pp_mcep:
-                print('        Merlin/SPTK Post-proc on MCEP')
-                import external.merlin.generate_pp
-                mcep_pp = external.merlin.generate_pp.mcep_postproc_sptk(SPEC, fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
-                SPEC = sp.mcep2spec(mcep_pp, sp.bark_alpha(fs), dftlen=self.dftlen)
-            SPEC /= float(fs)
+        SPEC = self.decompress_spectrum(CMP[:,1:1+self.spec_size], self.spec_type, pp_mcep=pp_mcep)
 
         APER = CMP[:,1+self.spec_size:1+self.spec_size+self.aper_size]
         APER = sp.db2mag(APER)
@@ -237,14 +271,8 @@ class VocoderWORLD(Vocoder):
 
         return syn
 
-    # Objective measures for WORLD vocoder
-
-    features_err = dict()
-
-    def objmeasures_clear(self): self.features_err=dict()
-
+    # Objective measures
     def objmeasures_add(self, CMP, REF):
-        # Objective measurements
         f0trg = np.exp(REF[:,0])
         f0gen = np.exp(CMP[:,0])
         self.features_err.setdefault('F0[Hz]', []).append(np.sqrt(np.mean((f0trg-f0gen)**2)))
@@ -254,7 +282,4 @@ class VocoderWORLD(Vocoder):
         apertrg = REF[:,1+self.spec_size:1+self.spec_size+self.aper_size]
         apergen = CMP[:,1+self.spec_size:1+self.spec_size+self.aper_size]
         self.features_err.setdefault('APER[dB]', []).append(np.sqrt(np.mean((apertrg-apergen)**2, 0)))
-
-    def objmeasures_stats(self):
-        for key in self.features_err:
-            print('{} RMS={}'.format(key, np.mean(np.vstack(self.features_err[key]))))
+        # TODO Add VUV

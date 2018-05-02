@@ -36,7 +36,7 @@ export THEANO_FLAGS="floatX=float32,on_unused_input=ignore,"
 # For maximum speed:
 export THEANO_FLAGS="mode=FAST_RUN,device=cuda,"$THEANO_FLAGS
 # For debugging, comment the line above and uncomment the line below
-# export THEANO_FLAGS="device=cpu,exception_verbosity=high,optimizer=None,"$THEANO_FLAGS
+# export THEANO_FLAGS="device=cuda,exception_verbosity=high,optimizer=None,"$THEANO_FLAGS
 
 # Theano loads way faster by compiling on shm.
 # Hardcode the compute hostnames that have shm here below.

@@ -185,15 +185,15 @@ class Model:
 
             if do_resynth:
                 CMP = denormalise(y_test[vi], wins=[])
-                resyn = vocoder.synthesis(cfg.fs, CMP, pp_mcep=False)
-                sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+                resyn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=False)
+                sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
             CMP = CMP[0,:,:]
 
             CMP = denormalise(CMP, wins=wins)
-            syn = vocoder.synthesis(cfg.fs, CMP, pp_mcep=pp_mcep)
-            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+            syn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=pp_mcep)
+            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             if do_objmeas: vocoder.objmeasures_add(CMP, y_test[vi])
 

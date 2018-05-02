@@ -58,7 +58,7 @@ class configuration(object):
 
     def id_train_nb(self):
         """Return the size of the training set (equal or slightly lower than self.id_valid_start)."""
-        return self.train_batch_size* int(np.floor(self.id_valid_start/self.train_batch_size))
+        return self.train_batch_size*int(np.floor(self.id_valid_start/self.train_batch_size))
 
     def print_content(self):
         """Print the configuration variables"""
