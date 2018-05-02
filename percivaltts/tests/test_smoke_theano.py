@@ -116,15 +116,15 @@ class TestSmokeTheano(unittest.TestCase):
         model.generate_cmp(cfg.indir, 'tests/test_made__smoke_theano_model_train/smokymodelparams-cmp', fid_lst_val)
 
         model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_extrapfreq', fid_lst, cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_extrapfreq=8000)
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_pf_coef', fid_lst, cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_pf_coef=1.2)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_extrapfreq', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_extrapfreq=8000)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_pf_coef', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_pf_coef=1.2)
 
         # Test MLPG
         cfg.outdir = 'tests/test_made__smoke_compose_compose2_cmp_deltas/*.cmp:(-1,249)'
         optiganwdeltas = optimizer.Optimizer(modelwdeltas, errtype='LSE')
         optiganwdeltas.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modelwdeltas.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl', cfgtomerge=cfg, cont=False)
         modelwdeltas.saveAllParams('tests/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl')
-        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', fid_lst, cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
+        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
 
         cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 
