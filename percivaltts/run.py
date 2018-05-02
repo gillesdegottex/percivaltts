@@ -166,7 +166,7 @@ def composition_normalisation():
 def build_model():
     # Build the model
     import models_cnn
-    model = models_cnn.ModelCNN(in_size, spec_size, nm_size, hiddensize=cfg.model_hiddensize, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, nm_freqlen=cfg.model_nm_freqlen, windur=cfg.model_windur)
+    model = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
     # import models_basic
     # model = models_basic.ModelFC(in_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=cfg.model_hiddensize, nblayers=6)
