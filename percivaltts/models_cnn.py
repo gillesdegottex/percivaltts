@@ -56,7 +56,6 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
 class ModelCNN(model.Model):
     def __init__(self, insize, vocoder, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctxlayers_nb=1, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, windur=0.025, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
-        outsize = 1+specsize+nmsize
         model.Model.__init__(self, insize, vocoder, hiddensize)
 
         self._nbcnnlayers = nbcnnlayers
@@ -81,43 +80,61 @@ class ModelCNN(model.Model):
             layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
 
 
-        # F0 - 1D Gated Conv layers
-        layer_f0 = layer_ctx
-        grad_clipping = 50
-        for layi in xrange(1):  # TODO TODO TODO Used 2 in most stable version; Params hardcoded 1 layer
-            layerstr = 'f0_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
-            fwd = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-            bck = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+        layers_toconcat = []
 
-            layer_f0 = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
-        layer_f0 = lasagne.layers.DenseLayer(layer_f0, num_units=1, nonlinearity=None, num_leading_axes=2, name='f0_lout_projection')
+        if vocoder.f0size()>0:
+            # F0 - BLSTM layer
+            layer_f0 = layer_ctx
+            grad_clipping = 50
+            for layi in xrange(1):  # TODO TODO TODO Used 2 in most stable version; Params hardcoded 1 layer
+                layerstr = 'f0_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
+                fwd = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+                bck = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
 
+                layer_f0 = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
+            layer_f0 = lasagne.layers.DenseLayer(layer_f0, num_units=vocoder.f0size(), nonlinearity=None, num_leading_axes=2, name='f0_lout_projection')
+            layers_toconcat.append(layer_f0)
 
-        # Amplitude spectrum - 2D Gated Conv layers
-        layer_spec = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, vocoder.spec_size, nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
-        layer_spec = lasagne.layers.dimshuffle(layer_spec, [0, 'x', 1, 2], name='spec_dimshuffle')
-        for layi in xrange(nbcnnlayers):
-            layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,spec_freqlen)
-            layer_spec = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_spec, nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-            if dropout_p>0.0: layer_spec = lasagne.layers.dropout(layer_spec, p=dropout_p)
-        layer_spec = lasagne.layers.Conv2DLayer(layer_spec, 1, [_winlen,spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
-        layer_spec = lasagne.layers.dimshuffle(layer_spec, [0, 2, 3, 1], name='spec_dimshuffle')
-        layer_spec = lasagne.layers.flatten(layer_spec, outdim=3, name='spec_flatten')
+        if vocoder.specsize()>0:
+            # Amplitude spectrum - 2D Gated Conv layers
+            layer_spec = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, vocoder.specsize(), nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
+            layer_spec = lasagne.layers.dimshuffle(layer_spec, [0, 'x', 1, 2], name='spec_dimshuffle')
+            for layi in xrange(nbcnnlayers):
+                layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,spec_freqlen)
+                layer_spec = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_spec, nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
+                if dropout_p>0.0: layer_spec = lasagne.layers.dropout(layer_spec, p=dropout_p)
+            layer_spec = lasagne.layers.Conv2DLayer(layer_spec, 1, [_winlen,spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
+            layer_spec = lasagne.layers.dimshuffle(layer_spec, [0, 2, 3, 1], name='spec_dimshuffle')
+            layer_spec = lasagne.layers.flatten(layer_spec, outdim=3, name='spec_flatten')
+            layers_toconcat.append(layer_spec)
 
+        if vocoder.noisesize()>0:
+            # Noise mask - 2D Gated Conv layers
+            layer_noise = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, vocoder.noisesize(), nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
+            layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 'x', 1, 2], name='nm_dimshuffle')
+            for layi in xrange(nbcnnlayers):
+                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,noise_freqlen)
+                layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
+                if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
+            # layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=None)
+            layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlin_saturatedsigmoid, name='nm_lout_2DC') # Force the output in [-0.005,1.005] lasagne.nonlinearities.sigmoid TODO TODO TODO Vocoder dependent
+            layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 2, 3, 1], name='nm_dimshuffle')
+            layer_noise = lasagne.layers.flatten(layer_noise, outdim=3, name='nm_flatten')
+            layers_toconcat.append(layer_noise)
 
-        # Noise mask - 2D Gated Conv layers
-        layer_noise = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, vocoder.nm_size, nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
-        layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 'x', 1, 2], name='nm_dimshuffle')
-        for layi in xrange(nbcnnlayers):
-            layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,noise_freqlen)
-            layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
-            if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
-        # layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=None)
-        layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlin_saturatedsigmoid, name='nm_lout_2DC') # Force the output to [-0.005,1.005] lasagne.nonlinearities.sigmoid TODO TODO TODO Vocoder dependent
-        layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 2, 3, 1], name='nm_dimshuffle')
-        layer_noise = lasagne.layers.flatten(layer_noise, outdim=3, name='nm_flatten')
+        if vocoder.vuvsize()>0:
+            # VUV - BLSTM layer
+            layer_vuv = layer_ctx
+            grad_clipping = 50
+            for layi in xrange(1):
+                layerstr = 'vuv_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
+                fwd = lasagne.layers.LSTMLayer(layer_vuv, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+                bck = lasagne.layers.LSTMLayer(layer_vuv, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+                layer_vuv = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
+            layer_vuv = lasagne.layers.DenseLayer(layer_vuv, num_units=vocoder.vuvsize(), nonlinearity=None, num_leading_axes=2, name='vuv_lout_projection')
+            layers_toconcat.append(layer_vuv)
 
-        layer = lasagne.layers.ConcatLayer((layer_f0, layer_spec, layer_noise), axis=2, name='lout_concat')
+        layer = lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lout_concat')
 
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
