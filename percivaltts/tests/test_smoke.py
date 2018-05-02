@@ -158,7 +158,7 @@ class TestSmoke(unittest.TestCase):
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp_deltas/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_nmnoscale, do_finalcheck=True, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
 
-        compose.create_weights(spec_path+':(-1,'+str(spec_size)+')', fids, 'tests/test_made__smoke_compose_compose2_w1/*.w', spec_type='fwlspec', thresh=-32)
+        compose.create_weights_spec(spec_path+':(-1,'+str(spec_size)+')', fids, 'tests/test_made__smoke_compose_compose2_w1/*.w', spec_type='fwlspec', thresh=-32)
 
 
 if __name__ == '__main__':

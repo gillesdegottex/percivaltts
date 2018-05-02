@@ -38,12 +38,17 @@ class TestSmokeTheano(unittest.TestCase):
         makedirs('tests/test_made__smoke_theano_model')
         makedirs('tests/test_made__smoke_theano_model_train')
 
+        import vocoders
+        vocoder = vocoders.VocoderPML(16000, 0.005, 129, 33)
+
         import models_basic
-        model = models_basic.ModelFC(lab_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=2)
+        model = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=2)
         print("modgan.nbParams={}".format(model.nbParams()))
         self.assertEqual(model.nbParams(), 2163)
 
-        modelwdeltas = models_basic.ModelFC(lab_size, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=2)
+        mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
+
+        modelwdeltas = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=2)
         import optimizer
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 5        # Just run one training only
@@ -125,14 +130,14 @@ class TestSmokeTheano(unittest.TestCase):
 
         # Now test the various models available
 
-        model = models_basic.ModelBGRU(lab_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=1)
-        modelwdeltas = models_basic.ModelBGRU(lab_size, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=1)
+        model = models_basic.ModelBGRU(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=1)
+        modelwdeltas = models_basic.ModelBGRU(lab_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype='LSE')
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate_wav('test/test_made__smoke_theano_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
 
-        model = models_basic.ModelBLSTM(lab_size, 1+spec_size+nm_size, spec_size, nm_size, hiddensize=4, nblayers=1)
-        modelwdeltas = models_basic.ModelBLSTM(lab_size, 3*(1+spec_size+nm_size), spec_size, nm_size, hiddensize=4, nblayers=1)
+        model = models_basic.ModelBLSTM(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=1)
+        modelwdeltas = models_basic.ModelBLSTM(lab_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=1)
         optigan = optimizer.Optimizer(model, errtype='LSE')
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate_wav('test/test_made__smoke_theano_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)

@@ -54,11 +54,11 @@ cfg.indir = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_s
 labs_wpath = cp+lab_dir+'_weights/*.w:(-1,1)' # Ignore silences based on labs
 
 # Output features
-cfg.fs = 16000
-cfg.f0_min, cfg.f0_max = 70, 600
-spec_size = 129
-cfg.shift = 0.005
-noise_size = 33
+cfg.vocoder_fs = 16000
+cfg.vocoder_shift = 0.005
+cfg.vocoder_f0_min, cfg.vocoder_f0_max = 70, 600
+vocoder_spec_size = 129
+vocoder_noise_size = 33
 
 import vocoders
 # vocoder = vocoders.VocoderPML(cfg.fs, cfg.shift, spec_size, noise_size)

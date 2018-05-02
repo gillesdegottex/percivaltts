@@ -73,9 +73,9 @@ class TestBase(unittest.TestCase):
 
         # Create time weights (column vector in [0,1]). The frames at begining or end of
         # each file whose weights are smaller than 0.5 will be ignored by the training
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
-        compose.create_weights(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwlspec')  # Overwrite with the good one
+        compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
+        compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
+        compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwlspec')  # Overwrite with the good one
 
         import data
         fid_lst_val = fids[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
