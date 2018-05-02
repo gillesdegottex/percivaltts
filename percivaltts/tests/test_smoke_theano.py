@@ -39,7 +39,7 @@ class TestSmokeTheano(unittest.TestCase):
         makedirs('tests/test_made__smoke_theano_model_train')
 
         import vocoders
-        vocoder = vocoders.VocoderPML(16000, 0.005, 129, 33)
+        vocoder = vocoders.VocoderPML(16000, 0.005, spec_size, nm_size)
 
         import models_basic
         model = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=2)
