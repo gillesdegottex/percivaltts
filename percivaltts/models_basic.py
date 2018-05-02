@@ -125,7 +125,7 @@ class ModelFC(model.Model):
 class ModelBGRU(model.Model):
     def __init__(self, insize, vocoder, mlpg_wins=[], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
         if bn_axes is None: bn_axes=[] # Recurrent nets don't like batch norm [ref. needed]
-        model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
+        model.Model.__init__(self, insize, vocoder, hiddensize)
 
         if len(bn_axes)>0: warnings.warn('ModelBGRU: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable [ref. needed]'.format(bn_axes))
 
