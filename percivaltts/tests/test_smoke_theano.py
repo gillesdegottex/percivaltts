@@ -13,8 +13,8 @@ cptest = 'tests/slt_arctic_merlin_test/' # The main directory where the data of 
 lab_size = 425
 spec_size = 65
 nm_size = 17
-cfg.shift = 0.005   # Time shift between 2 frames
-cfg.fs = 32000      # Sampling frequency of the samples used for testing
+cfg.vocoder_shift = 0.005   # Time shift between 2 frames
+cfg.vocoder_fs = 16000      # Sampling frequency of the samples used for testing
 
 cfg.fileids = cptest+'/file_id_list.scp'
 fid_lst = readids(cfg.fileids)
@@ -39,7 +39,7 @@ class TestSmokeTheano(unittest.TestCase):
         makedirs('tests/test_made__smoke_theano_model_train')
 
         import vocoders
-        vocoder = vocoders.VocoderPML(16000, 0.005, spec_size, nm_size)
+        vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
 
         import models_basic
         model = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=2)
