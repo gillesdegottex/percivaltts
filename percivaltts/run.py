@@ -61,8 +61,8 @@ vocoder_spec_size = 129
 vocoder_noise_size = 33
 
 import vocoders
-# vocoder = vocoders.VocoderPML(cfg.fs, cfg.shift, spec_size, noise_size)
-vocoder = vocoders.VocoderWORLD(cfg.fs, cfg.shift, spec_size, noise_size)
+vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, vocoder_spec_size, vocoder_noise_size)
+# vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, vocoder_spec_size, vocoder_noise_size)
 
 do_mlpg = True # TODO TODO TODO
 mlpg_wins = []
@@ -97,8 +97,8 @@ cfg.train_batch_size = 5
 cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each batch through time
                                            # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
 cfg.train_LScoef = 0.25         # For WGAN mixed with LS [def. 0.25]
-cfg.train_max_nbepochs = 300    # Can stop much earlier with 3 stacked BLSTM or 6 stacked FC
-cfg.train_cancel_nodecepochs = 100
+cfg.train_max_nbepochs = 300    # (Can stop much earlier for 3 stacked BLSTM or 6 stacked FC)
+cfg.train_cancel_nodecepochs = 50 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)
 cfg.cropmode = 'begend' # begend, begendbigger, all  # TODO TODO TODO Drop some of them, but not all bigger, proba drop
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
