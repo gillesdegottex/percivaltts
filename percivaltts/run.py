@@ -144,7 +144,7 @@ def contexts_extraction():
     for fid in readids(cfg.fileids):
         label_normaliser.perform_normalisation([lab_path.replace('*',fid)], [labbin_path.replace('*',fid)], label_type='state_align') # phone_align or state_align
 
-    compose.create_weights_lab(lab_path, cfg.fileids, labs_wpath, silencesymbol='sil', shift=cfg.shift)
+    compose.create_weights_lab(lab_path, cfg.fileids, labs_wpath, silencesymbol='sil', shift=cfg.vocoder_shift)
 
 
 # DNN data composition ---------------------------------------------------------
