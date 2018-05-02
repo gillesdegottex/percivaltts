@@ -72,6 +72,10 @@ class Vocoder:
     def featuressize(self):
         raise ValueError('This member function needs to be re-implemented in the sub-classes')
 
+    def f0size(self): return -1
+    def specsize(self): return -1
+    def noisesize(self): return -1
+    def vuvsize(self): return -1
 
     # Objective measures member functions for any vocoder
     features_err = dict()
@@ -90,6 +94,9 @@ class VocoderF0Spec(Vocoder):
         self.spec_size = _spec_size
         self.spec_type = _spec_type # 'fwbnd' 'mcep'
         self.dftlen = _dftlen
+
+    def f0size(self): return 1
+    def specsize(self): return self.spec_size
 
     # Utility functions for this class of vocoder
     def compress_spectrum(self, SPEC, spec_type, spec_size):
@@ -137,6 +144,8 @@ class VocoderPML(VocoderF0Spec):
     def featuressize(self):
         return 1+self.spec_size+self.nm_size
 
+    def noisesize(self): return self.nm_size
+
     def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, fnm):              # pragma: no cover  coverage not detected
         print('Extracting PML features from: '+fwav)
         pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
@@ -180,6 +189,9 @@ class VocoderWORLD(VocoderF0Spec):
 
     def featuressize(self):
         return 1+self.spec_size+self.aper_size+1
+
+    def noisesize(self): return self.aper_size
+    def vuvsize(self): return 1
 
     def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv):          # pragma: no cover  coverage not detected
         print('Extracting WORLD features from: '+fwav)
