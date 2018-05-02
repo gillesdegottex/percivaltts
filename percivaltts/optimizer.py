@@ -157,9 +157,22 @@ class Optimizer:
                 else:
                     # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
                     print('WGAN Weighted LS - Generator part')
-                    specxs = np.arange(self._model.specsize, dtype=theano.config.floatX)
-                    nmxs = np.arange(self._model.nmsize, dtype=theano.config.floatX)
-                    wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specxs,  int(self._LSWGANtransflc*self._model.specsize), self._LSWGANtransc), nonlin_sigmoidparm(nmxs,  int(self._LSWGANtransflc*self._model.nmsize), self._LSWGANtransc)))
+
+                    wganls_weights_els = []
+                    wganls_weights_els.append([0.0]) # For f0
+                    specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
+                    wganls_weights_els.append(nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.specsize()), self._LSWGANtransc)) # For spec
+                    if self._model.vocoder.noisesize()>0:
+                        noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
+                        wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)) # For noise
+                    if self._model.vocoder.vuvsize()>0:
+                        wganls_weights_els.append([0.0]) # For vuv
+                    wganls_weights_ = np.hstack(wganls_weights_els)
+
+                    # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)))
+                    # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc), [0.0]))
+
+                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # TODO TODO TODO
                     wganls_weights_ *= (1.0-cfg.train_LScoef)
 
                     wganls_weights_gan = theano.shared(value=wganls_weights_, name='wganls_weights_gan')
