@@ -23,6 +23,7 @@ from __future__ import print_function
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/pulsemodel/external/pyworld/')
 
 import numpy as np
 def numpy_force_random_seed():

@@ -97,11 +97,11 @@ class VocoderF0Spec(Vocoder):
         dftlen = (SPEC.shape[1]-1)*2
 
         if self.spec_type=='fwbnd':
-            COMPSPEC = sp.linbnd2fwbnd(np.log(abs(SPEC)), fs, dftlen, spec_size)
+            COMPSPEC = sp.linbnd2fwbnd(np.log(abs(SPEC)), self.fs, dftlen, spec_size)
 
         elif self.spec_type=='mcep':
             # TODO test
-            COMPSPEC = sp.spec2mcep(SPEC*fs, sp.bark_alpha(fs), spec_size-1)
+            COMPSPEC = sp.spec2mcep(SPEC*self.fs, sp.bark_alpha(self.fs), spec_size-1)
 
         return COMPSPEC
 
@@ -137,12 +137,12 @@ class VocoderPML(VocoderF0Spec):
     def featuressize(self):
         return 1+self.spec_size+self.nm_size
 
-    def analysisf(self, cfg, fwav, ff0, fspec, fnm):              # pragma: no cover  coverage not detected
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, fnm):              # pragma: no cover  coverage not detected
         print('Extracting PML features from: '+fwav)
-        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=cfg.f0_min, f0_max=cfg.f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
+        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
 
     def analysisfid(self, cfg, fid, wav_path, outputpathdicts):   # pragma: no cover  coverage not detected
-        return self.analysisf(cfg, wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), cfg.vocoder_f0_min, cfg.vocoder_f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
 
     def synthesis(self, fs, CMP, pp_mcep=False):
 
@@ -181,7 +181,7 @@ class VocoderWORLD(VocoderF0Spec):
     def featuressize(self):
         return 1+self.spec_size+self.aper_size+1
 
-    def analysisf(self, cfg, fwav, ff0, fspec, faper, fvuv):          # pragma: no cover  coverage not detected
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv):          # pragma: no cover  coverage not detected
         print('Extracting WORLD features from: '+fwav)
 
         wav, fs, _ = sp.wavread(fwav)
@@ -191,8 +191,8 @@ class VocoderWORLD(VocoderF0Spec):
         if 0:
             # Check direct copy re-synthesis without compression/encoding
             print(pw.__file__)
-            # _f0, ts = pw.dio(wav, fs, f0_floor=cfg.f0_min, f0_ceil=cfg.f0_max, channels_in_octave=2, frame_period=self.shift*1000.0)
-            _f0, ts = pw.dio(wav, fs, f0_floor=cfg.f0_min, f0_ceil=cfg.f0_max, channels_in_octave=2, frame_period=self.shift*1000.0)
+            # _f0, ts = pw.dio(wav, fs, f0_floor=f0_min, f0_ceil=f0_max, channels_in_octave=2, frame_period=self.shift*1000.0)
+            _f0, ts = pw.dio(wav, fs, f0_floor=f0_min, f0_ceil=f0_max, channels_in_octave=2, frame_period=self.shift*1000.0)
             # _f0, ts = pw.harvest(wav, fs)
             f0 = pw.stonemask(wav, _f0, ts, fs)
             SPEC = pw.cheaptrick(wav, f0, ts, fs, fft_size=self.dftlen)
@@ -201,7 +201,7 @@ class VocoderWORLD(VocoderF0Spec):
             sp.wavwrite('resynth.wav', resyn, fs, norm_abs=True, force_norm_abs=True, verbose=1)
             from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
-        _f0, ts = pw.dio(wav, fs, f0_floor=cfg.f0_min, f0_ceil=cfg.f0_max, channels_in_octave=2, frame_period=self.shift*1000.0)
+        _f0, ts = pw.dio(wav, fs, f0_floor=f0_min, f0_ceil=f0_max, channels_in_octave=2, frame_period=self.shift*1000.0)
         f0 = pw.stonemask(wav, _f0, ts, fs)
         SPEC = pw.cheaptrick(wav, f0, ts, fs, fft_size=self.dftlen)
         # SPEC = 10.0*np.sqrt(SPEC) # TODO Best gain correction I could find. Hard to find the good one between PML and WORLD different syntheses
@@ -227,7 +227,7 @@ class VocoderWORLD(VocoderF0Spec):
         makedirs(os.path.dirname(faper))
         APER.astype('float32').tofile(faper)
 
-        CMP = np.concatenate((f0.reshape((-1,1)), SPEC, APER, vuv.reshape((-1,1))), axis=1)
+        # CMP = np.concatenate((f0.reshape((-1,1)), SPEC, APER, vuv.reshape((-1,1))), axis=1) # (This is not a necessity)
 
         if 0:
             import matplotlib.pyplot as plt
@@ -236,10 +236,10 @@ class VocoderWORLD(VocoderF0Spec):
             sp.wavwrite('resynth.wav', resyn, fs, norm_abs=True, force_norm_abs=True, verbose=1)
             from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
-        return CMP
+        # return CMP
 
     def analysisfid(self, cfg, fid, wav_path, outputpathdicts):              # pragma: no cover  coverage not detected
-        return self.analysisf(cfg, wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid))
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), cfg.vocoder_f0_min, cfg.vocoder_f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid))
 
     def synthesis(self, fs, CMP, pp_mcep=False):
         import pyworld as pw

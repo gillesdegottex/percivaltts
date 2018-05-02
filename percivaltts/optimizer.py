@@ -213,7 +213,8 @@ class Optimizer:
             self.cost = T.mean(costout) # self.cost = T.mean(T.sum(costout, axis=-1)) ?
 
             print("    creating parameters updates ...")
-            updates = lasagne.updates.adam(self.cost, params, learning_rate=10**cfg.train_learningrate_log10, beta1=cfg.train_adam_beta1, beta2=cfg.train_adam_beta2, epsilon=10**cfg.train_adam_epsilon_log10)
+            updates = lasagne.updates.adam(self.cost, params, learning_rate=float(10**cfg.train_learningrate_log10), beta1=float(cfg.train_adam_beta1), beta2=float(cfg.train_adam_beta2), epsilon=float(10**cfg.train_adam_epsilon_log10))
+
             self._optim_updates.append(updates)
             print("    compiling training function ...")
             train_fn = theano.function(self._model.inputs+[self._target_values], self.cost, updates=updates)
@@ -266,7 +267,7 @@ class Optimizer:
                     from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
                 load_times.append(time.time()-timeloadstart)
-                print_tty('({:.6f}s); training '.format(load_times[-1]))
+                print_tty(' (iter load: {:.6f}s); training '.format(load_times[-1]))
 
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
@@ -296,7 +297,7 @@ class Optimizer:
 
                 train_times.append(time.time()-timetrainstart)
 
-                print_tty('err={:.4f} ({:.4f}s)                  '.format(cost_tra,train_times[-1]))
+                print_tty('err={:.4f} (iter train: {:.4f}s)                  '.format(cost_tra,train_times[-1]))
                 if np.isnan(cost_tra):                      # pragma: no cover
                     print_log('    previous costs: {}'.format(costs_tra_batches))
                     print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
