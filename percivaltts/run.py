@@ -129,7 +129,7 @@ def features_extraction():
 
     # Create time weights (column vector in [0,1]). The frames at begining or end of
     # each file whose weights are smaller than 0.5 will be ignored by the training
-    compose.create_weights_spec(spec_path+':(-1,'+str(spec_size)+')', fids, feats_wpath)
+    compose.create_weights_spec(spec_path+':(-1,'+str(vocoder_spec_size)+')', fids, feats_wpath)
 
 
 def contexts_extraction():
@@ -152,10 +152,11 @@ def composition_normalisation():
     compose.compose([labbin_path+':(-1,'+str(in_size)+')'], fids, cfg.inpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[])
 
     # Compose the outputs
-    if isinstance(vocoder, vocoders.VocoderPML):
-        compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', noise_path+':(-1,'+str(noise_size)+')'], fids, cfg.outpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_nmnoscale, wins=mlpg_wins)
-    else:
-        compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', noise_path+':(-1,'+str(noise_size)+')', vuv_path], fids, cfg.outpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd, wins=mlpg_wins)
+    outpaths = [f0_path, spec_path+':(-1,'+str(vocoder_spec_size)+')', noise_path+':(-1,'+str(vocoder_noise_size)+')']
+    normfn = compose.normalise_meanstd
+    if isinstance(vocoder, vocoders.VocoderPML):        normfn=compose.normalise_meanstd_nmnoscale
+    elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)
+    compose.compose(outpaths, fids, cfg.outpath, id_valid_start=cfg.id_valid_start, normfn=normfn, wins=mlpg_wins)
 
 
 def build_model():
@@ -184,7 +185,7 @@ def training(cont=False):
 
     import optimizer
     optigan = optimizer.Optimizer(model, errtype='WGAN') # 'WGAN' or 'LSE'
-    optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
+    optigan.train_multipletrials(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, model.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 
 def generate(fparams=cfg.fparams_fullset):
