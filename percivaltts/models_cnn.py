@@ -141,7 +141,7 @@ class ModelCNN(model.Model):
 
     def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, ctxlayers_nb=1, postlayers_nb=6, windur=0.025, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
         if bn_axes is None: bn_axes=[0,1]
-        layer_discri = lasagne.layers.InputLayer(shape=(None, None, 1+specsize+nmsize), input_var=discri_input_var, name='input')
+        layer_discri = lasagne.layers.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
 
         _winlen = int(0.5*windur/0.005)*2+1
 
@@ -165,11 +165,11 @@ class ModelCNN(model.Model):
             layerstoconcats.append(layer_f0)
 
         # Amplitude spectrum
-        layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1,1+specsize), axis=2, name='spec_slice')
+        layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
 
         if use_LSweighting: # Using weighted WGAN+LS
             print('WGAN Weighted LS - Discri - SPEC')
-            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(specsize, dtype=theano.config.floatX),  int(LSWGANtransflc*specsize), LSWGANtransc)
+            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX),  int(LSWGANtransflc*vocoder.specsize()), LSWGANtransc)
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
@@ -185,11 +185,11 @@ class ModelCNN(model.Model):
         layerstoconcats.append(layer_spec)
 
         if 1: # Add Noise mask (NM) in discriminator
-            layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(1+specsize,1+specsize+nmsize), axis=2, name='nm_slice')
+            layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
 
             if use_LSweighting: # Using weighted WGAN+LS
                 print('WGAN Weighted LS - Discri - NM')
-                wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(nmsize, dtype=theano.config.floatX),  int(LSWGANtransflc*nmsize), LSWGANtransc)
+                wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  int(LSWGANtransflc*vocoder.noisesize()), LSWGANtransc)
                 wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
                 layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
