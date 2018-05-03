@@ -107,6 +107,7 @@ def normalise_meanstd(filepath, fids, outfilepath=None, featurepaths=None, keepi
     stds[stds==0.0] = 1.0 # Force std to 1 for constant values to avoid division by zero
                           # This modification is not saved in std4norm.
                           # Though, during denormalisation, the data variance will be crushed to zero variance, and not one, which is the correct behavior.
+
     for nf, fid in enumerate(fids):
         finpath = filepath.replace('*',fid)
         Y = np.fromfile(finpath, dtype='float32')
@@ -348,7 +349,7 @@ def compose(featurepaths, fids, outfilepath, wins=None, id_valid_start=-1, normf
             print('verif_stds={}'.format(verif_stds))
 
 
-def create_weights(specfeaturepath, fids, outfilepath, thresh=-32, dftlen=4096, spec_type='fwlspec'):
+def create_weights_spec(specfeaturepath, fids, outfilepath, thresh=-32, dftlen=4096, spec_type='fwlspec'):
     """
     This function creates a one-column vector with one weight value per frame.
     By default, in this implementation, the weight is computed as a silence
@@ -398,5 +399,33 @@ def create_weights(specfeaturepath, fids, outfilepath, thresh=-32, dftlen=4096, 
             plt.plot(np.log10(weight), 'b')
             plt.plot([0, len(ener)], thresh*np.array([1, 1]), 'k')
             from IPython.core.debugger import  Pdb; Pdb().set_trace()
+
+    print_tty('\r                                                           \r')
+
+def create_weights_lab(labpath, fids, outfilepath, silencesymbol='sil', shift=0.005):
+    makedirs(os.path.dirname(outfilepath))
+
+    outfilepath, _ = data.getpathandshape(outfilepath)
+
+    for fid in readids(fids):
+        print_tty('\r    Processing feature file {}                '.format(fid))
+
+        with open(labpath.replace('*',fid)) as f:
+
+            lines = f.readlines()
+            lineels = re.findall(r'([0-9]+)\s+([0-9]+)\s+(.+)', lines[-1])[0]
+            tend   = float(lineels[1])*1e-7
+            weight = np.ones(int(np.ceil(tend/shift)), dtype='float32')
+
+            for line in lines:
+                lineels = re.findall(r'([0-9]+)\s+([0-9]+)\s+(.+)', line)[0]
+                tstart = float(lineels[0])*1e-7
+                tend   = float(lineels[1])*1e-7
+                # print('{}-{}'.format(tstart, tend))
+                phones = re.findall(r'([^\^]+)\^([^-]+)-([^\+]+)\+([^=]+)=([^@]+)@(.+)', lineels[2])[0]
+                if phones[2]==silencesymbol:
+                    weight[int(np.floor(tstart/shift)):int(np.ceil(tend/shift))] = 0.0
+
+            weight.astype('float32').tofile(outfilepath.replace('*',fid))
 
     print_tty('\r                                                           \r')

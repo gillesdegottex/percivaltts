@@ -56,22 +56,20 @@ class Model:
 
     _hiddensize = 256
 
-    outsize = -1
+    vocoder = None
     net_out = None  # Network output
     outputs = None  # Outputs of prediction function
 
     predict = None  # Prection function
 
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256):
+    def __init__(self, insize, _vocoder, hiddensize=256):
         # Force additional random inputs is using anyform of GAN
         print("Building the model")
 
         self.insize = insize
 
-        self.specsize = specsize
-        self.nmsize = nmsize
+        self.vocoder = _vocoder
         self._hiddensize = hiddensize
-        self.outsize = outsize
 
         self._input_values = T.ftensor3('input_values')
 
@@ -135,18 +133,13 @@ class Model:
             CMP.astype('float32').tofile(outpath.replace('*',fid_lst[vi]))
 
 
-    def generate_wav(self, syndir, fid_lst, cfg, do_objmeas=True, do_resynth=True
-            , spec_comp='fwlspec'
-            , spec_size=129
-            , nm_size=33
-            , do_mlpg=False
+    def generate_wav(self, inpath, outpath, fid_lst, syndir, cfg, vocoder, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]], do_objmeas=True, do_resynth=True
             , pp_mcep=False
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
             ):
 
         # Options dependent on features composition
-        outsize_wodeltas = 1+spec_size+nm_size    # 1+: logf0
 
         # Options for synthesis only
         dftlen = 4096
@@ -157,125 +150,53 @@ class Model:
 
         print('Reloading output stats')
         # Assume mean/std normalisation of the output
-        Ymean = np.fromfile(os.path.dirname(cfg.outdir)+'/mean4norm.dat', dtype='float32')
-        Ystd = np.fromfile(os.path.dirname(cfg.outdir)+'/std4norm.dat', dtype='float32')
+        Ymean = np.fromfile(os.path.dirname(outpath)+'/mean4norm.dat', dtype='float32')
+        Ystd = np.fromfile(os.path.dirname(outpath)+'/std4norm.dat', dtype='float32')
 
         print('\nLoading generation data at once ...')
-        X_test = data.load(cfg.indir, fid_lst, verbose=1)
+        X_test = data.load(inpath, fid_lst, verbose=1)
         if do_objmeas:
-            y_test = data.load(cfg.outdir, fid_lst, verbose=1)
+            y_test = data.load(outpath, fid_lst, verbose=1)
             X_test, y_test = data.croplen((X_test, y_test))
-            #cost_test = data.cost_model_merlin(mod, X_test, y_test, model_outsize=cfg.model_outsize)
-            #print("    test cost = {:.6f} ({:.4f}%)".format(cost_test, 100*np.sqrt(cost_test)/np.sqrt(worst_val)))
 
-        def decomposition(CMP, outsize_wodeltas, do_mlpg=False, pp_mcep=True, f0clipmin=-1, f0clipmax=-1):
+        def denormalise(CMP, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]):
 
-            # Denormalise
-            CMP = CMP*np.tile(Ystd, (CMP.shape[0], 1)) + np.tile(Ymean, (CMP.shape[0], 1))
+            CMP = CMP*np.tile(Ystd, (CMP.shape[0], 1)) + np.tile(Ymean, (CMP.shape[0], 1)) # De-normalise
 
-            if do_mlpg:
+            if len(wins)>0:
+                # Apply MLPG
                 from external.merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
-                mlpg_algo = MLParameterGeneration(delta_win=[-0.5, 0.0, 0.5], acc_win=[1.0, -2.0, 1.0])
+                mlpg_algo = MLParameterGeneration(delta_win=wins[0], acc_win=wins[1])
                 var = np.tile(Ystd**2,(CMP.shape[0],1)) # Simplification!
                 CMP = mlpg_algo.generation(CMP, var, len(Ymean)/3)
             else:
-                CMP = CMP[:,:outsize_wodeltas]
+                CMP = CMP[:,:vocoder.featuressize()]
 
-            f0sgen = CMP[:,0].copy()
-            f0sgen[f0sgen>0] = np.exp(f0sgen[f0sgen>0])
-            if f0clipmin>0: f0sgen=np.clip(f0sgen, f0clipmin, f0clipmax)
-            ts = (cfg.shift)*np.arange(len(f0sgen))
-            f0sgen = np.vstack((ts, f0sgen)).T
-
-            CMP_spec = CMP[:,1:1+spec_size]
-            if spec_comp=='fwlspec':
-                SPEC = np.exp(sp.fwbnd2linbnd(CMP_spec, cfg.fs, dftlen, smooth=True))
-
-            elif spec_comp=='mcep': # pragma: no cover
-                                    # nothing is guaranteed, this one even less.
-                # SPTK necessary here, but it doesn't bring better quality
-                # anyway, so no need to submodule SPTK nor test these lines.
-                import merlin.generate_pp
-                if pp_mcep: CMP_spec=merlin.generate_pp.mcep_postproc_sptk(CMP_spec, cfg.fs, dftlen=dftlen) # Apply Merlin's post-proc on spec env
-                SPEC = sp.mcep2spec(CMP_spec, sp.bark_alpha(cfg.fs), dftlen=dftlen)
-
-            # TODO Do some post-processing using SPTK
-
-            if 0:
-                import matplotlib.pyplot as plt
-                plt.ion()
-                plt.imshow(sp.mag2db(SPEC).T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, cfg.fs/2])
-                #plt.plot(ts, 0.5*cfg.fs*LSF/np.pi, 'k')
-                from IPython.core.debugger import  Pdb; Pdb().set_trace()
-
-            CMP_nm = CMP[:,1+spec_size:]
-            nm = sp.fwbnd2linbnd(CMP_nm, cfg.fs, dftlen)
-
-            if pp_spec_extrapfreq>0:
-                idxlim = int(dftlen*pp_spec_extrapfreq/cfg.fs)
-                for n in xrange(SPEC.shape[0]):
-                    SPEC[n,idxlim:] = SPEC[n,idxlim]
-
-            if pp_spec_pf_coef>0:
-                for n in xrange(SPEC.shape[0]):
-                    #if n*0.005<1.085: continue
-                    # Post-processing similar to Merlin's
-                    # But really NOT equivalent
-                    # This one creates way more low-pass effect with same coef (1.4)
-                    cc = np.fft.irfft(np.log(abs(SPEC[n,:])))
-                    cc = cc[:int(dftlen/2)+1]
-                    cc[1:] = 2.0*cc[1:]
-                    cc[2:] = pp_spec_pf_coef*cc[2:]
-                    spec_pp = abs(np.exp(np.fft.rfft(cc, dftlen)))
-                    if 0:
-                        import matplotlib.pyplot as plt
-                        plt.ion()
-                        plt.clf()
-                        FF = cfg.fs*np.arange(dftlen/2+1)/dftlen
-                        plt.plot(FF, sp.mag2db(SPEC[n,:]), 'k')
-                        plt.plot(FF, sp.mag2db(spec_pp), 'b')
-                        from IPython.core.debugger import  Pdb; Pdb().set_trace()
-                    SPEC[n,:] = spec_pp
-
-            return f0sgen, SPEC, nm, CMP_spec, CMP_nm
+            return CMP
 
         from external import pulsemodel
         from external.pulsemodel import sigproc as sp
         if not os.path.isdir(syndir): os.makedirs(syndir)
-        features_err = dict()
 
         for vi in xrange(len(X_test)):
 
             print('Generating {}/{} ...'.format(1+vi, len(X_test)))
             print('    Predict ...')
 
-            CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
+            if do_resynth:
+                CMP = denormalise(y_test[vi], wins=[])
+                resyn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=False)
+                sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
-            # (X_test_masked,), _ = data.maskify([[X_test[vi]]])
-            # CMP = self.predict(X_test_masked)
+            CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
             CMP = CMP[0,:,:]
 
-            print('    Decompose ...')
-            f0sgen, specgen, nmgen, cmpspecgen, cmpnmgen = decomposition(CMP, outsize_wodeltas=outsize_wodeltas, do_mlpg=do_mlpg, pp_mcep=pp_mcep, f0clipmin=f0clipmin, f0clipmax=f0clipmax)
+            CMP = denormalise(CMP, wins=wins)
+            syn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=pp_mcep)
+            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
-            if do_objmeas:
-                # Objective measurements
-                f0strg, spectrg, nmtrg, cmpspectrg, cmpnmtrg = decomposition( y_test[vi], outsize_wodeltas=outsize_wodeltas, do_mlpg=False, pp_mcep=False)
-                features_err.setdefault('F0', []).append(np.sqrt(np.mean((f0strg[:,1]-f0sgen[:,1])**2)))
-                features_err.setdefault('MCEP', []).append(sp.log2db(np.sqrt(np.mean((cmpspectrg-cmpspecgen)**2, 0))))
-                features_err.setdefault('BNDNM', []).append(np.sqrt(np.mean((cmpnmtrg-cmpnmgen)**2, 0)))
+            if do_objmeas: vocoder.objmeasures_add(CMP, y_test[vi])
 
-                if do_resynth:
-                    # resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_forcebinary=True) # Prev version
-                    resyn = pulsemodel.synthesis.synthesize(cfg.fs, f0strg, spectrg, NM=nmtrg, nm_cont=False, pp_atten1stharminsilences=-25)
-                    sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
-
-            # syn = pulsemodel.synthesis.synthesize(cfg.fs, f0sgen, specgen, NM=nmgen, nm_forcebinary=True)
-            syn = pulsemodel.synthesis.synthesize(cfg.fs, f0sgen, specgen, NM=nmgen, nm_cont=False, pp_atten1stharminsilences=-25)
-
-            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.fs, norm_abs=True, force_norm_abs=True, verbose=1)
-
-        for key in features_err:
-            print('{} err={}'.format(key, np.mean(np.vstack(features_err[key]))))
+        if do_objmeas: vocoder.objmeasures_stats()
 
         print_log('Generation finished')

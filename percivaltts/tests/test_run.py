@@ -8,7 +8,6 @@ import unittest
 class TestRun(unittest.TestCase):
 
     def test_run(self):
-        import run
 
         os.system('ls -l')
         os.system('ls -l tests')
@@ -19,6 +18,8 @@ class TestRun(unittest.TestCase):
             os.symlink('slt_arctic_merlin_test', 'tests/slt_arctic_merlin_full')
         os.listdir('tests/slt_arctic_merlin_full')
         os.system('ls -l tests/slt_arctic_merlin_full')
+
+        import run
 
         print('Overwrite the configuration to run a smoke test')
         run.cfg.id_valid_start = 8

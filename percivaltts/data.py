@@ -143,7 +143,7 @@ def croplen(xs, axis=0):
 
     return xs
 
-def croplen_weight(xs, w, thresh=0.5):
+def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.1/0.005)):
     """
     Similar to croplen(xs), but crop according to some weight w and a threshold on this weight (only at beginning and end of file).
     """
@@ -153,18 +153,46 @@ def croplen_weight(xs, w, thresh=0.5):
 
     for ki in xrange(len(w)):   # For each sample of the data set
 
-        speechidx = np.where(w[ki]>thresh)[0]
-        # if len(speechidx)==0: from IPython.core.debugger import  Pdb; Pdb().set_trace()
-        starti = min(speechidx)
-        endi = max(speechidx)
+        if cropmode=='begend':
+            speechidx = np.where(w[ki]>thresh)[0]
+            starti = min(speechidx)
+            endi = max(speechidx)
 
-        # Crop each feature given
-        for x in xs:
-            # print('cropsilences: {} {}'.format(starti, endi))
-            x[ki] = x[ki][starti:endi,]
+            # Crop each feature given at the beginning and end
+            for x in xs:
+                # print('cropsilences: {} {}'.format(starti, endi))
+                x[ki] = x[ki][starti:endi,]
 
-        # Crop the weight
-        w[ki] = w[ki][starti:endi,]
+            # Crop the weight
+            w[ki] = w[ki][starti:endi,]
+
+        elif cropmode=='begendbigger':
+            # Start as usual...
+            keep = w[ki]>thresh
+            speechidx = np.where(keep)[0]
+            # ... and replace the False where the distance is small
+            speechidxd = np.diff(speechidx)
+            spidxd1 = np.where(speechidxd>1)[0]
+            for spd1 in spidxd1:
+                if speechidxd[spd1]<int(cropsize):
+                    keep[speechidx[spd1]:speechidx[spd1+1]] = True
+            speechidx = np.where(keep)[0]
+
+            for x in xs:
+                # print('cropsilences: {} {}'.format(starti, endi))
+                x[ki] = x[ki][speechidx,]
+
+            # Crop the weight
+            w[ki] = w[ki][speechidx,]
+
+        elif cropmode=='all':
+            speechidx = np.where(w[ki]>thresh)[0]
+            for x in xs:
+                # print('cropsilences: {} {}'.format(starti, endi))
+                x[ki] = x[ki][speechidx,]
+
+            # Crop the weight
+            w[ki] = w[ki][speechidx,]
 
     return xs, w
 
@@ -228,7 +256,7 @@ def addstop(X, value=1.0):
 
     return X
 
-def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=None, lengthmax=None, maskpadtype='padright', verbose=0):
+def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=None, lengthmax=None, maskpadtype='padright', cropmode='begend', verbose=0):
     """Directly load batches of input and corresponding outputs (crop the lengths)."""
 
     X_val = load(indir, fid_lst, verbose=verbose, label='Context labels: ')
@@ -238,11 +266,11 @@ def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=No
     # Crop time sequences according to model type
     if inouttimesync:
         X_val, Y_val, W_val = croplen([X_val, Y_val, W_val])
-        [X_val, Y_val], W_val = croplen_weight([X_val, Y_val], W_val)
+        [X_val, Y_val], W_val = croplen_weight([X_val, Y_val], W_val, cropmode=cropmode)
     else:
         X_val = addstop(X_val)
         Y_val, W_val = croplen([Y_val, W_val])
-        [Y_val], W_val = croplen_weight([Y_val], W_val)
+        [Y_val], W_val = croplen_weight([Y_val], W_val, cropmode=cropmode)
         Y_val = addstop(Y_val)
 
     # Maskify the validation data according to the batchsize

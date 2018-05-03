@@ -35,21 +35,41 @@ import lasagne
 from backend_theano import *
 import model
 
-def addPMLNMDeltas(l_in, layers_toconcat, outsize, specsize, nmsize):
-    if outsize>(1+specsize+nmsize):
-        l_out_f0spec = lasagne.layers.DenseLayer(l_in, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
-        l_out_nm = lasagne.layers.DenseLayer(l_in, num_units=nmsize, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
+import vocoders
+
+def layer_final(l_hid, vocoder, mlpg_wins):
+    layers_toconcat = []
+
+    if isinstance(vocoder, vocoders.VocoderPML):
+        l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec')
+        l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=vocoder.nm_size, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
         layers_toconcat.extend([l_out_f0spec, l_out_nm])
-        if outsize>2*(1+specsize+nmsize):
-            l_out_f0spec = lasagne.layers.DenseLayer(l_in, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
-            l_out_nm = lasagne.layers.DenseLayer(l_in, num_units=nmsize, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')
+        if len(mlpg_wins)>0:
+            l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_d')
+            l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=vocoder.nm_size, nonlinearity=lasagne.nonlinearities.tanh, num_leading_axes=2, name='lo_nm_d')
             layers_toconcat.extend([l_out_f0spec, l_out_nm])
+            if len(mlpg_wins)>1:
+                l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+vocoder.spec_size, nonlinearity=None, num_leading_axes=2, name='lo_f0spec_dd')
+                l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=vocoder.nm_size, nonlinearity=partial(nonlin_tanh_saturated, coef=2.0), num_leading_axes=2, name='lo_nm_dd')
+                layers_toconcat.extend([l_out_f0spec, l_out_nm])
+
+    elif isinstance(vocoder, vocoders.VocoderWORLD):
+        layers_toconcat.append(lasagne.layers.DenseLayer(l_hid, num_units=vocoder.featuressize(), nonlinearity=None, num_leading_axes=2, name='lo_f0specaper'))
+        if len(mlpg_wins)>0:
+            layers_toconcat.append(lasagne.layers.DenseLayer(l_hid, num_units=vocoder.featuressize(), nonlinearity=None, num_leading_axes=2, name='lo_f0specaper_d'))
+            if len(mlpg_wins)>1:
+                layers_toconcat.append(lasagne.layers.DenseLayer(l_hid, num_units=vocoder.featuressize(), nonlinearity=None, num_leading_axes=2, name='lo_f0specaper_dd'))
+
+    if len(layers_toconcat)==1: l_out = layers_toconcat[0]
+    else:                       l_out = lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
+
+    return l_out
 
 
 class ModelFC(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, vocoder, mlpg_wins=[], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
-        model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
+        model.Model.__init__(self, insize, vocoder, hiddensize)
 
         l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
 
@@ -69,23 +89,15 @@ class ModelFC(model.Model):
             # Add dropout (after batchnorm)
             if dropout_p>0.0: l_hid=lasagne.layers.dropout(l_hid, p=dropout_p)
 
-        layers_toconcat = []
-        l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec')
-        l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
-        layers_toconcat.extend([l_out_f0spec, l_out_nm])
-
-        addPMLNMDeltas(l_hid, layers_toconcat, outsize, specsize, nmsize)
-
-        if len(layers_toconcat)==1: l_out=layers_toconcat
-        else:                       l_out=lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
+        l_out = layer_final(l_hid, vocoder, mlpg_wins)
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
 class ModelBGRU(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+    def __init__(self, insize, vocoder, mlpg_wins=[], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
         if bn_axes is None: bn_axes=[] # Recurrent nets don't like batch norm [ref. needed]
-        model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
+        model.Model.__init__(self, insize, vocoder, hiddensize)
 
         if len(bn_axes)>0: warnings.warn('ModelBGRU: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable [ref. needed]'.format(bn_axes))
 
@@ -104,23 +116,15 @@ class ModelBGRU(model.Model):
             # Add dropout (after batchnorm)
             if dropout_p>0.0: l_hid=lasagne.layers.dropout(l_hid, p=dropout_p)
 
-        layers_toconcat = []
-        l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec')
-        l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
-        layers_toconcat.extend([l_out_f0spec, l_out_nm])
-
-        addPMLNMDeltas(l_hid, layers_toconcat, outsize, specsize, nmsize)
-
-        if len(layers_toconcat)==1: l_out=layers_toconcat
-        else:                       l_out=lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
+        l_out = layer_final(l_hid, vocoder, mlpg_wins)
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
 class ModelBLSTM(model.Model):
-    def __init__(self, insize, outsize, specsize, nmsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+    def __init__(self, insize, vocoder, mlpg_wins=[], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
         if bn_axes is None: bn_axes=[] # Recurrent nets don't like batch norm [ref needed]
-        model.Model.__init__(self, insize, outsize, specsize, nmsize, hiddensize)
+        model.Model.__init__(self, insize, vocoder, hiddensize)
 
         if len(bn_axes)>0: warnings.warn('ModelBLSTM: You are using bn_axes={}, but batch normalisation is supposed to make Recurrent Neural Networks (RNNS) unstable [ref. needed]'.format(bn_axes))
 
@@ -139,14 +143,36 @@ class ModelBLSTM(model.Model):
             # Add dropout (after batchnorm)
             if dropout_p>0.0: l_hid=lasagne.layers.dropout(l_hid, p=dropout_p)
 
-        layers_toconcat = []
-        l_out_f0spec = lasagne.layers.DenseLayer(l_hid, num_units=1+specsize, nonlinearity=None, num_leading_axes=2, name='lo_f0spec')
-        l_out_nm = lasagne.layers.DenseLayer(l_hid, num_units=nmsize, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_nm') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
-        layers_toconcat.extend([l_out_f0spec, l_out_nm])
+        l_out = layer_final(l_hid, vocoder, mlpg_wins)
 
-        addPMLNMDeltas(l_hid, layers_toconcat, outsize, specsize, nmsize)
+        self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
-        if len(layers_toconcat)==1: l_out=layers_toconcat
-        else:                       l_out=lasagne.layers.ConcatLayer(layers_toconcat, axis=2, name='lo_concatenation')
+
+class ModelGeneric(model.Model):
+    def __init__(self, insize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'BLSTM'], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+        if bn_axes is None: bn_axes=[0,1]
+        model.Model.__init__(self, insize, vocoder, hiddensize)
+
+        l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
+
+        for layi in xrange(len(layertypes)):
+            layerstr = 'l'+str(1+layi)+'_{}{}'.format(layertypes[layi], hiddensize)
+
+            if layertypes[layi]=='FC':
+                l_hid = lasagne.layers.DenseLayer(l_hid, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
+
+                if len(bn_axes)>0: l_hid=lasagne.layers.batch_norm(l_hid, axes=bn_axes, name=layerstr+'.bn') # Add batch normalisation
+
+            elif layertypes[layi]=='BLSTM':
+                fwd = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+                bck = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+                l_hid = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
+
+                # Don't add batch norm for RNN-based layers
+
+            # Add dropout (after batchnorm)
+            if dropout_p>0.0: l_hid=lasagne.layers.dropout(l_hid, p=dropout_p)
+
+        l_out = layer_final(l_hid, vocoder, mlpg_wins)
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.

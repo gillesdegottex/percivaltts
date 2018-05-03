@@ -67,7 +67,7 @@ in Merlin).
 Dealing with the numerous dependencies between the libraries and tools can also
 be a nightmare. We strongly suggest to use a package manager
 [conda](https://conda.io/docs/) or [miniconda](https://conda.io/miniconda.html)
-on top of the OS package manager. Here are versions the are known to work using
+on top of the OS package manager. Here are versions that are known to work using
 miniconda:
 ```
 libffi                    3.2.1                h4deb6c0_3  
@@ -80,16 +80,19 @@ python                    2.7.13              hfff3488_13
 scipy                     0.19.1              np112py27_0  
 theano                    0.9.0                    py27_0  
 ```
+Some packages are not available in conda directly, so install pip in your
+conda, activate the environment and then install also:
+```
+pip install defusedxml bandmat
+```
 And other version numbers
 ```
 CUDA                      9.0
 NVidia Drivers            384.111
 ```
 
-If you want to use MLPG (disabled by default), you will also need to install:
-```
-$ sudo pip install bandmat
-```
+To apply post-processing for formant enhancement, you need to have `mcep` command line from [SPTK](http://sp-tk.sourceforge.net/)
+By default, this post-processing is disabled since WGAN optimisation solves oversmoothing issues.
 
 ### Install and run the demo
 
@@ -121,7 +124,7 @@ And finally run the demo!
 $ make run
 ```
 
-[A web page with the expected resulting demonstration samples can be found here](http://gillesdegottex.eu/Demos/PercivalTTS/compare_percival_0.9.5/)
+[A web page with the expected demonstration samples can be found here](http://gillesdegottex.eu/Demos/PercivalTTS/compare_percival_0.9.5/)
 
 ### Preparing a new voice
 Like in Merlin, you basically need the three following elements from any corpus:
@@ -131,6 +134,10 @@ Like in Merlin, you basically need the three following elements from any corpus:
     alignement tool, as in HTS. Merlin provides the necessary scripts for
     generating the text labels from text inputs and align these text labels on
     some given waveform.
+
+    Phone aligned labels can also be used. In this case you have to pass
+    `subphone_feats='coarse_coding'` to HTSLabelNormalisation constructor and
+    pass `label_type='phone_align'` to `label_normaliser.perform_normalisation`
 
 * `wav`
 
@@ -163,6 +170,10 @@ The `id_valid_start-1` last files right before `id_valid_start` might thus be co
 A last set exists, the demo set, which is a subset of the test set. This is convenient for generating and listening quickly to a few known sentences after a training. By default it is the first 10 sentences of the test set.
 `id_test_demostart` can be used to select the starting index (relative to the test set) in order to chose where the demo set starts within the test set.
 
+During training percival uses batches that have a small time window (2sec by default). Thus, when a sentences is picked for training, only this time window is used.
+There is two main advantage of this data formating: i) the memory size on the GPU is dependent on the duration of this time window and not on the random selection of the sentences; ii) each batch is full, in the sense that it doesn't need any zero padding at the end of short sentences, which means that masks are neither necessary.
+However, an epoch is not a full epoch in the sense that it does _not_ see all of the training data. This explains why the number of "epoch" is quite huge (300) by default in order to compensate for the unseen data.
+
 #### File access and shapes
 To represent multiple files in a directory, file paths are usually defined with a wildcard (e.g. `waveforms/*.wav`).
 Because input and output data of the network (lab and cmp files) are saved in raw `float32` format, without header, it is not possible to know the actual dimensions of the data
@@ -173,6 +184,9 @@ In Percival, the trick is to specify the shape of the data as a suffix of the fi
 
 A batch has a shape: [size, length, features_dim], that represent the number of samples in the batches, the number of time frames in the batch and the feature dimensionality, respectively. Because Theano/Lasagne needs a "channel" dimension (as in pictures), batches' shape often become temporarily [size, 1, length, features_dim] so that the last two dimensions define a picture of size [length, features_dim].
 
+#### Features order
+
+The implementation of the models assume the following features order: f0, amplitude spectrum (spec), noise (e.g. aperiodicity noise mask), vuv.
 
 ### Results repeatability
 
@@ -200,9 +214,6 @@ when a script is runned using `clone.sh`, the working directory is `/path/to/exp
 You can also replace the `bash` command by a script for submitting the job to a Sun Grid Engine (SGE).
 The `Makefile` has also all the corresponding commands (clone, run, clone_run_grid, etc.)
 
-
-### Notes
-Before the waveform synthesis, there is no post-processing of the generated spectral amplitudes (e.g. no formant enhancement or similar).
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>

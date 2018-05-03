@@ -135,7 +135,8 @@ class Optimizer:
         if self._errtype=='WGAN':
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
-            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.specsize, self._model.nmsize, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, nm_freqlen=self._model._nm_freqlen, windur=self._model._windur, use_LSweighting=cfg.train_LScoef>0.0, LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
+
+            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, noise_freqlen=self._model._noise_freqlen, windur=self._model._windur, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
@@ -157,9 +158,22 @@ class Optimizer:
                 else:
                     # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
                     print('WGAN Weighted LS - Generator part')
-                    specxs = np.arange(self._model.specsize, dtype=theano.config.floatX)
-                    nmxs = np.arange(self._model.nmsize, dtype=theano.config.floatX)
-                    wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specxs,  int(self._LSWGANtransflc*self._model.specsize), self._LSWGANtransc), nonlin_sigmoidparm(nmxs,  int(self._LSWGANtransflc*self._model.nmsize), self._LSWGANtransc)))
+
+                    wganls_weights_els = []
+                    wganls_weights_els.append([0.0]) # For f0
+                    specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
+                    wganls_weights_els.append(nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.specsize()), self._LSWGANtransc)) # For spec
+                    if self._model.vocoder.noisesize()>0:
+                        noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
+                        wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)) # For noise
+                    if self._model.vocoder.vuvsize()>0:
+                        wganls_weights_els.append([0.0]) # For vuv
+                    wganls_weights_ = np.hstack(wganls_weights_els)
+
+                    # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)))
+                    # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc), [0.0]))
+
+                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # TODO TODO TODO
                     wganls_weights_ *= (1.0-cfg.train_LScoef)
 
                     wganls_weights_gan = theano.shared(value=wganls_weights_, name='wganls_weights_gan')
@@ -213,7 +227,8 @@ class Optimizer:
             self.cost = T.mean(costout) # self.cost = T.mean(T.sum(costout, axis=-1)) ?
 
             print("    creating parameters updates ...")
-            updates = lasagne.updates.adam(self.cost, params, learning_rate=10**cfg.train_learningrate_log10, beta1=cfg.train_adam_beta1, beta2=cfg.train_adam_beta2, epsilon=10**cfg.train_adam_epsilon_log10)
+            updates = lasagne.updates.adam(self.cost, params, learning_rate=float(10**cfg.train_learningrate_log10), beta1=float(cfg.train_adam_beta1), beta2=float(cfg.train_adam_beta2), epsilon=float(10**cfg.train_adam_epsilon_log10))
+
             self._optim_updates.append(updates)
             print("    compiling training function ...")
             train_fn = theano.function(self._model.inputs+[self._target_values], self.cost, updates=updates)
@@ -257,7 +272,7 @@ class Optimizer:
 
                 # Load training data online, because data is often too heavy to hold in memory
                 fid_lst_trab = [fid_lst_tra[bidx] for bidx in rndidxb[k]]
-                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype)
+                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype, cropmode=cfg.cropmode)
 
                 if 0: # Plot batch
                     import matplotlib.pyplot as plt
@@ -266,7 +281,7 @@ class Optimizer:
                     from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
                 load_times.append(time.time()-timeloadstart)
-                print_tty('({:.6f}s); training '.format(load_times[-1]))
+                print_tty(' (iter load: {:.6f}s); training '.format(load_times[-1]))
 
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
@@ -296,7 +311,7 @@ class Optimizer:
 
                 train_times.append(time.time()-timetrainstart)
 
-                print_tty('err={:.4f} ({:.4f}s)                  '.format(cost_tra,train_times[-1]))
+                print_tty('err={:.4f} (iter train: {:.4f}s)                  '.format(cost_tra,train_times[-1]))
                 if np.isnan(cost_tra):                      # pragma: no cover
                     print_log('    previous costs: {}'.format(costs_tra_batches))
                     print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
@@ -317,7 +332,7 @@ class Optimizer:
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
                 discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
                 costs['discri_validation'].append(data.cost_model_mfn(discri_train_validation_fn, discri_train_validation_fn_args))
-                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_cancel_nodecepochs:]))
+                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_validation_ltm_winlen:]))
 
                 cost_val = costs['discri_validation_ltm'][-1]
             elif self._errtype=='LSE':
@@ -353,10 +368,10 @@ class Optimizer:
                 plotsuffix = ''
                 if len(epochs_modelssaved)>0 and epochs_modelssaved[-1]==epoch: plotsuffix='_best'
                 else:                                                           plotsuffix='_last'
-                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, shift=0.005, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', title='E{}'.format(epoch), specsize=self._model.specsize)
+                log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+plotsuffix+'.png', vocoder=self._model.vocoder, title='E{}'.format(epoch))
 
             epochs_durs.append(time.time()-timeepochstart)
-            print_log('    ET: {}   max TT: {}s   train ~time left {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
+            print_log('    ET: {}   max TT: {}s   train ~time left: {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs)*cfg.train_max_nbepochs), time2str(np.median(epochs_durs)*(cfg.train_max_nbepochs-epoch))))
 
             self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
@@ -395,7 +410,7 @@ class Optimizer:
 
         # LSE
         cfg.train_learningrate_log10 = -3.39794 # [potential hyper-parameter] (10**-3.39794=0.0004)
-        cfg.train_adam_beta1 = 0.98             # [potential hyper-parameter]
+        cfg.train_adam_beta1 = 0.98             # [potential hyper-parameter] 0.9 seems better for BLSTM TODO TODO TODO
         cfg.train_adam_beta2 = 0.999            # [potential hyper-parameter]
         cfg.train_adam_epsilon_log10 = -8       # [potential hyper-parameter]
         # WGAN
@@ -407,6 +422,7 @@ class Optimizer:
         cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
         cfg.train_pg_lambda = 10                # [potential hyper-parameter]
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
+        cfg.train_validation_ltm_winlen = 20
 
         cfg.train_max_nbepochs = 300
         cfg.train_cancel_nodecepochs = 100
