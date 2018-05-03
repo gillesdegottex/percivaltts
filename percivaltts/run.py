@@ -109,7 +109,7 @@ cfg.cropmode = 'begend' # begend, begendbigger, all  # TODO TODO TODO Drop some 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
 # cfg.train_nbtrials = 12
 
-pp_mcep = True    # Set pp_mcep=True to apply Merlin's post-processing to enhance formants. TODO TODO TODO
+pp_mcep = False    # Set pp_mcep=True to apply Merlin's post-processing to enhance formants. TODO TODO TODO
 
 
 cfg.print_content()
