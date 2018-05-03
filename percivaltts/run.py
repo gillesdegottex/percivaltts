@@ -73,8 +73,8 @@ feats_dir+='_'+vocoder.name()
 f0_path = cp+wav_dir+feats_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'/*.fwlspec'
 feats_wpath = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'_weights/*.w' # Ignore silences based on spec energy
-if isinstance(vocoder, vocoders.VocoderPML): noisetag='fwnm'
-else:                                        noisetag='fwdbap'
+if isinstance(vocoder, vocoders.VocoderPML):    noisetag='fwnm'
+elif isinstance(vocoder, vocoders.VocoderWORLD):noisetag='fwdbap'
 noise_path = cp+wav_dir+feats_dir+'_'+noisetag+str(vocoder.noisesize())+'/*.'+noisetag
 vuv_path = cp+wav_dir+feats_dir+'_vuv1/*.vuv'
 
