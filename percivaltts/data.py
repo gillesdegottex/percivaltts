@@ -143,7 +143,7 @@ def croplen(xs, axis=0):
 
     return xs
 
-def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.1/0.005)):
+def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.750/0.005)):
     """
     Similar to croplen(xs), but crop according to some weight w and a threshold on this weight (only at beginning and end of file).
     """
