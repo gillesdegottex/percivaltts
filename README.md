@@ -124,7 +124,7 @@ And finally run the demo!
 $ make run
 ```
 
-[A web page with the expected resulting demonstration samples can be found here](http://gillesdegottex.eu/Demos/PercivalTTS/compare_percival_0.9.5/)
+[A web page with the expected demonstration samples can be found here](http://gillesdegottex.eu/Demos/PercivalTTS/compare_percival_0.9.5/)
 
 ### Preparing a new voice
 Like in Merlin, you basically need the three following elements from any corpus:
