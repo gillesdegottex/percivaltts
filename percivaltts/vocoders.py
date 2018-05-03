@@ -70,7 +70,7 @@ class Vocoder:
     def name(self): return self._name
 
     def featuressize(self):
-        raise ValueError('This member function needs to be re-implemented in the sub-classes')
+        raise ValueError('This member function needs to be re-implemented in the sub-classes')           # pragma: no cover
     def f0size(self): return -1
     def specsize(self): return -1
     def noisesize(self): return -1
