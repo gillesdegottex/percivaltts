@@ -115,7 +115,7 @@ class VocoderF0Spec(Vocoder):
 
         if self.spec_type=='fwbnd':
             SPEC = np.exp(sp.fwbnd2linbnd(COMPSPEC, self.fs, self.dftlen, smooth=True))
-            if pp_mcep:
+            if pp_mcep:             # pragma: no cover Would need SPTK to test it
                 print('        Merlin/SPTK Post-proc on MCEP')
                 import external.merlin.generate_pp
                 mcep = sp.spec2mcep(SPEC*self.fs, sp.bark_alpha(self.fs), 256)    # Arbitrary high order
@@ -124,7 +124,7 @@ class VocoderF0Spec(Vocoder):
 
         elif self.spec_type=='mcep':
             # TODO test
-            if pp_mcep:
+            if pp_mcep:             # pragma: no cover Would need SPTK to test it
                 print('        Merlin/SPTK Post-proc on MCEP')
                 import external.merlin.generate_pp
                 COMPSPEC = external.merlin.generate_pp.mcep_postproc_sptk(COMPSPEC, self.fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
