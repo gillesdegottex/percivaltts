@@ -61,7 +61,7 @@ import vocoders
 vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _nm_size=33)
 # vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
-do_mlpg = False # TODO TODO TODO
+do_mlpg = False
 mlpg_wins = []
 if do_mlpg: mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
 out_size = vocoder.featuressize()*(len(mlpg_wins)+1)
