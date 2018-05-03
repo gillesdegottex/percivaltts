@@ -119,8 +119,7 @@ def features_extraction():
 
     # Use this tool for parallel extraction of the acoustic features ...
     from external import pfs
-    import multiprocessing
-    pfs.map(pfs_map_vocoder, fids, processes=multiprocessing.cpu_count()-1)
+    pfs.map(pfs_map_vocoder, fids)
 
     # ... or uncomment these line to extract them file by file.
     # for fid in fids: vocoder.analysisfid(cfg, fid, wav_path, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
