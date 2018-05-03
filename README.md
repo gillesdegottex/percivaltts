@@ -135,6 +135,10 @@ Like in Merlin, you basically need the three following elements from any corpus:
     generating the text labels from text inputs and align these text labels on
     some given waveform.
 
+    Phone aligned labels can also be used. In this case you have to pass
+    `subphone_feats='coarse_coding'` to HTSLabelNormalisation constructor and
+    pass `label_type='phone_align'` to `label_normaliser.perform_normalisation`
+
 * `wav`
 
     The waveforms directory aligned with the labels above
