@@ -184,7 +184,7 @@ class ModelCNN(model.Model):
         layer_spec = lasagne.layers.flatten(layer, outdim=3, name='spec_flatten')
         layerstoconcats.append(layer_spec)
 
-        if 1: # Add Noise mask (NM) in discriminator
+        if vocoder.noisesize()>0: # Add noise in discriminator
             layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
 
             if use_LSweighting: # Using weighted WGAN+LS
