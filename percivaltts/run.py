@@ -97,7 +97,7 @@ cfg.fparams_fullset = 'model.pkl'
 cfg.train_batch_size = 5
 cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each batch through time
                                            # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
-cfg.wpath = labs_wpath # labs_wpath, feats_wpath
+cfg.wpath = labs_wpath # labs_wpath or feats_wpath. By def. ignore silences according to input labels.
 cfg.train_LScoef = 0.25         # For WGAN mixed with LS [def. 0.25]
 cfg.train_max_nbepochs = 300    # (Can stop much earlier for 3 stacked BLSTM or 6 stacked FC)
 cfg.train_cancel_nodecepochs = 50 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)
