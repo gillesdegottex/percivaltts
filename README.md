@@ -91,6 +91,8 @@ CUDA                      9.0
 NVidia Drivers            384.111
 ```
 
+To apply post-processing for formant enhancement, you need to have `mcep` command line from [SPTK](http://sp-tk.sourceforge.net/)
+By default, this post-processing is disabled since WGAN optimisation solves oversmoothing issues.
 
 ### Install and run the demo
 
@@ -208,9 +210,6 @@ when a script is runned using `clone.sh`, the working directory is `/path/to/exp
 You can also replace the `bash` command by a script for submitting the job to a Sun Grid Engine (SGE).
 The `Makefile` has also all the corresponding commands (clone, run, clone_run_grid, etc.)
 
-
-### Notes
-Before the waveform synthesis, there is no post-processing of the generated spectral amplitudes (e.g. no formant enhancement or similar).
 
 ### Author/Contributor
 Gilles Degottex <gad27@cam.ac.uk>
