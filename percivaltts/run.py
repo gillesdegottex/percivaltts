@@ -56,12 +56,10 @@ labs_wpath = cp+lab_dir+'_weights/*.w:(-1,1)' # Ignore silences based on labs
 cfg.vocoder_fs = 16000
 cfg.vocoder_shift = 0.005
 cfg.vocoder_f0_min, cfg.vocoder_f0_max = 70, 600
-vocoder_spec_size = 129
-vocoder_noise_size = 33
 
 import vocoders
-vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, vocoder_spec_size, vocoder_noise_size)
-# vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, vocoder_spec_size, vocoder_noise_size)
+vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _nm_size=33)
+# vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
 do_mlpg = False # TODO TODO TODO
 mlpg_wins = []
