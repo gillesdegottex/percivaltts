@@ -43,6 +43,7 @@ cfg.fileids = cp+'/file_id_list.scp'
 cfg.id_valid_start = 1032
 cfg.id_valid_nb = 50
 cfg.id_test_nb = 50
+fids = readids(cfg.fileids)
 
 # Input text labels
 lab_dir = 'label_state_align'
@@ -70,15 +71,15 @@ wav_path = cp+wav_dir+'/*.wav'
 feats_dir = ''
 feats_dir+='_'+vocoder.name()
 f0_path = cp+wav_dir+feats_dir+'_lf0/*.lf0'
-spec_path = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder_spec_size)+'/*.fwlspec'
-feats_wpath = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder_spec_size)+'_weights/*.w' # Ignore silences based on spec energy
+spec_path = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'/*.fwlspec'
+feats_wpath = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'_weights/*.w' # Ignore silences based on spec energy
 if isinstance(vocoder, vocoders.VocoderPML): noisetag='fwnm'
 else:                                        noisetag='fwdbap'
 noise_path = cp+wav_dir+feats_dir+'_'+noisetag+str(vocoder_noise_size)+'/*.'+noisetag
 vuv_path = cp+wav_dir+feats_dir+'_vuv1/*.vuv'
 
 if do_mlpg: feats_dir+='_mlpg'
-cfg.outpath = cp+wav_dir+feats_dir+'_cmp_lf0_fwlspec'+str(vocoder_spec_size)+'_'+noisetag+str(vocoder_noise_size)
+cfg.outpath = cp+wav_dir+feats_dir+'_cmp_lf0_fwlspec'+str(vocoder.specsize())+'_'+noisetag+str(vocoder.noisesize())
 if isinstance(vocoder, vocoders.VocoderPML): cfg.outpath+='_nmnoscale'
 else:                                        cfg.outpath+='_vuv'
 cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
@@ -111,14 +112,10 @@ pp_mcep = False    # Set to True to apply Merlin's post-processing to enhance fo
 
 cfg.print_content()
 
-
-
-# Feature extraction -----------------------------------------------------------
+# Processes --------------------------------------------------------------------
 
 def pfs_map_vocoder(fid): return vocoder.analysisfid(cfg, fid, wav_path, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
-
 def features_extraction():
-    fids = readids(cfg.fileids)
 
     # Use this tool for parallel extraction of the acoustic features ...
     from external import pfs
@@ -131,7 +128,7 @@ def features_extraction():
 
     # Create time weights (column vector in [0,1]). The frames at begining or end of
     # each file whose weights are smaller than 0.5 will be ignored by the training
-    compose.create_weights_spec(spec_path+':(-1,'+str(vocoder_spec_size)+')', fids, feats_wpath)
+    compose.create_weights_spec(spec_path+':(-1,'+str(vocoder.specsize())+')', fids, feats_wpath)
 
 
 def contexts_extraction():
@@ -145,16 +142,14 @@ def contexts_extraction():
     compose.create_weights_lab(lab_path, cfg.fileids, labs_wpath, silencesymbol='sil', shift=cfg.vocoder_shift)
 
 
-# DNN data composition ---------------------------------------------------------
 def composition_normalisation():
-    fids = readids(cfg.fileids)
 
     # Compose the inputs
     # The input files are binary labels, as they come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
     compose.compose([labbin_path+':(-1,'+str(in_size)+')'], fids, cfg.inpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[])
 
     # Compose the outputs
-    outpaths = [f0_path, spec_path+':(-1,'+str(vocoder_spec_size)+')', noise_path+':(-1,'+str(vocoder_noise_size)+')']
+    outpaths = [f0_path, spec_path+':(-1,'+str(vocoder.specsize())+')', noise_path+':(-1,'+str(vocoder.noisesize())+')']
     normfn = compose.normalise_meanstd
     if isinstance(vocoder, vocoders.VocoderPML):        normfn=compose.normalise_meanstd_nmnoscale
     elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)
@@ -172,15 +167,14 @@ def build_model():
 
     return model
 
-# Training ---------------------------------------------------------------------
+
 def training(cont=False):
     print('\nData profile')
-    fid_lst = data.readids(cfg.fileids)
     in_size = data.getlastdim(cfg.inpath)
     out_size = data.getlastdim(cfg.outpath)
     print('    in_size={} out_size={}'.format(in_size,out_size))
-    fid_lst_tra = fid_lst[:cfg.id_train_nb()]
-    fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
+    fid_lst_tra = fids[:cfg.id_train_nb()]
+    fid_lst_val = fids[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
     print('    {} validation files; ratio of validation data over training data: {:.2f}%'.format(len(fid_lst_val), 100.0*float(len(fid_lst_val))/len(fid_lst_tra)))
 
     model = build_model()
@@ -195,12 +189,10 @@ def generate(fparams=cfg.fparams_fullset):
     model = build_model()           # Rebuild the model from scratch
     model.loadAllParams(fparams)    # Load the model's parameters
 
-    fid_lst = data.readids(cfg.fileids)
-
     # Generate the network outputs (without any decomposition), for potential re-use for another network's input
-    # model.generate_cmp(cfg.inpath, os.path.splitext(fparams)[0]+'-gen/*.cmp', fid_lst)
+    # model.generate_cmp(cfg.inpath, os.path.splitext(fparams)[0]+'-gen/*.cmp', fids)
 
-    fid_lst_test = fid_lst[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
+    fid_lst_test = fids[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
 
     demostart = cfg.id_test_demostart if hasattr(cfg, 'id_test_demostart') else 0
     model.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', cfg, vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=pp_mcep)
