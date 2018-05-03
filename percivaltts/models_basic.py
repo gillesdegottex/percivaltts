@@ -174,3 +174,32 @@ class ModelBLSTM(model.Model):
         l_out = layer_final(l_hid, vocoder, mlpg_wins)
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
+
+class ModelGeneric(model.Model):
+    def __init__(self, insize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'BLSTM'], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+        if bn_axes is None: bn_axes=[0,1]
+        model.Model.__init__(self, insize, vocoder, hiddensize)
+
+        l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
+
+        for layi in xrange(len(layertypes)):
+            layerstr = 'l'+str(1+layi)+'_{}{}'.format(layertypes[layi], hiddensize)
+
+            if layertypes[layi]=='FC':
+                l_hid = lasagne.layers.DenseLayer(l_hid, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
+
+                if len(bn_axes)>0: l_hid=lasagne.layers.batch_norm(l_hid, axes=bn_axes, name=layerstr+'.bn') # Add batch normalisation
+
+            elif layertypes[layi]=='BLSTM':
+                fwd = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
+                bck = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+                l_hid = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
+
+                # Don't add batch norm for RNN-based layers
+
+            # Add dropout (after batchnorm)
+            if dropout_p>0.0: l_hid=lasagne.layers.dropout(l_hid, p=dropout_p)
+
+        l_out = layer_final(l_hid, vocoder, mlpg_wins)
+
+        self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
