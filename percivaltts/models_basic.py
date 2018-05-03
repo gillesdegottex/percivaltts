@@ -93,34 +93,6 @@ class ModelFC(model.Model):
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
-    def build_discri(self, discri_input_var, condition_var, outsize, ctxsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
-        if bn_axes is None: bn_axes=[0,1]
-        layer_discri = lasagne.layers.InputLayer(shape=(None, None, outsize), input_var=discri_input_var, name='input')
-
-        layer = lasagne.layers.DenseLayer(layer_discri, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2)
-
-        layerstoconcats = []
-        layerstoconcats.append(layer)
-
-        # Add the contexts
-        layer_ctx_input = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-        layer = lasagne.layers.DenseLayer(layer_ctx_input, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2)
-        layerstoconcats.append(layer)
-
-        # Concatenate the features analysis with the contexts...
-        layer = lasagne.layers.ConcatLayer(layerstoconcats, axis=2, name='ctx_features_concat')
-
-        # ... and finalize with a common FC network
-        for layi in xrange(nblayers-1):
-            layerstr = 'post_l'+str(1+layi)+'_FC'+str(hiddensize)
-            layer = lasagne.layers.DenseLayer(layer, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
-            if use_bn: layer=lasagne.layers.batch_norm(layer, axes=_bn_axes)
-            # if dropout_p>0.0: layer = lasagne.layers.dropout(layer, p=dropout_p) # Bad for FC
-
-        # output layer (linear)
-        layer = lasagne.layers.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
-        return [layer, layer_discri, layer_ctx_input]
-
 
 class ModelBGRU(model.Model):
     def __init__(self, insize, vocoder, mlpg_wins=[], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=3, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
@@ -174,6 +146,7 @@ class ModelBLSTM(model.Model):
         l_out = layer_final(l_hid, vocoder, mlpg_wins)
 
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
+
 
 class ModelGeneric(model.Model):
     def __init__(self, insize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'BLSTM'], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
