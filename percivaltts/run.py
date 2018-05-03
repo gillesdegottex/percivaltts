@@ -30,6 +30,7 @@ print('')
 
 from percivaltts import *  # Always include this first to setup a few things for percival
 import data
+import vocoders
 import compose
 print_sysinfo()
 
@@ -57,7 +58,6 @@ cfg.vocoder_fs = 16000
 cfg.vocoder_shift = 0.005
 cfg.vocoder_f0_min, cfg.vocoder_f0_max = 70, 600
 
-import vocoders
 vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _nm_size=33)
 # vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
