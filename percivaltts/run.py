@@ -49,7 +49,6 @@ lab_path = cp+lab_dir+'/*.lab'
 lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/merlin/questions-radio_dnn_416.hed')
 in_size = 416+9
 labbin_path = cp+lab_dir+'_bin'+str(in_size)+'/*.lab'
-
 cfg.inpath = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
 labs_wpath = cp+lab_dir+'_weights/*.w:(-1,1)' # Ignore silences based on labs
 
