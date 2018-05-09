@@ -162,6 +162,7 @@ class TestSmoke(unittest.TestCase):
 
         # WORLD vocoder features
         compose.compose([cptest+wav_dir+'_world_lf0/*.lf0', cptest+wav_dir+'_world_fwlspec/*.fwlspec:(-1,'+str(spec_size)+')', cptest+wav_dir+'_world_fwdbaper/*.fwdbaper:(-1,'+str(nm_size)+')', cptest+wav_dir+'_world_vuv/*.vuv'], fids, 'tests/test_made__smoke_compose_compose2_cmp_WORLD/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd, wins=[])
+        compose.compose([cptest+wav_dir+'_world_lf0/*.lf0', cptest+wav_dir+'_world_fwlspec/*.fwlspec:(-1,'+str(spec_size)+')', cptest+wav_dir+'_world_fwdbaper/*.fwdbaper:(-1,'+str(nm_size)+')', cptest+wav_dir+'_world_vuv/*.vuv'], fids, 'tests/test_made__smoke_compose_compose2_cmp_WORLD_mlpg/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
 
         compose.create_weights_spec(spec_path+':(-1,'+str(spec_size)+')', fids, 'tests/test_made__smoke_compose_compose2_w1/*.w', spec_type='fwlspec', thresh=-32)
 
