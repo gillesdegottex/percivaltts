@@ -38,6 +38,7 @@ class TestSmokeTheano(unittest.TestCase):
         makedirs('tests/test_made__smoke_theano_model')
         makedirs('tests/test_made__smoke_theano_model_train')
         makedirs('tests/test_made__smoke_theano_model_train_vocoder_WORLD')
+        makedirs('tests/test_made__smoke_theano_model_train_vocoder_WORLD_mlpg')
 
         fid_lst = readids(cfg.fileids)
 
