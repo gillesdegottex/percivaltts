@@ -128,9 +128,9 @@ class TestSmokeTheano(unittest.TestCase):
 
         # Test WORLD vocoder
         import vocoders
-        vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
+        vocoder_world = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
         import models_basic
-        model = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=2)
+        model = models_basic.ModelFC(lab_size, vocoder_world, mlpg_wins=[], hiddensize=4, nblayers=2)
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
@@ -139,7 +139,7 @@ class TestSmokeTheano(unittest.TestCase):
         optilse = optimizer.Optimizer(model, errtype='LSE')
         optilse.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         model.saveAllParams('tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams.pkl')
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams-snd', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams-snd', cfg, vocoder_world, wins=[], do_objmeas=True, do_resynth=True)
         cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 
 
