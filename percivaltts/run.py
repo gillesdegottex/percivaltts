@@ -74,14 +74,14 @@ f0_path = cp+wav_dir+feats_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'/*.fwlspec'
 feats_wpath = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'_weights/*.w' # Ignore silences based on spec energy
 if isinstance(vocoder, vocoders.VocoderPML):    noisetag='fwnm'
-elif isinstance(vocoder, vocoders.VocoderWORLD):noisetag='fwdbap'
+elif isinstance(vocoder, vocoders.VocoderWORLD):noisetag='fwdbap'   # pragma: no cover
 noise_path = cp+wav_dir+feats_dir+'_'+noisetag+str(vocoder.noisesize())+'/*.'+noisetag
 vuv_path = cp+wav_dir+feats_dir+'_vuv1/*.vuv'
 
 if do_mlpg: feats_dir+='_mlpg'
 cfg.outpath = cp+wav_dir+feats_dir+'_cmp_lf0_fwlspec'+str(vocoder.specsize())+'_'+noisetag+str(vocoder.noisesize())
-if isinstance(vocoder, vocoders.VocoderPML): cfg.outpath+='_nmnoscale'
-else:                                        cfg.outpath+='_vuv'
+if isinstance(vocoder, vocoders.VocoderPML):     cfg.outpath+='_nmnoscale'
+elif isinstance(vocoder, vocoders.VocoderWORLD): cfg.outpath+='_vuv'    # pragma: no cover
 cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
 
 # Model architecture options
