@@ -41,6 +41,8 @@ class TestSmokeTheano(unittest.TestCase):
         import vocoders
         vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
 
+        vocoder_world = vocoders.VocoderWorld(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
+
         import models_basic
         model = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=2)
         print("modgan.nbParams={}".format(model.nbParams()))
@@ -142,6 +144,10 @@ class TestSmokeTheano(unittest.TestCase):
         optigan = optimizer.Optimizer(model, errtype='LSE')
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate_wav('test/test_made__smoke_theano_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
+
+        model = models_basic.ModelGeneric(lab_size, vocoder, mlpg_wins=[], layertypes=['FC', 'BLSTM'], hiddensize=4)
+        optigan = optimizer.Optimizer(model, errtype='LSE')
+        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
 
         import models_cnn
         model = models_cnn.ModelCNN(lab_size, vocoder, hiddensize=4, nbcnnlayers=1, nbfilters=2, spec_freqlen=3, noise_freqlen=3, windur=0.020)
