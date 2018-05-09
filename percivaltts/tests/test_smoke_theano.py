@@ -54,6 +54,7 @@ class TestSmokeTheano(unittest.TestCase):
         import optimizer
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 1        # Just run one training only
+        cfg.train_hypers = []
         cfg.cropmode = 'begend'
         optigan = optimizer.Optimizer(model, errtype='LSE')
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
@@ -107,7 +108,7 @@ class TestSmokeTheano(unittest.TestCase):
 
         # Go back to single trial for the next tests
         cfg.train_nbtrials = 1
-        cfg.train_hypers = list()
+        cfg.train_hypers = []
 
         # Change a few configuration values
         cfg.train_max_nbepochs = 10
