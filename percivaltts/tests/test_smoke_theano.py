@@ -140,6 +140,7 @@ class TestSmokeTheano(unittest.TestCase):
         optilse.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         model.saveAllParams('tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams.pkl')
         model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams-snd', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
+        cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 
 
 
