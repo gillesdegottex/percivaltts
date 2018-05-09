@@ -149,8 +149,8 @@ class VocoderPML(VocoderF0Spec):
         print('Extracting PML features from: '+fwav)
         pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
 
-    def analysisfid(self, cfg, fid, wav_path, outputpathdicts):   # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), cfg.vocoder_f0_min, cfg.vocoder_f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts):   # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
 
     def synthesis(self, fs, CMP, pp_mcep=False):
 
@@ -249,8 +249,8 @@ class VocoderWORLD(VocoderF0Spec):
 
         # return CMP
 
-    def analysisfid(self, cfg, fid, wav_path, outputpathdicts):              # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), cfg.vocoder_f0_min, cfg.vocoder_f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid))
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts):              # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid))
 
     def synthesis(self, fs, CMP, pp_mcep=False):
         import pyworld as pw
