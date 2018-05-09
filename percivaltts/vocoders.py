@@ -38,7 +38,7 @@ class Vocoder:
         self.shift = _shift
 
         # if pp_spec_extrapfreq>0:
-        #     idxlim = int(dftlen*pp_spec_extrapfreq/cfg.vocoder_fs)
+        #     idxlim = int(dftlen*pp_spec_extrapfreq/self.fs)
         #     for n in xrange(SPEC.shape[0]):
         #         SPEC[n,idxlim:] = SPEC[n,idxlim]
         #
@@ -58,7 +58,7 @@ class Vocoder:
         #             import matplotlib.pyplot as plt
         #             plt.ion()
         #             plt.clf()
-        #             FF = cfg.vocoder_fs*np.arange(dftlen/2+1)/dftlen
+        #             FF = self.fs*np.arange(dftlen/2+1)/dftlen
         #             plt.plot(FF, sp.mag2db(SPEC[n,:]), 'k')
         #             plt.plot(FF, sp.mag2db(spec_pp), 'b')
         #             from IPython.core.debugger import  Pdb; Pdb().set_trace()
