@@ -107,7 +107,7 @@ class TestSmokeTheano(unittest.TestCase):
 
         # Go back to single trial for the next tests
         cfg.train_nbtrials = 1
-        cfg.train_hypers = []
+        cfg.train_hypers = list()
 
         # Change a few configuration values
         cfg.train_max_nbepochs = 10
