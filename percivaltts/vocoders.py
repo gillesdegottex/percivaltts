@@ -122,9 +122,9 @@ class VocoderF0Spec(Vocoder):
                 mcep_pp = external.merlin.generate_pp.mcep_postproc_sptk(mcep, self.fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(mcep_pp, sp.bark_alpha(self.fs), dftlen=self.dftlen)/self.fs
 
-        elif self.spec_type=='mcep':
+        elif self.spec_type=='mcep':# pragma: no cover Would need SPTK to test it
             # TODO test
-            if pp_mcep:             # pragma: no cover Would need SPTK to test it
+            if pp_mcep:
                 print('        Merlin/SPTK Post-proc on MCEP')
                 import external.merlin.generate_pp
                 COMPSPEC = external.merlin.generate_pp.mcep_postproc_sptk(COMPSPEC, self.fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
