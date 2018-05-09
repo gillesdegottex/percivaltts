@@ -57,7 +57,7 @@ class TestBase(unittest.TestCase):
 
         import vocoders
         vocoder_pml = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
-        vocoder_world = vocoders.VocoderWorld(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
+        vocoder_world = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
 
         for fid in fids:
             print('Extracting features from: '+fid)
