@@ -53,7 +53,7 @@ class TestSmokeTheano(unittest.TestCase):
         # LSE optimizer
         import optimizer
         cfg.train_max_nbepochs = 5
-        cfg.train_nbtrials = 5        # Just run one training only
+        cfg.train_nbtrials = 1        # Just run one training only
         cfg.cropmode = 'begend'
         optigan = optimizer.Optimizer(model, errtype='LSE')
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
@@ -66,8 +66,6 @@ class TestSmokeTheano(unittest.TestCase):
         # Extra test along side the simple test above
         # Saving ...
         global cfg
-        cfg.train_nbtrials = 1        # Just run one training only
-        cfg.train_hypers = []
         cost_val = 67.43
         model.saveAllParams('tests/test_made__smoke_theano_model/smokymodelparams.pkl')
         model.saveAllParams('tests/test_made__smoke_theano_model/smokymodelparams.pkl', cfg=cfg, extras={'cost_val':cost_val})
