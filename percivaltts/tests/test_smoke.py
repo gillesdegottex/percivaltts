@@ -103,6 +103,8 @@ class TestSmoke(unittest.TestCase):
 
         X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', inouttimesync=False)
         X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift')
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='begendbigger')
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='all')
 
         worst_val = data.cost_0pred_rmse(Ys)
         print('worst_val={}'.format(worst_val))
