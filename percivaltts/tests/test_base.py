@@ -61,7 +61,7 @@ class TestBase(unittest.TestCase):
 
         for fid in fids:
             print('Extracting features from: '+fid)
-            vocoder_pml.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':f0_path, 'spec':spec_fw_path, 'noise':nm_path)
+            vocoder_pml.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':f0_path, 'spec':spec_fw_path, 'noise':nm_path})
             vocoder_world.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':cp+wav_dir+'_world_lf0/*.lf0', 'spec':cp+wav_dir+'_world_fwlspec/*.fwlspec', 'noise':cp+wav_dir+'_world_fwdbaper/*.fwdbaper', 'vuv':cp+wav_dir+'_world_vuv/*.vuv'})
             # pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
             # fspec=spec_fw_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
