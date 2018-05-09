@@ -114,7 +114,7 @@ cfg.print_content()
 
 # Processes --------------------------------------------------------------------
 
-def pfs_map_vocoder(fid): return vocoder.analysisfid(cfg, fid, wav_path, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
+def pfs_map_vocoder(fid): return vocoder.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
 def features_extraction():
 
     # Use this tool for parallel extraction of the acoustic features ...
@@ -122,7 +122,7 @@ def features_extraction():
     pfs.map(pfs_map_vocoder, fids)
 
     # ... or uncomment these line to extract them file by file.
-    # for fid in fids: vocoder.analysisfid(cfg, fid, wav_path, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
+    # for fid in fids: pfs_map_vocoder(fid)
 
 
     # Create time weights (column vector in [0,1]). The frames at begining or end of
