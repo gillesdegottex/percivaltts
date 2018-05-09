@@ -41,8 +41,6 @@ class TestSmokeTheano(unittest.TestCase):
         import vocoders
         vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
 
-        vocoder_world = vocoders.VocoderWorld(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
-
         import models_basic
         model = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=2)
         print("modgan.nbParams={}".format(model.nbParams()))
