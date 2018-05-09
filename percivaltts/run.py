@@ -151,7 +151,7 @@ def composition_normalisation():
     outpaths = [f0_path, spec_path+':(-1,'+str(vocoder.specsize())+')', noise_path+':(-1,'+str(vocoder.noisesize())+')']
     normfn = compose.normalise_meanstd
     if isinstance(vocoder, vocoders.VocoderPML):        normfn=compose.normalise_meanstd_nmnoscale
-    elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)
+    elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)   # pragma: no cover
     compose.compose(outpaths, fids, cfg.outpath, id_valid_start=cfg.id_valid_start, normfn=normfn, wins=mlpg_wins)
 
 
