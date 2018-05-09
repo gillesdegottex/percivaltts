@@ -138,15 +138,7 @@ class Model:
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
             ):
-
-        # Options dependent on features composition
-
-        # Options for synthesis only
-        dftlen = 4096
-        f0clipmin = 50
-        f0clipmax = 700
-
-        # ----------------------------------------------------------------------
+        from external.pulsemodel import sigproc as sp
 
         print('Reloading output stats')
         # Assume mean/std normalisation of the output
@@ -174,8 +166,6 @@ class Model:
 
             return CMP
 
-        from external import pulsemodel
-        from external.pulsemodel import sigproc as sp
         if not os.path.isdir(syndir): os.makedirs(syndir)
 
         for vi in xrange(len(X_test)):

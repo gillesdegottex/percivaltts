@@ -143,7 +143,7 @@ def croplen(xs, axis=0):
 
     return xs
 
-def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.1/0.005)):
+def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.750/0.005)):
     """
     Similar to croplen(xs), but crop according to some weight w and a threshold on this weight (only at beginning and end of file).
     """
@@ -161,7 +161,7 @@ def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.1/0.005)
             # Crop each feature given at the beginning and end
             for x in xs:
                 # print('cropsilences: {} {}'.format(starti, endi))
-                x[ki] = x[ki][starti:endi,]
+                x[ki] = x[ki][starti:endi,]     # TODO This is changing the reference!
 
             # Crop the weight
             w[ki] = w[ki][starti:endi,]
@@ -180,16 +180,16 @@ def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.1/0.005)
 
             for x in xs:
                 # print('cropsilences: {} {}'.format(starti, endi))
-                x[ki] = x[ki][speechidx,]
+                x[ki] = x[ki][speechidx,]       # TODO This is changing the reference!
 
-            # Crop the weight
+            # Crop the weight too
             w[ki] = w[ki][speechidx,]
 
         elif cropmode=='all':
             speechidx = np.where(w[ki]>thresh)[0]
             for x in xs:
                 # print('cropsilences: {} {}'.format(starti, endi))
-                x[ki] = x[ki][speechidx,]
+                x[ki] = x[ki][speechidx,]       # TODO This is changing the reference!
 
             # Crop the weight
             w[ki] = w[ki][speechidx,]

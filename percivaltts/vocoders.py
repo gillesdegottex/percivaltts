@@ -38,7 +38,7 @@ class Vocoder:
         self.shift = _shift
 
         # if pp_spec_extrapfreq>0:
-        #     idxlim = int(dftlen*pp_spec_extrapfreq/cfg.vocoder_fs)
+        #     idxlim = int(dftlen*pp_spec_extrapfreq/self.fs)
         #     for n in xrange(SPEC.shape[0]):
         #         SPEC[n,idxlim:] = SPEC[n,idxlim]
         #
@@ -58,7 +58,7 @@ class Vocoder:
         #             import matplotlib.pyplot as plt
         #             plt.ion()
         #             plt.clf()
-        #             FF = cfg.vocoder_fs*np.arange(dftlen/2+1)/dftlen
+        #             FF = self.fs*np.arange(dftlen/2+1)/dftlen
         #             plt.plot(FF, sp.mag2db(SPEC[n,:]), 'k')
         #             plt.plot(FF, sp.mag2db(spec_pp), 'b')
         #             from IPython.core.debugger import  Pdb; Pdb().set_trace()
@@ -70,7 +70,7 @@ class Vocoder:
     def name(self): return self._name
 
     def featuressize(self):
-        raise ValueError('This member function needs to be re-implemented in the sub-classes')
+        raise ValueError('This member function needs to be re-implemented in the sub-classes')           # pragma: no cover
     def f0size(self): return -1
     def specsize(self): return -1
     def noisesize(self): return -1
@@ -105,7 +105,7 @@ class VocoderF0Spec(Vocoder):
         if self.spec_type=='fwbnd':
             COMPSPEC = sp.linbnd2fwbnd(np.log(abs(SPEC)), self.fs, dftlen, spec_size)
 
-        elif self.spec_type=='mcep':
+        elif self.spec_type=='mcep':  # pragma: no cover   Need SPTK to test this
             # TODO test
             COMPSPEC = sp.spec2mcep(SPEC*self.fs, sp.bark_alpha(self.fs), spec_size-1)
 
@@ -115,14 +115,14 @@ class VocoderF0Spec(Vocoder):
 
         if self.spec_type=='fwbnd':
             SPEC = np.exp(sp.fwbnd2linbnd(COMPSPEC, self.fs, self.dftlen, smooth=True))
-            if pp_mcep:
+            if pp_mcep:             # pragma: no cover Would need SPTK to test it
                 print('        Merlin/SPTK Post-proc on MCEP')
                 import external.merlin.generate_pp
                 mcep = sp.spec2mcep(SPEC*self.fs, sp.bark_alpha(self.fs), 256)    # Arbitrary high order
                 mcep_pp = external.merlin.generate_pp.mcep_postproc_sptk(mcep, self.fs, dftlen=self.dftlen) # Apply Merlin's post-proc on spec env
                 SPEC = sp.mcep2spec(mcep_pp, sp.bark_alpha(self.fs), dftlen=self.dftlen)/self.fs
 
-        elif self.spec_type=='mcep':
+        elif self.spec_type=='mcep':# pragma: no cover Would need SPTK to test it
             # TODO test
             if pp_mcep:
                 print('        Merlin/SPTK Post-proc on MCEP')
@@ -149,8 +149,8 @@ class VocoderPML(VocoderF0Spec):
         print('Extracting PML features from: '+fwav)
         pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
 
-    def analysisfid(self, cfg, fid, wav_path, outputpathdicts):   # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), cfg.vocoder_f0_min, cfg.vocoder_f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts):   # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
 
     def synthesis(self, fs, CMP, pp_mcep=False):
 
@@ -192,7 +192,7 @@ class VocoderWORLD(VocoderF0Spec):
     def noisesize(self): return self.aper_size
     def vuvsize(self): return 1
 
-    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv):          # pragma: no cover  coverage not detected
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv):
         print('Extracting WORLD features from: '+fwav)
 
         wav, fs, _ = sp.wavread(fwav)
@@ -249,8 +249,8 @@ class VocoderWORLD(VocoderF0Spec):
 
         # return CMP
 
-    def analysisfid(self, cfg, fid, wav_path, outputpathdicts):              # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), cfg.vocoder_f0_min, cfg.vocoder_f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid))
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts):              # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid))
 
     def synthesis(self, fs, CMP, pp_mcep=False):
         import pyworld as pw

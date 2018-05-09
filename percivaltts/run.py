@@ -73,15 +73,15 @@ feats_dir+='_'+vocoder.name()
 f0_path = cp+wav_dir+feats_dir+'_lf0/*.lf0'
 spec_path = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'/*.fwlspec'
 feats_wpath = cp+wav_dir+feats_dir+'_fwlspec'+str(vocoder.specsize())+'_weights/*.w' # Ignore silences based on spec energy
-if isinstance(vocoder, vocoders.VocoderPML): noisetag='fwnm'
-else:                                        noisetag='fwdbap'
+if isinstance(vocoder, vocoders.VocoderPML):    noisetag='fwnm'
+elif isinstance(vocoder, vocoders.VocoderWORLD):noisetag='fwdbap'   # pragma: no cover
 noise_path = cp+wav_dir+feats_dir+'_'+noisetag+str(vocoder.noisesize())+'/*.'+noisetag
 vuv_path = cp+wav_dir+feats_dir+'_vuv1/*.vuv'
 
 if do_mlpg: feats_dir+='_mlpg'
 cfg.outpath = cp+wav_dir+feats_dir+'_cmp_lf0_fwlspec'+str(vocoder.specsize())+'_'+noisetag+str(vocoder.noisesize())
-if isinstance(vocoder, vocoders.VocoderPML): cfg.outpath+='_nmnoscale'
-else:                                        cfg.outpath+='_vuv'
+if isinstance(vocoder, vocoders.VocoderPML):     cfg.outpath+='_nmnoscale'
+elif isinstance(vocoder, vocoders.VocoderWORLD): cfg.outpath+='_vuv'    # pragma: no cover
 cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
 
 # Model architecture options
@@ -114,7 +114,7 @@ cfg.print_content()
 
 # Processes --------------------------------------------------------------------
 
-def pfs_map_vocoder(fid): return vocoder.analysisfid(cfg, fid, wav_path, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
+def pfs_map_vocoder(fid): return vocoder.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
 def features_extraction():
 
     # Use this tool for parallel extraction of the acoustic features ...
@@ -122,7 +122,7 @@ def features_extraction():
     pfs.map(pfs_map_vocoder, fids)
 
     # ... or uncomment these line to extract them file by file.
-    # for fid in fids: vocoder.analysisfid(cfg, fid, wav_path, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
+    # for fid in fids: pfs_map_vocoder(fid)
 
 
     # Create time weights (column vector in [0,1]). The frames at begining or end of
@@ -151,7 +151,7 @@ def composition_normalisation():
     outpaths = [f0_path, spec_path+':(-1,'+str(vocoder.specsize())+')', noise_path+':(-1,'+str(vocoder.noisesize())+')']
     normfn = compose.normalise_meanstd
     if isinstance(vocoder, vocoders.VocoderPML):        normfn=compose.normalise_meanstd_nmnoscale
-    elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)
+    elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)   # pragma: no cover
     compose.compose(outpaths, fids, cfg.outpath, id_valid_start=cfg.id_valid_start, normfn=normfn, wins=mlpg_wins)
 
 

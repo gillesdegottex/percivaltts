@@ -103,6 +103,8 @@ class TestSmoke(unittest.TestCase):
 
         X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', inouttimesync=False)
         X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift')
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='begendbigger')
+        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='all')
 
         worst_val = data.cost_0pred_rmse(Ys)
         print('worst_val={}'.format(worst_val))
@@ -157,6 +159,10 @@ class TestSmoke(unittest.TestCase):
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp4/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_nmnoscale, wins=[])
 
         compose.compose([f0_path, spec_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, 'tests/test_made__smoke_compose_compose2_cmp_deltas/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd_nmnoscale, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
+
+        # WORLD vocoder features
+        compose.compose([cptest+wav_dir+'_world_lf0/*.lf0', cptest+wav_dir+'_world_fwlspec/*.fwlspec:(-1,'+str(spec_size)+')', cptest+wav_dir+'_world_fwdbaper/*.fwdbaper:(-1,'+str(nm_size)+')', cptest+wav_dir+'_world_vuv/*.vuv'], fids, 'tests/test_made__smoke_compose_compose2_cmp_WORLD/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd, wins=[])
+        compose.compose([cptest+wav_dir+'_world_lf0/*.lf0', cptest+wav_dir+'_world_fwlspec/*.fwlspec:(-1,'+str(spec_size)+')', cptest+wav_dir+'_world_fwdbaper/*.fwdbaper:(-1,'+str(nm_size)+')', cptest+wav_dir+'_world_vuv/*.vuv'], fids, 'tests/test_made__smoke_compose_compose2_cmp_WORLD_mlpg/*.cmp', id_valid_start=8, normfn=compose.normalise_meanstd, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
 
         compose.create_weights_spec(spec_path+':(-1,'+str(spec_size)+')', fids, 'tests/test_made__smoke_compose_compose2_w1/*.w', spec_type='fwlspec', thresh=-32)
 

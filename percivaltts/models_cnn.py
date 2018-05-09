@@ -32,6 +32,7 @@ import lasagne
 
 from backend_theano import *
 import model
+import vocoders
 
 # Full architectures -----------------------------------------------------------
 
@@ -86,7 +87,7 @@ class ModelCNN(model.Model):
             # F0 - BLSTM layer
             layer_f0 = layer_ctx
             grad_clipping = 50
-            for layi in xrange(1):  # TODO TODO TODO Used 2 in most stable version; Params hardcoded 1 layer
+            for layi in xrange(1):  # TODO Used 2 in most stable version; Params hardcoded 1 layer. Shows convergence issue with 2.
                 layerstr = 'f0_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
                 fwd = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
                 bck = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
@@ -117,7 +118,9 @@ class ModelCNN(model.Model):
                 layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
                 if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
             # layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=None)
-            layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlin_saturatedsigmoid, name='nm_lout_2DC') # Force the output in [-0.005,1.005] lasagne.nonlinearities.sigmoid TODO TODO TODO Vocoder dependent
+            noise_nonlinearity = None
+            if isinstance(vocoder, vocoders.VocoderPML): nonlinearity=nonlin_saturatedsigmoid # Force the output in [-0.005,1.005] lasagne.nonlinearities.sigmoid
+            layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=noise_nonlinearity, name='nm_lout_2DC')
             layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 2, 3, 1], name='nm_dimshuffle')
             layer_noise = lasagne.layers.flatten(layer_noise, outdim=3, name='nm_flatten')
             layers_toconcat.append(layer_noise)
@@ -139,6 +142,7 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
+    # TODO Should force the use of member fields of the generator instead of re-passing them as arg of the ctor ?
     def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, ctxlayers_nb=1, postlayers_nb=6, windur=0.025, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
         if bn_axes is None: bn_axes=[0,1]
         layer_discri = lasagne.layers.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')

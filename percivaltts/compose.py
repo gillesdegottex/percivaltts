@@ -28,7 +28,7 @@ numpy_force_random_seed()
 
 import data
 
-def normalise_minmax(filepath, fids, outfilepath=None, featurepaths=None, nrange=None, keepidx=None, verbose=1):
+def normalise_minmax(filepath, fids, outfilepath=None, featurepaths=None, nrange=None, keepidx=None, zerovarstozeros=True, verbose=1):
     """
     Normalisation function for compose.compose(.): Normalise [min,max] values to nrange values ([-1,1] by default)
     """
@@ -57,6 +57,9 @@ def normalise_minmax(filepath, fids, outfilepath=None, featurepaths=None, nrange
     maxs.astype('float32').tofile(os.path.dirname(outfilepath)+'/max4norm.dat')
 
     maxmindiff = (maxs-mins)
+
+    if zerovarstozeros:                 # Force idx of zero vars to zero values
+        mins[maxmindiff==0.0] = 0.0     # to avoid zero vars idx to -1, e.g.
 
     maxmindiff[maxmindiff==0.0] = 1.0   # Avoid division by zero in dead dimensions
 
