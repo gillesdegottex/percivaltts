@@ -105,7 +105,7 @@ class VocoderF0Spec(Vocoder):
         if self.spec_type=='fwbnd':
             COMPSPEC = sp.linbnd2fwbnd(np.log(abs(SPEC)), self.fs, dftlen, spec_size)
 
-        elif self.spec_type=='mcep':
+        elif self.spec_type=='mcep':  # pragma: no cover   Need SPTK to test this
             # TODO test
             COMPSPEC = sp.spec2mcep(SPEC*self.fs, sp.bark_alpha(self.fs), spec_size-1)
 
