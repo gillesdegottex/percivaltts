@@ -182,7 +182,7 @@ def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.750/0.00
                 # print('cropsilences: {} {}'.format(starti, endi))
                 x[ki] = x[ki][speechidx,]       # TODO This is changing the reference!
 
-            # Crop the weight
+            # Crop the weight too
             w[ki] = w[ki][speechidx,]
 
         elif cropmode=='all':
