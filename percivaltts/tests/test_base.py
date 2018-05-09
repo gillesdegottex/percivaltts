@@ -27,7 +27,7 @@ cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-
 # Output features
 cfg.vocoder_fs = 32000
 cfg.vocoder_shift = 0.005
-f0_min, f0_max = 60, 600
+cfg.vocoder_f0_min, cfg.vocoder_f0_max = 60, 600
 spec_size = 65
 nm_size = 17
 out_size = 1+spec_size+nm_size
@@ -63,7 +63,7 @@ class TestBase(unittest.TestCase):
             print('Extracting features from: '+fid)
             vocoder_pml.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':f0_path, 'spec':spec_fw_path, 'noise':nm_path})
             vocoder_world.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':cp+wav_dir+'_world_lf0/*.lf0', 'spec':cp+wav_dir+'_world_fwlspec/*.fwlspec', 'noise':cp+wav_dir+'_world_fwdbaper/*.fwdbaper', 'vuv':cp+wav_dir+'_world_vuv/*.vuv'})
-            # pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+            # pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.vocoder_f0_min, f0_max=cfg.vocoder_f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
             # fspec=spec_fw_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 
@@ -99,7 +99,7 @@ class TestBase(unittest.TestCase):
     #         fids = filter(None, [x for x in map(str.strip, f.readlines()) if x])
     #         for fid in fids:
     #             print('Extracting features from: '+fid)
-    #             pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=f0_min, f0_max=f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
+    #             pulsemodel.analysisf(wav_path.replace('*',fid), f0_min=cfg.vocoder_f0_min, f0_max=cfg.vocoder_f0_max, ff0=f0_path.replace('*',fid), f0_log=True,
     #             fspec=spec_fwcep_path.replace('*',fid), spec_fwceporder=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
     #
     #     import compose
