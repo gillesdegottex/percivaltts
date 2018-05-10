@@ -146,8 +146,9 @@ class VocoderPML(VocoderF0Spec):
     def noisesize(self): return self.nm_size
 
     def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, fnm):              # pragma: no cover  coverage not detected
+
         print('Extracting PML features from: '+fwav)
-        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
+        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, preproc_fs=self.fs, verbose=1)
 
     def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts):   # pragma: no cover  coverage not detected
         return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
@@ -196,6 +197,11 @@ class VocoderWORLD(VocoderF0Spec):
         print('Extracting WORLD features from: '+fwav)
 
         wav, fs, _ = sp.wavread(fwav)
+
+        if fs!=self.fs:
+            print('    Resampling the waveform (new fs={}Hz)'.format(self.fs))
+            wav = sp.resample(wav, fs, self.fs, method=2, deterministic=True)
+            fs = self.fs
 
         import pyworld as pw
 
