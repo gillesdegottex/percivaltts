@@ -4,6 +4,3 @@
 [submodule "percivaltts/external/pfs"]
 	path = percivaltts/external/pfs
 	url = https://github.com/gillesdegottex/pfs.git
-[submodule "percivaltts/external/pulsemodel"]
-	path = percivaltts/external/pulsemodel
-	url = https://github.com/gillesdegottex/pulsemodel.git
