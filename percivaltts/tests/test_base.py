@@ -25,7 +25,7 @@ label_path = cp+label_dir+'/*.lab'
 cfg.indir = cp+label_dir+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
 
 # Output features
-cfg.vocoder_fs = 32000
+cfg.vocoder_fs = 16000
 cfg.vocoder_shift = 0.005
 cfg.vocoder_f0_min, cfg.vocoder_f0_max = 60, 600
 spec_size = 65

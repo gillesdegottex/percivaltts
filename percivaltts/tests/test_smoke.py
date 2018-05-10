@@ -20,7 +20,7 @@ class TestSmoke(unittest.TestCase):
         cfg = percivaltts.configuration()
 
         text_file = open(cptest+'/info.py', "w")
-        text_file.write("fs = 32000\n")
+        text_file.write("fs = 16000\n")
         text_file.write("shift = 0.005\n")
         text_file.close()
         cfg.mergefiles([cptest+'/info.py'])
@@ -86,9 +86,9 @@ class TestSmoke(unittest.TestCase):
 
         outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
         Ys = data.load(outdir, fids, shape=None, frameshift=0.005, verbose=1, label='Ys: ')
-        print(len(Ys))
+        print('len(Ys)='+str(len(Ys)))
         self.assertTrue(len(Ys)==10)
-        print(Ys[0].shape)
+        print('Ys[0].shape'+str(Ys[0].shape))
         self.assertTrue(Ys[0].shape==(666, 83))
 
         wdir = cptest+'wav_fwlspec65_weights/*.w:(-1,1)'
