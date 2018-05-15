@@ -66,6 +66,18 @@ def layer_final(l_hid, vocoder, mlpg_wins):
     return l_out
 
 
+def layer_LSTM(l_hid, hiddensize, nonlinearity, backwards=False, grad_clipping=50, name=""):
+    ingate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+    forgetgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+    outgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
+    # cell = lasagne.layers.Gate(W_cell=None, W_in=lasagne.init.Orthogonal(np.sqrt(2.0/(1.0+(1.0/3.0))**2)), W_hid=lasagne.init.Orthogonal(np.sqrt(2.0/(1+(1.0/3.0))**2)), nonlinearity=nonlinearity)
+    cell = lasagne.layers.Gate(W_cell=None, W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0), nonlinearity=nonlinearity)
+    # The final nonline should be TanH otherwise it doesn't converge (why?)
+    # by default peepholes=True
+    fwd = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=backwards, ingate=ingate, forgetgate=forgetgate, outgate=outgate, cell=cell, grad_clipping=grad_clipping, nonlinearity=lasagne.nonlinearities.tanh, name=name)
+
+    return fwd
+
 class ModelFC(model.Model):
     def __init__(self, insize, vocoder, mlpg_wins=[], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nblayers=6, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
