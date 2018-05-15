@@ -272,7 +272,7 @@ class Optimizer:
 
                 # Load training data online, because data is often too heavy to hold in memory
                 fid_lst_trab = [fid_lst_tra[bidx] for bidx in rndidxb[k]]
-                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype, cropmode=cfg.cropmode)
+                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype, cropmode=cfg.train_batch_cropmode)
 
                 if 0: # Plot batch
                     import matplotlib.pyplot as plt
@@ -429,6 +429,7 @@ class Optimizer:
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
         cfg.train_batch_size = 5                # [potential hyper-parameter] # TODO Rename batch_size ?
         cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
+        cfg.train_batch_cropmode = 'begendbigger'     # 'begend', 'begendbigger', 'all'
         cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
         cfg.train_batch_lengthmax = None        # Maximum duration [frames] of each batch
         cfg.train_nbtrials = 1                  # Just run one training only
