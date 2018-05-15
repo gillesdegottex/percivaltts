@@ -55,8 +55,6 @@ class ModelGeneric(model.Model):
                 if len(bn_axes)>0: l_hid=lasagne.layers.batch_norm(l_hid, axes=bn_axes, name=layerstr+'.bn') # Add batch normalisation
 
             elif layertypes[layi]=='BLSTM':
-                # fwd = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-                # bck = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
                 fwd = models_basic.layer_LSTM(l_hid, hiddensize, nonlinearity=nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
                 bck = models_basic.layer_LSTM(l_hid, hiddensize, nonlinearity=nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.bck')
                 l_hid = lasagne.layers.ConcatLayer((fwd, bck), axis=2)

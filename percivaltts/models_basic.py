@@ -147,8 +147,8 @@ class ModelBLSTM(model.Model):
         for layi in xrange(nblayers):
             layerstr = 'l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
 
-            fwd = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-            bck = lasagne.layers.LSTMLayer(l_hid, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
+            fwd = layer_LSTM(l_hid, hiddensize, nonlinearity=nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
+            bck = layer_LSTM(l_hid, hiddensize, nonlinearity=nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.bck')
             l_hid = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
 
             # Add batch normalisation
