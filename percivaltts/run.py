@@ -160,9 +160,9 @@ def build_model():
     import models_cnn
     model = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
-    # import models_basic
-    # model = models_basic.ModelFC(in_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=cfg.model_hiddensize, nblayers=6)
-    # model = models_basic.ModelBLSTM(in_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=cfg.model_hiddensize, nblayers=3)
+    # import models_generic
+    # model = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
+    # model = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], hiddensize=cfg.model_hiddensize)
 
     return model
 
