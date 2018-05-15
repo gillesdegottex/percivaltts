@@ -46,7 +46,8 @@ cfg.id_test_nb = 50
 fids = readids(cfg.fileids)
 
 # Input text labels
-lab_dir = 'label_state_align'
+lab_type = 'state'  # 'state' or 'phone'
+lab_dir = 'label_'+lab_type+'_align'
 lab_path = cp+lab_dir+'/*.lab'
 lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/merlin/questions-radio_dnn_416.hed')
 in_size = 416+9
@@ -133,10 +134,10 @@ def features_extraction():
 def contexts_extraction():
     # Let's use Merlin's code for this
     from external.merlin.label_normalisation import HTSLabelNormalisation
-    label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full') # coarse_coding or full
+    label_normaliser = HTSLabelNormalisation(question_file_name=lab_questions, add_frame_features=True, subphone_feats='full' if lab_type else 'coarse_coding') # coarse_coding or full
     makedirs(os.path.dirname(labbin_path))
     for fid in readids(cfg.fileids):
-        label_normaliser.perform_normalisation([lab_path.replace('*',fid)], [labbin_path.replace('*',fid)], label_type='state_align') # phone_align or state_align
+        label_normaliser.perform_normalisation([lab_path.replace('*',fid)], [labbin_path.replace('*',fid)], label_type='state_align' if lab_type else 'phone_align') # phone_align or state_align
 
     compose.create_weights_lab(lab_path, cfg.fileids, labs_wpath, silencesymbol='sil', shift=cfg.vocoder_shift)
 
