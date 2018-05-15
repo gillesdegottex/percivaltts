@@ -51,6 +51,8 @@ class TestSmokeTheano(unittest.TestCase):
         print("modgan.nbParams={}".format(model.nbParams()))
         self.assertEqual(model.nbParams(), 2163)
 
+        import models_generic
+
         # LSE optimizer
         import optimizer
         cfg.train_max_nbepochs = 5
@@ -182,7 +184,7 @@ class TestSmokeTheano(unittest.TestCase):
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate_wav('test/test_made__smoke_theano_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
 
-        model = models_basic.ModelGeneric(lab_size, vocoder, mlpg_wins=[], layertypes=['FC', 'BLSTM'], hiddensize=4)
+        model = models_generic.ModelGeneric(lab_size, vocoder, mlpg_wins=[], layertypes=['FC', 'BLSTM'], hiddensize=4)
         optigan = optimizer.Optimizer(model, errtype='LSE')
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
 
