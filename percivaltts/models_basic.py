@@ -67,10 +67,12 @@ def layer_final(l_hid, vocoder, mlpg_wins):
 
 
 def layer_LSTM(l_hid, hiddensize, nonlinearity, backwards=False, grad_clipping=50, name=""):
+    '''
+    That's a custom LSTM layer that seems to converge faster.
+    '''
     ingate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
     forgetgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
     outgate = lasagne.layers.Gate(W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0))
-    # cell = lasagne.layers.Gate(W_cell=None, W_in=lasagne.init.Orthogonal(np.sqrt(2.0/(1.0+(1.0/3.0))**2)), W_hid=lasagne.init.Orthogonal(np.sqrt(2.0/(1+(1.0/3.0))**2)), nonlinearity=nonlinearity)
     cell = lasagne.layers.Gate(W_cell=None, W_in=lasagne.init.Orthogonal(1.0), W_hid=lasagne.init.Orthogonal(1.0), nonlinearity=nonlinearity)
     # The final nonline should be TanH otherwise it doesn't converge (why?)
     # by default peepholes=True
