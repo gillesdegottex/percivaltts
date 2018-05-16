@@ -38,6 +38,9 @@ import model
 import vocoders
 
 import models_basic
+from models_cnn import CstMulLayer
+from models_cnn import layer_GatedConv2DLayer
+
 
 class ModelGeneric(model.Model):
     def __init__(self, insize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'BLSTM'], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
@@ -94,9 +97,6 @@ class ModelGeneric(model.Model):
     def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, ctxlayers_nb=1, postlayers_nb=6, windur=0.025, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
         if bn_axes is None: bn_axes=[0,1]
         layer_discri = lasagne.layers.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
-
-        from models_cnn import CstMulLayer
-        from models_cnn import layer_GatedConv2DLayer
 
         _winlen = int(0.5*windur/0.005)*2+1
 
