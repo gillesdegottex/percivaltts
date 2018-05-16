@@ -64,6 +64,8 @@ vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129,
 # vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
 do_mlpg = False
+pp_mcep = False # Set to True to apply Merlin's post-processing to enhance formants. You need mcep command line from SPTK.
+
 mlpg_wins = []
 if do_mlpg: mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
 out_size = vocoder.featuressize()*(len(mlpg_wins)+1)
@@ -106,9 +108,6 @@ cfg.train_cancel_nodecepochs = 50 # (Can reduce it for 3 stacked BLSTM or 6 stac
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
 # cfg.train_nbtrials = 12
-
-pp_mcep = False    # Set to True to apply Merlin's post-processing to enhance formants. You need mcep command line from SPTK.
-
 
 cfg.print_content()
 
