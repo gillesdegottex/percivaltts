@@ -103,7 +103,6 @@ cfg.wpath = labs_wpath # labs_wpath or feats_wpath. By def. ignore silences acco
 cfg.train_LScoef = 0.25         # LS loss weights 0.25 and WGAN for the rest (even though LS loss is in [0,oo) whereas WGAN loss is on (-oo,+oo))
 cfg.train_max_nbepochs = 300    # (Can stop much earlier for 3 stacked BLSTM or 6 stacked FC)
 cfg.train_cancel_nodecepochs = 50 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)
-cfg.cropmode = 'begend' # 'begend', 'begendbigger', 'all'  # Drop beging and end silences; Drop also the big ones in the middle; Drop all silences
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
 # cfg.train_nbtrials = 12
