@@ -64,7 +64,7 @@ class TestSmokeTheano(unittest.TestCase):
         model.saveAllParams('tests/test_made__smoke_theano_model/smokymodelparams.pkl')
 
         # Generate waveforms
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', vocoder, wins=[], do_objmeas=True, do_resynth=True)
 
 
         # Extra test along side the simple test above
