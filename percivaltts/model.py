@@ -79,8 +79,8 @@ class Model:
         self.net_out = net_out
 
         print('    architecture:')
-        for l in lasagne.layers.get_all_layers(self.net_out):
-            print('        {}:{}'.format(l.name, l.output_shape))
+        for li, l in enumerate(lasagne.layers.get_all_layers(self.net_out)):
+            print('        {}: {}({})'.format(li, l.name, l.output_shape))
 
         self.params_all = lasagne.layers.get_all_params(self.net_out)
         self.params_trainable = lasagne.layers.get_all_params(self.net_out, trainable=True)
