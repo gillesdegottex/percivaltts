@@ -66,6 +66,7 @@ class ModelGeneric(model.Model):
 
             elif isinstance(layertypes[layi], list):
                 if layertypes[layi][0]=='CNN':
+                    # l_hid = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(l_hid, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
                     l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name='dimshuffle_to_2DCNN')
                     nbfilters = layertypes[layi][1]
                     winlen = layertypes[layi][2]
