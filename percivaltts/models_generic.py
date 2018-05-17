@@ -64,20 +64,18 @@ class ModelGeneric(model.Model):
 
                 # Don't add batch norm for RNN-based layers
 
-            elif layertypes[layi]=='CNN':
-                # l_hid = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(l_hid, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
-                l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name='dimshuffle_to_2DCNN')
-                nbfilters = 3
-                winlen = 21
-                nbcnnlayers = 1
-                for layicnn in xrange(nbcnnlayers):
-                    layerstr = 'l'+str(1+layi)+'_'+str(layicnn)+'CNN{}x{}x{}'.format(nbfilters,winlen,1)
-                    l_hid = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(l_hid, num_filters=nbfilters, filter_size=[winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-                    # l_hid = lasagne.layers.batch_norm(layer_GatedConv2DLayer(l_hid, nbfilters, [_winlen,spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
+            elif isinstance(layertypes[layi], list):
+                if layertypes[layi][0]=='CNN':
+                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name='dimshuffle_to_2DCNN')
+                    nbfilters = layertypes[layi][1]
+                    winlen = layertypes[layi][2]
+                    layerstr = 'l'+str(1+layi)+'_CNN{}x{}x{}'.format(nbfilters,winlen,1)
+                    l_hid = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(l_hid, num_filters=nbfilters, filter_size=[winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr)) # TODO TODO TODO
+                    # l_hid = lasagne.layers.batch_norm(layer_GatedConv2DLayer(l_hid, nbfilters, [winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
                     # if dropout_p>0.0: l_hid = lasagne.layers.dropout(l_hid, p=dropout_p)
-                # l_hid = lasagne.layers.Conv2DLayer(l_hid, 1, [_winlen,spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
-                l_hid = lasagne.layers.dimshuffle(l_hid, [0, 2, 3, 1], name='dimshuffle_back')
-                l_hid = lasagne.layers.flatten(l_hid, outdim=3, name='flatten')
+                    # l_hid = lasagne.layers.Conv2DLayer(l_hid, 1, [_winlen,spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
+                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 2, 3, 1], name='dimshuffle_back')
+                    l_hid = lasagne.layers.flatten(l_hid, outdim=3, name='flatten')
 
             # Add dropout (after batchnorm)
             if dropout_p>0.0: l_hid=lasagne.layers.dropout(l_hid, p=dropout_p)
