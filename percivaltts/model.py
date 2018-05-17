@@ -133,7 +133,7 @@ class Model:
             CMP.astype('float32').tofile(outpath.replace('*',fid_lst[vi]))
 
 
-    def generate_wav(self, inpath, outpath, fid_lst, syndir, cfg, vocoder, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]], do_objmeas=True, do_resynth=True
+    def generate_wav(self, inpath, outpath, fid_lst, syndir, vocoder, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]], do_objmeas=True, do_resynth=True
             , pp_mcep=False
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
@@ -175,15 +175,15 @@ class Model:
 
             if do_resynth:
                 CMP = denormalise(y_test[vi], wins=[])
-                resyn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=False)
-                sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
+                resyn = vocoder.synthesis(vocoder.fs, CMP, pp_mcep=False)
+                sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
             CMP = CMP[0,:,:]
 
             CMP = denormalise(CMP, wins=wins)
-            syn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=pp_mcep)
-            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
+            syn = vocoder.synthesis(vocoder.fs, CMP, pp_mcep=pp_mcep)
+            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             if do_objmeas: vocoder.objmeasures_add(CMP, y_test[vi])
 
