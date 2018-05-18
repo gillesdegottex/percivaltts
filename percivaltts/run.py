@@ -155,7 +155,6 @@ def composition_normalisation():
 
 
 def build_model():
-    # Build the model
     import models_cnn
     model = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
