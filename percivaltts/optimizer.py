@@ -136,7 +136,7 @@ class Optimizer:
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
 
-            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, noise_freqlen=self._model._noise_freqlen, windur=self._model._windur, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
+            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
