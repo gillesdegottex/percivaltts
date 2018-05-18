@@ -154,7 +154,7 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, use_bn=False):
+    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, use_WGAN_incnoise=True, use_bn=False):
         if bn_axes is None: bn_axes=[0,1]
         layer_discri = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
 
@@ -181,7 +181,7 @@ class ModelCNN(model.Model):
         layer_spec = ll.flatten(layer, outdim=3, name='spec_flatten')
         layerstoconcats.append(layer_spec)
 
-        if vocoder.noisesize()>0: # Add noise in discriminator
+        if use_WGAN_incnoise and vocoder.noisesize()>0: # Add noise in discriminator
             layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
 
             if use_LSweighting: # Using weighted WGAN+LS
