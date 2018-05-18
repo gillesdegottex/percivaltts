@@ -133,7 +133,7 @@ class ModelCNN(model.Model):
             # Noise mask - 2D Gated Conv layers
             layer_noise = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, vocoder.noisesize(), nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
             layer_noise = lasagne.layers.dimshuffle(layer_noise, [0, 'x', 1, 2], name='nm_dimshuffle')
-            for layi in xrange(nbcnnlayers):
+            for layi in xrange(np.max((1,int(np.ceil(nbcnnlayers/2))))):
                 layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,noise_freqlen)
                 layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
                 if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
