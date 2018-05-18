@@ -103,12 +103,16 @@ class ModelCNN(model.Model):
             # F0 - BLSTM layer
             layer_f0 = layer_ctx
             grad_clipping = 50
-            for layi in xrange(1):  # TODO Used 2 in most stable version; Params hardcoded 1 layer. Shows convergence issue with 2.
-                layerstr = 'f0_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
-                fwd = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-                bck = lasagne.layers.LSTMLayer(layer_f0, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
-
-                layer_f0 = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
+            for layi in xrange(1):  # TODO Used 2 in most stable version; Params hardcoded 1 layer. Shows convergence issue with 2. TODO TODO TODO
+                if 0: # TODO TODO TODO Use FC for f0 instead of BLSTM
+                    layerstr = 'f0_l'+str(1+layi)+'_FC{}'.format(hiddensize)
+                    layer_f0 = lasagne.layers.DenseLayer(layer_f0, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
+                else:
+                    layerstr = 'f0_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
+                    fwd = models_basic.layer_LSTM(layer_f0, hiddensize, nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
+                    bck = models_basic.layer_LSTM(layer_f0, hiddensize, nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.fwd')
+                    layer_f0 = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
+                # TODO TODO TODO Replace by CNN ?? It didn't work well
             layer_f0 = lasagne.layers.DenseLayer(layer_f0, num_units=vocoder.f0size(), nonlinearity=None, num_leading_axes=2, name='f0_lout_projection')
             layers_toconcat.append(layer_f0)
 
