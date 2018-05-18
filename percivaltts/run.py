@@ -88,6 +88,9 @@ elif isinstance(vocoder, vocoders.VocoderWORLD): cfg.outpath+='_vuv'    # pragma
 cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
 
 # Model architecture options
+cfg.model_ctx_nblayers = 1
+cfg.model_ctx_nbfilters = 2
+cfg.model_ctx_winlen = 21
 cfg.model_hiddensize = 256      # For all arch
 cfg.model_nbcnnlayers = 8       # CNN only 8
 cfg.model_nbfilters = 16        # CNN only 16
