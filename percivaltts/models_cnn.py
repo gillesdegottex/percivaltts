@@ -53,22 +53,18 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
     lout = lasagne.layers.ElemwiseMergeLayer([la, lg], T.mul, cropping=None, name=name+'.mul_merge')
     return lout
 
-
 def layer_embedded_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize, nonlinearity, bn_axes=None):
     if bn_axes is None: bn_axes=[0,1]
 
     layer_ctx = lasagne.layers.dimshuffle(layer_ctx, [0, 'x', 1, 2], name='ctx_dimshuffle_to_2DCNN')
-    for layi in xrange(ctx_nblayers):   # TODO TODO TODO Use CNN at input instead of FC+BLSTM
+    for layi in xrange(ctx_nblayers):
         layerstr = 'ctx_l'+str(1+layi)+'_CNN{}'.format(hiddensize)
         layerstr = 'l'+str(1+layi)+'_CNN{}x{}x{}'.format(ctx_nbfilters,ctx_winlen,1)
         layer_ctx = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(layer_ctx, num_filters=ctx_nbfilters, filter_size=[ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-        # layer_ctx = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_ctx, nbfilters, [ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-        # if dropout_p>0.0: layer_ctx = lasagne.layers.dropout(layer_ctx, p=dropout_p)
-        # layer_ctx = lasagne.layers.Conv2DLayer(layer_ctx, 1, [_winlen,spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
     layer_ctx = lasagne.layers.dimshuffle(layer_ctx, [0, 2, 3, 1], name='ctx_dimshuffle_back')
     layer_ctx = lasagne.layers.flatten(layer_ctx, outdim=3, name='ctx_flatten')
 
-    for layi in xrange(2):  # TODO TODO TODO
+    for layi in xrange(2):
         layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
         layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
 
