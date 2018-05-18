@@ -75,9 +75,13 @@ def layer_embedded_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, h
     return layer_ctx
 
 class ModelCNN(model.Model):
-    def __init__(self, insize, vocoder, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctxlayers_nb=1, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, windur=0.025, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, vocoder, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctx_nblayers=1, ctx_nbfilters=2, ctx_winlen=21, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, windur=0.025, bn_axes=None, dropout_p=-1.0):
         if bn_axes is None: bn_axes=[0,1]
         model.Model.__init__(self, insize, vocoder, hiddensize)
+
+        self._ctx_nblayers = ctx_nblayers
+        self._ctx_nbfilters = ctx_nbfilters
+        self._ctx_winlen = ctx_winlen
 
         self._nbcnnlayers = nbcnnlayers
         self._nbfilters = nbfilters
@@ -89,17 +93,7 @@ class ModelCNN(model.Model):
 
         layer_ctx = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx_input')
 
-        # Start with a few layers that is supposed to gather the useful information from the context labels
-        for layi in xrange(ctxlayers_nb):
-            layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
-            layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
-        grad_clipping = 50
-        for layi in xrange(ctxlayers_nb):
-            layerstr = 'ctx_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
-            fwd = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-            bck = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
-            layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
-
+        layer_ctx = layer_embedded_context(layer_ctx, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
 
         layers_toconcat = []
 
@@ -163,7 +157,7 @@ class ModelCNN(model.Model):
 
 
     # TODO Should force the use of member fields of the generator instead of re-passing them as arg of the ctor ?
-    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, ctxlayers_nb=1, postlayers_nb=6, windur=0.025, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
+    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, ctx_nblayers=1, ctx_nbfilters=2, ctx_winlen=21, postlayers_nb=1, windur=0.025, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False): # TODO TODO TODO postlayers_nb
         if bn_axes is None: bn_axes=[0,1]
         layer_discri = lasagne.layers.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
 
@@ -217,33 +211,14 @@ class ModelCNN(model.Model):
                 wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
                 layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
-            layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2], name='nm_dimshuffle')
-            for layi in xrange(nbcnnlayers):
-                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,noise_freqlen)
-                layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
-                if use_bn: layer=lasagne.layers.batch_norm(layer)
-                if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-            layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
-            layer_bndnm = lasagne.layers.flatten(layer, outdim=3, name='nm_flatten')
-            layerstoconcats.append(layer_bndnm)
+        layer_ctx = layer_embedded_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
+        layerstoconcats.append(layer_ctx)
 
         # Add the contexts
         layer_ctx_input = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-        layer_ctx = layer_ctx_input
-        for layi in xrange(ctxlayers_nb):
-            layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
-            layer_ctx = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
-        grad_clipping = 50
-        for layi in xrange(ctxlayers_nb):
-            layerstr = 'ctx_l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
-            fwd = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=False, name=layerstr+'.fwd', grad_clipping=grad_clipping)
-            bck = lasagne.layers.LSTMLayer(layer_ctx, num_units=hiddensize, backwards=True, name=layerstr+'.bck', grad_clipping=grad_clipping)
-            # layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2) # It seems concat of concats doesn't work
-            if layi==ctxlayers_nb-1:
-                layerstoconcats.append(fwd)
-                layerstoconcats.append(bck)
-            else:
-                layer_ctx = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
+
+        layer_ctx = layer_embedded_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
+        layerstoconcats.append(layer_ctx)
 
         # Concatenate the features analysis with the contexts...
         layer = lasagne.layers.ConcatLayer(layerstoconcats, axis=2, name='ctx_features_concat')
@@ -257,4 +232,5 @@ class ModelCNN(model.Model):
 
         # output layer (linear)
         layer = lasagne.layers.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
+
         return [layer, layer_discri, layer_ctx_input]
