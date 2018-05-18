@@ -71,7 +71,7 @@ class ModelGeneric(model.Model):
                     nbfilters = layertypes[layi][1]
                     winlen = layertypes[layi][2]
                     layerstr = 'l'+str(1+layi)+'_CNN{}x{}x{}'.format(nbfilters,winlen,1)
-                    l_hid = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(l_hid, num_filters=nbfilters, filter_size=[winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr)) # TODO TODO TODO
+                    l_hid = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(l_hid, num_filters=nbfilters, filter_size=[winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
                     # l_hid = lasagne.layers.batch_norm(layer_GatedConv2DLayer(l_hid, nbfilters, [winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
                     # if dropout_p>0.0: l_hid = lasagne.layers.dropout(l_hid, p=dropout_p)
                     # l_hid = lasagne.layers.Conv2DLayer(l_hid, 1, [_winlen,spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
