@@ -88,12 +88,12 @@ elif isinstance(vocoder, vocoders.VocoderWORLD): cfg.outpath+='_vuv'    # pragma
 cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
 
 # Model architecture options
-cfg.model_hiddensize = 256      # All arch
-cfg.model_nbcnnlayers = 8       # CNN only
-cfg.model_nbfilters = 16        # CNN only
-cfg.model_spec_freqlen = 5      # [bins] CNN only
-cfg.model_noise_freqlen = 5     # [bins] CNN only
-cfg.model_windur = 0.025        # [s] 0.025/0.005=5 frames. CNN only
+cfg.model_hiddensize = 256      # For all arch
+cfg.model_nbcnnlayers = 8       # CNN only 8
+cfg.model_nbfilters = 16        # CNN only 16
+cfg.model_spec_freqlen = 5      # [bins] CNN only 5
+cfg.model_noise_freqlen = 5     # [bins] CNN only 5
+cfg.model_windur = 0.025        # [s] 0.025/0.005=5 frames. CNN only 0.025
 
 # Training options
 cfg.fparams_fullset = 'model.pkl'
