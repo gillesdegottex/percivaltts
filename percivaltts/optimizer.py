@@ -54,6 +54,7 @@ class Optimizer:
     _model = None # The model whose parameters will be optimised.
 
     _errtype = 'WGAN' # or 'LSE'
+    _WGAN_incnoise = True # Include noise in the WGAN loss
     _LSWGANtransflc = 0.5 # Params hardcoded
     _LSWGANtransc = 1.0/8.0 # Params hardcoded
 
