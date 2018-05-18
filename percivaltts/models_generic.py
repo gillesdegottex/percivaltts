@@ -101,23 +101,6 @@ class ModelGeneric(model.Model):
 
         layerstoconcats = []
 
-        # F0
-        if 0: # Add f0 in discriminator. Disabled bcs it makes the f0 curve very noisy
-            print('f0 winlen={}'.format(_winlen))
-            layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(0,1), axis=2)
-            layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2])
-            layer = lasagne.layers.Conv2DLayer(layer, 1, [_winlen,1], stride=1, pad='same', nonlinearity=None)
-            if use_bn: layer=lasagne.layers.batch_norm(layer)
-            if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-            for _ in xrange(nbcnnlayers):
-                layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
-                # layer = layer_GatedResConv2DLayer(layer, nbfilters, [_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity)
-                if use_bn: layer=lasagne.layers.batch_norm(layer)
-                if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
-            layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1])
-            layer_f0 = lasagne.layers.flatten(layer, outdim=3)
-            layerstoconcats.append(layer_f0)
-
         # Amplitude spectrum
         layer = lasagne.layers.SliceLayer(layer_discri, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
 
