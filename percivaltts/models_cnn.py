@@ -86,7 +86,7 @@ class ModelCNN(model.Model):
         self._noise_freqlen = noise_freqlen
         self._windur = windur
 
-        _winlen = int(0.5*self._windur/0.005)*2+1
+        winlen = int(0.5*self._windur/0.005)*2+1
 
         layer_ctx = ll.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx_input')
 
@@ -116,9 +116,9 @@ class ModelCNN(model.Model):
             layer_spec = ll.batch_norm(ll.DenseLayer(layer_ctx, vocoder.specsize(), nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
             layer_spec = ll.dimshuffle(layer_spec, [0, 'x', 1, 2], name='spec_dimshuffle')
             for layi in xrange(nbcnnlayers):
-                layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,_winlen,self._spec_freqlen)
-                layer_spec = ll.batch_norm(layer_GatedConv2DLayer(layer_spec, self._nbfilters, [_winlen,self._spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-            layer_spec = ll.Conv2DLayer(layer_spec, 1, [_winlen,self._spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
+                layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._spec_freqlen)
+                layer_spec = ll.batch_norm(layer_GatedConv2DLayer(layer_spec, self._nbfilters, [winlen,self._spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
+            layer_spec = ll.Conv2DLayer(layer_spec, 1, [winlen,self._spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
             layer_spec = ll.dimshuffle(layer_spec, [0, 2, 3, 1], name='spec_dimshuffle')
             layer_spec = ll.flatten(layer_spec, outdim=3, name='spec_flatten')
             layers_toconcat.append(layer_spec)
@@ -128,11 +128,11 @@ class ModelCNN(model.Model):
             layer_noise = ll.batch_norm(ll.DenseLayer(layer_ctx, vocoder.noisesize(), nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
             layer_noise = ll.dimshuffle(layer_noise, [0, 'x', 1, 2], name='nm_dimshuffle')
             for layi in xrange(np.max((1,int(np.ceil(nbcnnlayers/2))))):
-                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,_winlen,self._noise_freqlen)
-                layer_noise = ll.batch_norm(layer_GatedConv2DLayer(layer_noise, self._nbfilters, [_winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
+                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._noise_freqlen)
+                layer_noise = ll.batch_norm(layer_GatedConv2DLayer(layer_noise, self._nbfilters, [winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
             noise_nonlinearity = None
             if isinstance(vocoder, vocoders.VocoderPML): nonlinearity=nonlin_saturatedsigmoid # Force the output in [-0.005,1.005] lasagne.nonlinearities.sigmoid
-            layer_noise = ll.Conv2DLayer(layer_noise, 1, [_winlen,self._noise_freqlen], pad='same', nonlinearity=noise_nonlinearity, name='nm_lout_2DC')
+            layer_noise = ll.Conv2DLayer(layer_noise, 1, [winlen,self._noise_freqlen], pad='same', nonlinearity=noise_nonlinearity, name='nm_lout_2DC')
             layer_noise = ll.dimshuffle(layer_noise, [0, 2, 3, 1], name='nm_dimshuffle')
             layer_noise = ll.flatten(layer_noise, outdim=3, name='nm_flatten')
             layers_toconcat.append(layer_noise)
@@ -158,7 +158,7 @@ class ModelCNN(model.Model):
         if bn_axes is None: bn_axes=[0,1]
         layer_discri = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
 
-        _winlen = int(0.5*self._windur/0.005)*2+1
+        winlen = int(0.5*self._windur/0.005)*2+1
 
         layerstoconcats = []
 
@@ -173,9 +173,9 @@ class ModelCNN(model.Model):
 
         layer = ll.dimshuffle(layer, [0, 'x', 1, 2], name='spec_dimshuffle')
         for layi in xrange(self._nbcnnlayers):
-            layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,_winlen,self._spec_freqlen)
+            layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._spec_freqlen)
             # strides>1 make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
-            layer = layer_GatedConv2DLayer(layer, self._nbfilters, [_winlen,self._spec_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
+            layer = layer_GatedConv2DLayer(layer, self._nbfilters, [winlen,self._spec_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
             if use_bn: layer=ll.batch_norm(layer)
         layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='spec_dimshuffle')
         layer_spec = ll.flatten(layer, outdim=3, name='spec_flatten')
@@ -192,8 +192,8 @@ class ModelCNN(model.Model):
 
             layer = ll.dimshuffle(layer, [0, 'x', 1, 2], name='nm_dimshuffle')
             for layi in xrange(np.max((1,int(np.ceil(self._nbcnnlayers/2))))):
-                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,_winlen,self._noise_freqlen)
-                layer = layer_GatedConv2DLayer(layer, self._nbfilters, [_winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
+                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._noise_freqlen)
+                layer = layer_GatedConv2DLayer(layer, self._nbfilters, [winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
                 if use_bn: layer=ll.batch_norm(layer)
             layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
             layer_bndnm = ll.flatten(layer, outdim=3, name='nm_flatten')
