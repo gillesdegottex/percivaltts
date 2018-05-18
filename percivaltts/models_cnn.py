@@ -72,7 +72,7 @@ def layer_embedded_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, h
     return layer_ctx
 
 class ModelCNN(model.Model):
-    def __init__(self, insize, vocoder, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctx_nblayers=1, ctx_nbfilters=2, ctx_winlen=21, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, windur=0.025, bn_axes=None, dropout_p=-1.0):
+    def __init__(self, insize, vocoder, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctx_nblayers=1, ctx_nbfilters=2, ctx_winlen=21, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, windur=0.025, bn_axes=None):
         if bn_axes is None: bn_axes=[0,1]
         model.Model.__init__(self, insize, vocoder, hiddensize)
 
@@ -118,7 +118,6 @@ class ModelCNN(model.Model):
             for layi in xrange(nbcnnlayers):
                 layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,_winlen,self._spec_freqlen)
                 layer_spec = ll.batch_norm(layer_GatedConv2DLayer(layer_spec, self._nbfilters, [_winlen,self._spec_freqlen], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-                if dropout_p>0.0: layer_spec = ll.dropout(layer_spec, p=dropout_p)
             layer_spec = ll.Conv2DLayer(layer_spec, 1, [_winlen,self._spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
             layer_spec = ll.dimshuffle(layer_spec, [0, 2, 3, 1], name='spec_dimshuffle')
             layer_spec = ll.flatten(layer_spec, outdim=3, name='spec_flatten')
@@ -131,7 +130,6 @@ class ModelCNN(model.Model):
             for layi in xrange(np.max((1,int(np.ceil(nbcnnlayers/2))))):
                 layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,_winlen,self._noise_freqlen)
                 layer_noise = ll.batch_norm(layer_GatedConv2DLayer(layer_noise, self._nbfilters, [_winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
-                if dropout_p>0.0: layer_noise = ll.dropout(layer_noise, p=dropout_p)
             noise_nonlinearity = None
             if isinstance(vocoder, vocoders.VocoderPML): nonlinearity=nonlin_saturatedsigmoid # Force the output in [-0.005,1.005] lasagne.nonlinearities.sigmoid
             layer_noise = ll.Conv2DLayer(layer_noise, 1, [_winlen,self._noise_freqlen], pad='same', nonlinearity=noise_nonlinearity, name='nm_lout_2DC')
@@ -156,7 +154,7 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, dropout_p=-1.0, use_bn=False):
+    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, use_bn=False):
         if bn_axes is None: bn_axes=[0,1]
         layer_discri = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
 
@@ -179,7 +177,6 @@ class ModelCNN(model.Model):
             # strides>1 make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
             layer = layer_GatedConv2DLayer(layer, self._nbfilters, [_winlen,self._spec_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
             if use_bn: layer=ll.batch_norm(layer)
-            if dropout_p>0.0: layer=ll.dropout(layer, p=dropout_p)
         layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='spec_dimshuffle')
         layer_spec = ll.flatten(layer, outdim=3, name='spec_flatten')
         layerstoconcats.append(layer_spec)
@@ -198,7 +195,6 @@ class ModelCNN(model.Model):
                 layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,_winlen,self._noise_freqlen)
                 layer = layer_GatedConv2DLayer(layer, self._nbfilters, [_winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
                 if use_bn: layer=ll.batch_norm(layer)
-                if dropout_p>0.0: layer=ll.dropout(layer, p=dropout_p)
             layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
             layer_bndnm = ll.flatten(layer, outdim=3, name='nm_flatten')
             layerstoconcats.append(layer_bndnm)
@@ -217,7 +213,6 @@ class ModelCNN(model.Model):
             layerstr = 'post_l'+str(1+layi)+'_FC'+str(self._hiddensize)
             layer = ll.DenseLayer(layer, self._hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
             if use_bn: layer=ll.batch_norm(layer, axes=_bn_axes)
-            # if dropout_p>0.0: layer = ll.dropout(layer, p=dropout_p) # Bad for FC
 
         # output layer (linear)
         layer = ll.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
