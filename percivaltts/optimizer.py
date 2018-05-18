@@ -177,7 +177,7 @@ class Optimizer:
                     # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)))
                     # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc), [0.0]))
 
-                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # TODO TODO TODO for MLPG
+                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG
                     wganls_weights_ *= (1.0-cfg.train_LScoef)
 
                     wganls_weights_gan = theano.shared(value=wganls_weights_, name='wganls_weights_gan')
@@ -431,7 +431,7 @@ class Optimizer:
         cfg.train_max_nbepochs = 300
         cfg.train_cancel_nodecepochs = 100
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
-        cfg.train_batch_size = 5                # [potential hyper-parameter] # TODO Rename batch_size ?
+        cfg.train_batch_size = 5                # [potential hyper-parameter]
         cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
         cfg.train_batch_cropmode = 'begendbigger'     # 'begend', 'begendbigger', 'all'
         cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
