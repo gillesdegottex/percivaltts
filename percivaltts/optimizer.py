@@ -136,7 +136,7 @@ class Optimizer:
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
 
-            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
+            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc, use_WGAN_incnoise=self._WGAN_incnoise)
 
             print('    Discriminator architecture')
             for l in lasagne.layers.get_all_layers(discri):
@@ -164,8 +164,11 @@ class Optimizer:
                     specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
                     wganls_weights_els.append(nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.specsize()), self._LSWGANtransc)) # For spec
                     if self._model.vocoder.noisesize()>0:
-                        noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
-                        wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)) # For noise
+                        if self._WGAN_incnoise:
+                            noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
+                            wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)) # For noise
+                        else:
+                            wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
                     if self._model.vocoder.vuvsize()>0:
                         wganls_weights_els.append([0.0]) # For vuv
                     wganls_weights_ = np.hstack(wganls_weights_els)
