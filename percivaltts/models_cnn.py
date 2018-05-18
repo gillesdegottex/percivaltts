@@ -34,6 +34,8 @@ from backend_theano import *
 import model
 import vocoders
 
+import models_basic
+
 # Full architectures -----------------------------------------------------------
 
 class CstMulLayer(lasagne.layers.Layer):
