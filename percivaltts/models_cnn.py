@@ -36,8 +36,6 @@ import vocoders
 
 import models_basic
 
-# Full architectures -----------------------------------------------------------
-
 class CstMulLayer(lasagne.layers.Layer):
     def __init__(self, incoming, cstW, **kwargs):
         super(CstMulLayer, self).__init__(incoming, **kwargs)
