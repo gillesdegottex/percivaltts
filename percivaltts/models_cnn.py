@@ -131,7 +131,6 @@ class ModelCNN(model.Model):
                 layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,noise_freqlen)
                 layer_noise = lasagne.layers.batch_norm(layer_GatedConv2DLayer(layer_noise, nbfilters, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
                 if dropout_p>0.0: layer_noise = lasagne.layers.dropout(layer_noise, p=dropout_p)
-            # layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=None)
             noise_nonlinearity = None
             if isinstance(vocoder, vocoders.VocoderPML): nonlinearity=nonlin_saturatedsigmoid # Force the output in [-0.005,1.005] lasagne.nonlinearities.sigmoid
             layer_noise = lasagne.layers.Conv2DLayer(layer_noise, 1, [_winlen,noise_freqlen], pad='same', nonlinearity=noise_nonlinearity, name='nm_lout_2DC')
@@ -194,8 +193,15 @@ class ModelCNN(model.Model):
                 wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
                 layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
-        layer_ctx = layer_embedded_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
-        layerstoconcats.append(layer_ctx)
+            layer = lasagne.layers.dimshuffle(layer, [0, 'x', 1, 2], name='nm_dimshuffle')
+            for layi in xrange(np.max((1,int(np.ceil(nbcnnlayers/2))))):
+                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(nbfilters,_winlen,noise_freqlen)
+                layer = layer_GatedConv2DLayer(layer, nbfilters, [_winlen,noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
+                if use_bn: layer=lasagne.layers.batch_norm(layer)
+                if dropout_p>0.0: layer=lasagne.layers.dropout(layer, p=dropout_p)
+            layer = lasagne.layers.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
+            layer_bndnm = lasagne.layers.flatten(layer, outdim=3, name='nm_flatten')
+            layerstoconcats.append(layer_bndnm)
 
         # Add the contexts
         layer_ctx_input = lasagne.layers.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
@@ -215,5 +221,4 @@ class ModelCNN(model.Model):
 
         # output layer (linear)
         layer = lasagne.layers.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
-
         return [layer, layer_discri, layer_ctx_input]
