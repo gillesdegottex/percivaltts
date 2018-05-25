@@ -457,6 +457,8 @@ class Optimizer:
         X_vals = data.load(indir, fid_lst_val, verbose=1, label='Context labels: ')
         Y_vals = data.load(outdir, fid_lst_val, verbose=1, label='Output features: ')
         X_vals, Y_vals = data.croplen([X_vals, Y_vals])
+        print('    {} validation files'.format(len(fid_lst_val)))
+        print('    {:.2f}% of validation files for number of train files'.format(100.0*float(len(fid_lst_val))/len(fid_lst_tra)))
 
         if cfg.train_nbtrials>1:
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-init.pkl', cfg=cfg, printfn=print_log)
