@@ -164,6 +164,7 @@ class Model:
             return CMP
 
         if not os.path.isdir(syndir): os.makedirs(syndir)
+        if do_resynth: if not os.path.isdir(syndir): os.makedirs(syndir+'-resynth/')
 
         for vi in xrange(len(X_test)):
 
@@ -173,7 +174,7 @@ class Model:
             if do_resynth:
                 CMP = denormalise(y_test[vi], wins=[])
                 resyn = vocoder.synthesis(vocoder.fs, CMP, pp_mcep=False)
-                sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+                sp.wavwrite(syndir+'-resynth/'+fid_lst[vi]+'.wav', resyn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
             CMP = CMP[0,:,:]
