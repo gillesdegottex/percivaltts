@@ -34,29 +34,33 @@ import lasagne.layers as ll
 # lasagne.random.set_rng(np.random)
 
 from backend_theano import *
-import model
 
 import vocoders
 
+import model
 import models_basic
 from models_cnn import CstMulLayer
+from models_cnn import TileLayer
+from models_cnn import TimeWeightLayer
 from models_cnn import layer_GatedConv2DLayer
-
+from models_cnn import layer_context
 
 class ModelGeneric(model.Model):
-    def __init__(self, insize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'BLSTM'], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, bn_axes=None, dropout_p=-1.0, grad_clipping=50):
+    def __init__(self, insize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'BLSTM'], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, bn_axes=None, grad_clipping=50, nameprefix=None):
         if bn_axes is None: bn_axes=[0,1]
         model.Model.__init__(self, insize, vocoder, hiddensize)
 
-        l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='input_conditional')
+        if nameprefix is None: nameprefix=''
+
+        l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name=nameprefix+'input.conditional')
 
         for layi in xrange(len(layertypes)):
-            layerstr = 'l'+str(1+layi)+'_{}{}'.format(layertypes[layi], hiddensize)
+            layerstr = nameprefix+'l'+str(1+layi)+'_{}{}'.format(layertypes[layi], hiddensize)
 
             if layertypes[layi]=='FC':
                 l_hid = lasagne.layers.DenseLayer(l_hid, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
 
-                if len(bn_axes)>0: l_hid=lasagne.layers.batch_norm(l_hid, axes=bn_axes, name=layerstr+'.bn') # Add batch normalisation
+                if len(bn_axes)>0: l_hid=lasagne.layers.batch_norm(l_hid, axes=bn_axes) # Add batch normalisation
 
             elif layertypes[layi]=='BLSTM':
                 fwd = models_basic.layer_LSTM(l_hid, hiddensize, nonlinearity=nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
@@ -68,10 +72,10 @@ class ModelGeneric(model.Model):
             elif isinstance(layertypes[layi], list):
                 if layertypes[layi][0]=='CNN':
                     # l_hid = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(l_hid, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
-                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name='dimshuffle_to_2DCNN')
+                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name=nameprefix+'dimshuffle')
                     nbfilters = layertypes[layi][1]
                     winlen = layertypes[layi][2]
-                    layerstr = 'l'+str(1+layi)+'_CNN{}x{}x{}'.format(nbfilters,winlen,1)
+                    layerstr = nameprefix+'l'+str(1+layi)+'_CNN{}x{}x{}'.format(nbfilters,winlen,1)
                     l_hid = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(l_hid, num_filters=nbfilters, filter_size=[winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
                     # l_hid = lasagne.layers.batch_norm(layer_GatedConv2DLayer(l_hid, nbfilters, [winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
                     # if dropout_p>0.0: l_hid = lasagne.layers.dropout(l_hid, p=dropout_p)

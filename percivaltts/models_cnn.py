@@ -48,6 +48,18 @@ class CstMulLayer(ll.Layer):
     # def get_output_shape_for(self, input_shape):
     #     return (input_shape[0], self.num_units)
 
+class TileLayer(ll.Layer):
+    def __init__(self, incoming, reps, **kwargs):
+        super(TileLayer, self).__init__(incoming, **kwargs)
+        self.reps = reps
+
+    def get_output_for(self, x, **kwargs):
+        x = T.tile(x, self.reps)
+        return x
+
+    def get_output_shape_for(self, input_shape):
+        return (input_shape[0], input_shape[1], input_shape[2]*self.reps[2])
+
 
 def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pad=0, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, name=''):
     la = ll.Conv2DLayer(incoming, num_filters=num_filters, filter_size=filter_size, stride=stride, pad=pad, nonlinearity=nonlinearity, name=name+'.activation')
@@ -75,7 +87,7 @@ def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize
             layer_ctx = ll.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
 
     for layi in xrange(2):
-        layerstr = 'ctx_l'+str(1+layi)+'_FC{}'.format(hiddensize)
+        layerstr = 'ctx.l'+str(1+ctx_nblayers+layi)+'_FC{}'.format(hiddensize)
         layer_ctx = ll.batch_norm(ll.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr), axes=bn_axes)
 
     return layer_ctx
@@ -97,15 +109,15 @@ class ModelCNN(model.Model):
 
         winlen = int(0.5*self._windur/0.005)*2+1
 
-        layer_ctx = ll.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx_input')
+        layer_ctx_input = ll.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx.input')
 
-        self._layer_ctx = layer_context(layer_ctx, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
+        self._layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
 
         layers_toconcat = []
 
         if vocoder.f0size()>0:
             # F0 - BLSTM layer
-            layer_f0 = layer_ctx
+            layer_f0 = self._layer_ctx
             grad_clipping = 50
             for layi in xrange(1):  # TODO Used 2 in most stable version; Params hardcoded 1 layer. Shows convergence issue with 2. TODO TODO TODO
                 if 0: # TODO TODO TODO Use FC for f0 instead of BLSTM
@@ -122,7 +134,7 @@ class ModelCNN(model.Model):
 
         if vocoder.specsize()>0:
             # Amplitude spectrum - 2D Gated Conv layers
-            layer_spec = ll.batch_norm(ll.DenseLayer(layer_ctx, vocoder.specsize(), nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
+            layer_spec = ll.batch_norm(ll.DenseLayer(self._layer_ctx, vocoder.specsize(), nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
             layer_spec = ll.dimshuffle(layer_spec, [0, 'x', 1, 2], name='spec_dimshuffle')
             for layi in xrange(nbcnnlayers):
                 layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._spec_freqlen)
@@ -134,7 +146,7 @@ class ModelCNN(model.Model):
 
         if vocoder.noisesize()>0:
             # Noise mask - 2D Gated Conv layers
-            layer_noise = ll.batch_norm(ll.DenseLayer(layer_ctx, vocoder.noisesize(), nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
+            layer_noise = ll.batch_norm(ll.DenseLayer(self._layer_ctx, vocoder.noisesize(), nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
             layer_noise = ll.dimshuffle(layer_noise, [0, 'x', 1, 2], name='nm_dimshuffle')
             for layi in xrange(np.max((1,int(np.ceil(nbcnnlayers/2))))):
                 layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._noise_freqlen)
@@ -148,17 +160,17 @@ class ModelCNN(model.Model):
 
         if vocoder.vuvsize()>0:
             # VUV - BLSTM layer
-            layer_vuv = layer_ctx
+            layer_vuv = self._layer_ctx
             grad_clipping = 50
             for layi in xrange(1):
                 layerstr = 'vuv_l'+str(1+layi)+'_BLSTM{}'.format(self._hiddensize)
                 fwd = models_basic.layer_LSTM(layer_vuv, self._hiddensize, nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
-                bck = models_basic.layer_LSTM(layer_vuv, self._hiddensize, nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.fwd')
-                layer_vuv = ll.ConcatLayer((fwd, bck), axis=2, name=layerstr+'_concat')
+                bck = models_basic.layer_LSTM(layer_vuv, self._hiddensize, nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.bck')
+                layer_vuv = ll.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
             layer_vuv = ll.DenseLayer(layer_vuv, num_units=vocoder.vuvsize(), nonlinearity=None, num_leading_axes=2, name='vuv_lout_projection')
             layers_toconcat.append(layer_vuv)
 
-        layer = ll.ConcatLayer(layers_toconcat, axis=2, name='lout_concat')
+        layer = ll.ConcatLayer(layers_toconcat, axis=2, name='lout.concat')
 
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
@@ -210,16 +222,15 @@ class ModelCNN(model.Model):
 
         # Add the contexts
         layer_ctx_input = ll.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-
         layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
         layerstoconcats.append(layer_ctx)
 
         # Concatenate the features analysis with the contexts...
-        layer = ll.ConcatLayer(layerstoconcats, axis=2, name='ctx_features_concat')
+        layer = ll.ConcatLayer(layerstoconcats, axis=2, name='ctx_features.concat')
 
         # ... and finalize with a common FC network
         for layi in xrange(postlayers_nb):
-            layerstr = 'post_l'+str(1+layi)+'_FC'+str(self._hiddensize)
+            layerstr = 'post.l'+str(1+layi)+'_FC'+str(self._hiddensize)
             layer = ll.DenseLayer(layer, self._hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
             if use_bn: layer=ll.batch_norm(layer, axes=_bn_axes)
 
