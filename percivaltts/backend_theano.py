@@ -97,3 +97,13 @@ def params_count(paramss):
         else:            nbparams += np.prod(shap)
     return nbparams
 
+def print_network(net, params=None):
+    for li, l in enumerate(lasagne.layers.get_all_layers(net)):
+        # print('        {}: {}({})'.format(li, l.name, l.output_shape))
+        print('        {}: {}({})'.format(li, l.name, l.output_shape))
+        for p in l.get_params():
+            X = p.get_value()
+            istrainedstr = ''
+            if (params!=None) and (p in params): istrainedstr=colored('TRAINING', 'green')
+            print('            {}({}) [{}] {}'.format(p.name, X.shape, hash(str(X)), istrainedstr))
+
