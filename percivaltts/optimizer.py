@@ -248,17 +248,19 @@ class Optimizer:
         epochstart = 1
         if cont:
             print('    reloading previous training state ...')
-            _, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg)
+            savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg)
             np.random.set_state(rngstate)
             cost_val = extras['cost_val']
-            best_val = extras['best_val']
             # Restoring some local variables
             costs = extras['costs']
             epochs_modelssaved = extras['epochs_modelssaved']
             epochs_durs = extras['epochs_durs']
-            nbnodecepochs = extras['nbnodecepochs']
             generator_updates = extras['generator_updates']
             epochstart = extras['epoch']+1
+            # Restore the saving criteria only none of those 3 cfg values changed:
+            if (savedcfg.train_min_nbepochs==cfg.train_min_nbepochs) and (savedcfg.train_max_nbepochs==cfg.train_max_nbepochs) and (savedcfg.train_cancel_nodecepochs==cfg.train_cancel_nodecepochs):
+                best_val = extras['best_val']
+                nbnodecepochs = extras['nbnodecepochs']
 
         print_log("    start training ...")
         for epoch in range(epochstart,1+cfg.train_max_nbepochs):
