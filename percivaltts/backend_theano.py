@@ -52,18 +52,6 @@ def th_print(msg, op):
     op = print_val(print_shape(op))
     return op
 
-def paramss_count(paramss):
-    """
-    Returns the number of parameters in the set of parameters.
-
-    (counting verified on a FC512 only)
-    """
-    nbparams = 0
-    for p in paramss:
-        shap = p.get_value().shape
-        if len(shap)==1: nbparams += shap[0]
-        else:            nbparams += np.prod(shap)
-    return nbparams
 
 def nonlin_tanh_saturated(x, coef=1.01):
     """Hyperbolic tangent which spans slightly below and above -1 and +1, in order to avoid unreachable -1 and +1 values."""
@@ -90,3 +78,17 @@ def nonlin_softsign(x):
 def nonlin_sigmoidparm(x, c=0.0, f=1.0):
     """Parametrized sigmoid in order to chose its center and smoothness."""
     return 1.0 / (1.0 + np.exp(-(x-c)*f))
+
+def params_count(paramss):
+    """
+    Returns the number of parameters in the set of parameters.
+
+    (counting verified on a FC512 only)
+    """
+    nbparams = 0
+    for p in paramss:
+        shap = p.get_value().shape
+        if len(shap)==1: nbparams += shap[0]
+        else:            nbparams += np.prod(shap)
+    return nbparams
+
