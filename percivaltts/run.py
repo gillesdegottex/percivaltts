@@ -67,9 +67,9 @@ cfg.vocoder_f0_min, cfg.vocoder_f0_max = 70, 600
 vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _nm_size=33)
 # vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
-use_WGAN = True # TODO TODO TODO
+use_WGAN = True # Switch it to False and it will turn Merling's post-processing on (see below)
 
-do_mlpg = False
+do_mlpg = False # Switch it to True and deltas will be added in the input and the MLPG will be used during generation.
 pp_mcep = not use_WGAN # Set to True to apply Merlin's post-processing to enhance formants. You need mcep command line from SPTK.
 
 mlpg_wins = []
