@@ -93,6 +93,9 @@ class ModelGeneric(model.Model):
 
     # WGAN: Discriminant arch. parameters
     #       These are usually symmetrical with the model, but it the model can be very different in the case of a generic model, so make D as in CNN model.
+    _ctx_nblayers = 1
+    _ctx_nbfilters = 4
+    _ctx_winlen = 41
     _nbcnnlayers = 8
     _nbfilters = 16
     _spec_freqlen = 5
