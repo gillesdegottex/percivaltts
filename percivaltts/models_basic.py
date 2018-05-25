@@ -99,7 +99,7 @@ class ModelFC(model.Model):
             l_hid = ll.DenseLayer(l_hid, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
 
             # Add batch normalisation
-            if len(bn_axes)>0: l_hid=ll.batch_norm(l_hid, axes=bn_axes, name=layerstr+'_FC.bn')
+            if len(bn_axes)>0: l_hid=ll.batch_norm(l_hid, axes=bn_axes)
 
             # Add dropout (after batchnorm)
             if dropout_p>0.0: l_hid=ll.dropout(l_hid, p=dropout_p)
@@ -126,7 +126,7 @@ class ModelBGRU(model.Model):
             l_hid = ll.ConcatLayer((fwd, bck), axis=2)
 
             # Add batch normalisation
-            if len(bn_axes)>0: l_hid=ll.batch_norm(l_hid, axes=bn_axes, name=layerstr+'.bn')   # Not be good for recurrent nets!
+            if len(bn_axes)>0: l_hid=ll.batch_norm(l_hid, axes=bn_axes)   # Not be good for recurrent nets!
 
             # Add dropout (after batchnorm)
             if dropout_p>0.0: l_hid=ll.dropout(l_hid, p=dropout_p)
@@ -153,7 +153,7 @@ class ModelBLSTM(model.Model):
             l_hid = ll.ConcatLayer((fwd, bck), axis=2)
 
             # Add batch normalisation
-            if len(bn_axes)>0: l_hid=ll.batch_norm(l_hid, axes=bn_axes, name=layerstr+'.bn')
+            if len(bn_axes)>0: l_hid=ll.batch_norm(l_hid, axes=bn_axes)
 
             # Add dropout (after batchnorm)
             if dropout_p>0.0: l_hid=ll.dropout(l_hid, p=dropout_p)
