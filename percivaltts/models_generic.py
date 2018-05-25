@@ -77,14 +77,17 @@ class ModelGeneric(model.Model):
                     winlen = layertypes[layi][2]
                     layerstr = nameprefix+'l'+str(1+layi)+'_CNN{}x{}x{}'.format(nbfilters,winlen,1)
                     l_hid = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(l_hid, num_filters=nbfilters, filter_size=[winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-                    # l_hid = lasagne.layers.batch_norm(layer_GatedConv2DLayer(l_hid, nbfilters, [winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-                    # if dropout_p>0.0: l_hid = lasagne.layers.dropout(l_hid, p=dropout_p)
-                    # l_hid = lasagne.layers.Conv2DLayer(l_hid, 1, [_winlen,spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
-                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 2, 3, 1], name='dimshuffle_back')
-                    l_hid = lasagne.layers.flatten(l_hid, outdim=3, name='flatten')
-
-            # Add dropout (after batchnorm)
-            if dropout_p>0.0: l_hid=lasagne.layers.dropout(l_hid, p=dropout_p)
+                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 2, 3, 1], name=nameprefix+'dimshuffle')
+                    l_hid = lasagne.layers.flatten(l_hid, outdim=3, name=nameprefix+'flatten')
+                if layertypes[layi][0]=='GCNN':
+                    # l_hid = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(l_hid, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
+                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name=nameprefix+'dimshuffle')
+                    nbfilters = layertypes[layi][1]
+                    winlen = layertypes[layi][2]
+                    layerstr = nameprefix+'l'+str(1+layi)+'_GCNN{}x{}x{}'.format(nbfilters,winlen,1)
+                    l_hid = lasagne.layers.batch_norm(layer_GatedConv2DLayer(l_hid, nbfilters, [winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=nameprefix+layerstr))
+                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 2, 3, 1], name=nameprefix+'dimshuffle')
+                    l_hid = lasagne.layers.flatten(l_hid, outdim=3, name=nameprefix+'flatten')
 
         l_out = models_basic.layer_final(l_hid, vocoder, mlpg_wins)
 
