@@ -168,10 +168,8 @@ def composition_normalisation():
 
 
 def build_model():
-    import models_cnn
     model = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
-    # import models_generic
     # model = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
     # model = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], hiddensize=cfg.model_hiddensize)
 
@@ -179,36 +177,30 @@ def build_model():
 
 
 def training(cont=False):
-    print('\nData profile')
-    in_size = data.getlastdim(cfg.inpath)
-    out_size = data.getlastdim(cfg.outpath)
-    print('    in_size={} out_size={}'.format(in_size,out_size))
     fid_lst_tra = fids[:cfg.id_train_nb()]
     fid_lst_val = fids[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
-    print('    {} validation files; ratio of validation data over training data: {:.2f}%'.format(len(fid_lst_val), 100.0*float(len(fid_lst_val))/len(fid_lst_tra)))
 
     mod = build_model()
 
-    import optimizer
     opti = optimizer.Optimizer(mod, errtype='WGAN' if use_WGAN else 'LSE') # 'WGAN' or 'LSE'
     opti.train_multipletrials(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, mod.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 
 def generate(fparams=cfg.fparams_fullset):
 
-    model = build_model()           # Rebuild the model from scratch
-    model.loadAllParams(fparams)    # Load the model's parameters
+    mod = build_model()           # Rebuild the model from scratch
+    mod.loadAllParams(fparams)    # Load the model's parameters
 
     # Generate the network outputs (without any decomposition), for potential re-use for another network's input
-    # model.generate_cmp(cfg.inpath, os.path.splitext(fparams)[0]+'-gen/*.cmp', fids)
+    # mod.generate_cmp(cfg.inpath, os.path.splitext(fparams)[0]+'-gen/*.cmp', fids)
 
     fid_lst_test = fids[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
 
     demostart = cfg.id_test_demostart if hasattr(cfg, 'id_test_demostart') else 0
-    model.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=pp_mcep)
+    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=pp_mcep)
 
     # And generate all of them for listening tests
-    # model.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', cfg, vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=False, pp_mcep=pp_mcep)
+    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', cfg, vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=False, pp_mcep=pp_mcep)
 
 
 if  __name__ == "__main__" :                                 # pragma: no cover
