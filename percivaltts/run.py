@@ -29,9 +29,13 @@ Author
 print('')
 
 from percivaltts import *  # Always include this first to setup a few things for percival
+from backend_theano import *
 import data
 import vocoders
 import compose
+import models_cnn
+import models_generic
+import optimizer
 print_sysinfo()
 
 print_log('Global configurations')
