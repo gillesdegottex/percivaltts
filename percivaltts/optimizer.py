@@ -139,10 +139,6 @@ class Optimizer:
 
             [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc, use_WGAN_incnoise=self._WGAN_incnoise)
 
-            print('    Discriminator architecture')
-            for l in lasagne.layers.get_all_layers(discri):
-                print('        {}:{}'.format(l.name, l.output_shape))
-
             # Create expression for passing real data through the discri
             real_out = lasagne.layers.get_output(discri)
             # Create expression for passing fake data through the discri
@@ -204,12 +200,16 @@ class Optimizer:
             discri_loss = discri_loss + cfg.train_pg_lambda*grad_penalty
 
             # Create update expressions for training
-            generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
             discri_params = lasagne.layers.get_all_params(discri, trainable=True)
-            generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
-
             discri_updates = lasagne.updates.adam(discri_loss, discri_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
+            print('    Discriminator architecture')
+            print_network(discri, discri_params)
+
+            generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
+            generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
             self._optim_updates.extend([generator_updates, discri_updates])
+            print('    Generator architecture')
+            print_network(self._model.net_out, generator_params)
 
             # Compile functions performing a training step on a mini-batch (according
             # to the updates dictionary) and returning the corresponding score:
@@ -225,6 +225,7 @@ class Optimizer:
 
         elif self._errtype=='LSE':
             print('    LSE Training')
+            print_network(self._model.net_out, params)
             predicttrain_values = lasagne.layers.get_output(self._model.net_out, deterministic=False)
             costout = (predicttrain_values - self._target_values)**2
 
