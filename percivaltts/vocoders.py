@@ -193,7 +193,7 @@ class VocoderWORLD(VocoderF0Spec):
     def noisesize(self): return self.aper_size
     def vuvsize(self): return 1
 
-    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv):
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv, preproc_hp=None):
         print('Extracting WORLD features from: '+fwav)
 
         wav, fs, _ = sp.wavread(fwav)
