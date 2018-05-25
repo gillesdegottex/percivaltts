@@ -292,18 +292,17 @@ class Optimizer:
 
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
+
+                    random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
+                    discri_returns = discri_train_fn(X_trab, Y_trab, random_epsilon)        # Train the discrimnator
+                    costs_tra_discri_batches.append(float(discri_returns))
+
                     # TODO The params below are supposed to ensure the discri is "almost" fully converged
                     #      when training the generator. How to evaluate this? Is it the case currently?
                     if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded
                         discri_runs = 10 # TODO Params hardcoded
                     else:
                         discri_runs = 5 # TODO Params hardcoded
-
-                    random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
-
-                    discri_returns = discri_train_fn(X_trab, Y_trab, random_epsilon)        # Train the discrimnator
-                    costs_tra_discri_batches.append(float(discri_returns))
-
                     if k%discri_runs==0:
                         # Train the generator
                         trainargs = [X_trab]
