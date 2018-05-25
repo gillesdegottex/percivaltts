@@ -26,6 +26,7 @@ class TestRun(unittest.TestCase):
         run.cfg.id_valid_nb = 1
         run.cfg.id_test_nb = 1
         run.cfg.train_batch_size = 2
+        run.cfg.train_min_nbepochs = 1
         run.cfg.train_max_nbepochs = 5
         run.cfg.train_cancel_nodecepochs = 2
         run.cfg.model_hiddensize = 4
