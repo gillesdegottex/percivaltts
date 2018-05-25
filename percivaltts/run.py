@@ -126,7 +126,7 @@ cfg.print_content()
 
 # Processes --------------------------------------------------------------------
 
-def pfs_map_vocoder(fid): return vocoder.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})
+def pfs_map_vocoder(fid): return vocoder.analysisfid(fid, wav_path, cfg.vocoder_f0_min, cfg.vocoder_f0_max, {'f0':f0_path, 'spec':spec_path, 'noise':noise_path, 'vuv':vuv_path})  # TODO TODO TODO preproc_hp=100
 def features_extraction():
 
     # Use this tool for parallel extraction of the acoustic features ...
