@@ -203,7 +203,14 @@ class VocoderWORLD(VocoderF0Spec):
             wav = sp.resample(wav, fs, self.fs, method=2, deterministic=True)
             fs = self.fs
 
+        if not preproc_hp is None:
+            print('    High-pass filter the waveform (cutt-off={}Hz)'.format(preproc_hp))
+            from scipy import signal as sig
+            b, a = sig.butter(4, preproc_hp/(fs/0.5), btype='high')
+            wav = sig.filtfilt(b, a, wav)
+
         import pyworld as pw
+        wav = np.ascontiguousarray(wav) # Often necessary for pyworld cython bins
 
         if 0:
             # Check direct copy re-synthesis without compression/encoding
