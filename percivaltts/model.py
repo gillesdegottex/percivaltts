@@ -164,7 +164,7 @@ class Model:
             return CMP
 
         if not os.path.isdir(syndir): os.makedirs(syndir)
-        if do_resynth and not os.path.isdir(syndir): os.makedirs(syndir+'-resynth/')
+        if do_resynth and (not os.path.isdir(syndir+'-resynth')): os.makedirs(syndir+'-resynth')
 
         for vi in xrange(len(X_test)):
 
