@@ -19,14 +19,17 @@ Author
 '''
 
 import percivaltts  # Always include this first to setup a few things
+from percivaltts import colored
 
 import os
+import re
 
 import numpy as np
 percivaltts.numpy_force_random_seed()
 
 import theano
 import theano.tensor as T
+import lasagne
 
 def print_sysinfo_theano():
     """Print some information about Theano installation"""
@@ -37,7 +40,7 @@ def print_sysinfo_theano():
     print('    device={}'.format(theano.config.device))
     print('    CUDA_ROOT={}'.format(theano.config.cuda.root))
     try:    print('    cuDNN={}'.format(theano.gpuarray.dnn.version()))
-    except RuntimeError: print('    cuDNN=Unavailable')
+    except RuntimeError: print(colored('    cuDNN=Unavailable', 'red'))
     print('    GID={}'.format(percivaltts.nvidia_smi_current_gpu()))
     print('')
 
