@@ -26,6 +26,7 @@ cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 cfg.wdir = cptest+'wav_fwlspec65_weights/*.w:(-1,1)'
 
 cfg.train_batch_size = 2
+cfg.train_min_nbepochs = 1
 cfg.train_cancel_nodecepochs = 2
 
 fid_lst_tra = fid_lst[:cfg.id_train_nb()]
