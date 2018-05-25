@@ -107,3 +107,60 @@ def print_network(net, params=None):
             if (params!=None) and (p in params): istrainedstr=colored('TRAINING', 'green')
             print('            {}({}) [{}] {}'.format(p.name, X.shape, hash(str(X)), istrainedstr))
 
+def params_keeponly(params, regexp, reverse=False):
+    paramstotrain = []
+    for p in params:
+        if reverse:
+            if re.search(regexp, str(p))==None:
+                paramstotrain.append(p)
+        else:
+            if re.search(regexp, str(p))!=None:
+                paramstotrain.append(p)
+
+    return paramstotrain
+
+def params_keeponlynewstr(params, paramsnew):
+    paramsstr = [str(p) for p in params]
+
+    paramstotrain = []
+    for p in paramsnew:
+        if not(str(p) in paramsstr):
+            paramstotrain.append(p)
+
+    return paramstotrain
+
+def params_transfer(paramsfrom, paramsto):
+    '''
+    regexp : has to match parameter's name.
+    '''
+
+    paramstostr = [str(pto) for pto in paramsto]
+
+    for pfrom in paramsfrom:
+        if str(pfrom) in paramstostr:
+            pmatch = [pto for pto in paramsto if str(pto)==str(pfrom)]
+            if len(pmatch)>1:
+                print('        {}: {} destination parameters match the same name'.format(str(pfrom),len(pmatch)))
+            else:
+                print(colored('        {}: TRANSFERRED'.format(str(pfrom)), 'green'))
+                pmatch[0].set_value(pfrom.get_value())
+        else:
+            print(colored('        {}: Cannot be found in destination parameters! NOT transferred'.format(str(pfrom)), 'red'))
+
+def layers_transfer(netfrom, netto, regexp, strictnames=True):
+    '''
+    regexp : has to match both layer and parameter's name.
+    '''
+    layersfrom = lasagne.layers.get_all_layers(netfrom)
+    layers = lasagne.layers.get_all_layers(netto)
+    for li in xrange(len(layersfrom)):
+        lfrom = layersfrom[li]
+        lto = layers[li]
+        if re.search(regexp, lfrom.name)!=None:
+            print('        {}: {}({})'.format(li, lfrom.name, lfrom.output_shape))
+            for pfrom, pto in zip(lfrom.get_params(), lto.get_params()):
+                if re.search(regexp, str(pto))!=None and ((not strictnames) or str(pfrom)==str(pto)):
+                    print('            {} TRANSFERRED'.format(str(pto)))
+                    pto.set_value(pfrom.get_value())
+                else:
+                    print('            {} SKIPPED {}'.format(str(pto), str(pfrom)))
