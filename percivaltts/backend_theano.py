@@ -52,6 +52,11 @@ def th_print(msg, op):
     op = print_val(print_shape(op))
     return op
 
+def th_print_shape(msg, op):
+    """Print the content of a theano variable with a message"""
+    print_shape = theano.printing.Print(msg, attrs = [ 'shape' ])
+    op = print_shape(op)
+    return op
 
 def nonlin_tanh_saturated(x, coef=1.01):
     """Hyperbolic tangent which spans slightly below and above -1 and +1, in order to avoid unreachable -1 and +1 values."""
