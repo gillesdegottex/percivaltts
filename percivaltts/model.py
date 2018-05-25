@@ -78,16 +78,13 @@ class Model:
 
         self.net_out = net_out
 
-        print('    architecture:')
-        for li, l in enumerate(lasagne.layers.get_all_layers(self.net_out)):
-            print('        {}: {}({})'.format(li, l.name, l.output_shape))
+        print('    Architecture:')
+        print_network(self.net_out)
 
         self.params_all = lasagne.layers.get_all_params(self.net_out)
         self.params_trainable = lasagne.layers.get_all_params(self.net_out, trainable=True)
 
-        print('    params={}'.format(self.params_all))
-
-        print('    compiling prediction function ...')
+        print('    Compiling prediction function ...')
         self.inputs = [self._input_values]
 
         predicted_values = lasagne.layers.get_output(self.net_out, deterministic=True)
@@ -98,7 +95,7 @@ class Model:
 
 
     def nbParams(self):
-        return paramss_count(self.params_all)
+        return params_count(self.params_all)
 
     def saveAllParams(self, fmodel, cfg=None, extras=None, printfn=print, infostr=''):
         if extras is None: extras=dict()
