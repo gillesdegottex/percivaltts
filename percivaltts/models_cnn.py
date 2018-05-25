@@ -55,7 +55,7 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
     lout = ll.ElemwiseMergeLayer([la, lg], T.mul, cropping=None, name=name+'.mul_merge')
     return lout
 
-def layer_embedded_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize, nonlinearity, bn_axes=None):
+def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize, nonlinearity, bn_axes=None, grad_clipping=50):
     if bn_axes is None: bn_axes=[0,1]
 
     layer_ctx = ll.dimshuffle(layer_ctx, [0, 'x', 1, 2], name='ctx_dimshuffle_to_2DCNN')
@@ -91,7 +91,7 @@ class ModelCNN(model.Model):
 
         layer_ctx = ll.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx_input')
 
-        layer_ctx = layer_embedded_context(layer_ctx, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
+        self._layer_ctx = layer_context(layer_ctx, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
 
         layers_toconcat = []
 
@@ -203,7 +203,7 @@ class ModelCNN(model.Model):
         # Add the contexts
         layer_ctx_input = ll.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
 
-        layer_ctx = layer_embedded_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
+        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
         layerstoconcats.append(layer_ctx)
 
         # Concatenate the features analysis with the contexts...
