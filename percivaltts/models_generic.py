@@ -41,7 +41,6 @@ import model
 import models_basic
 from models_cnn import CstMulLayer
 from models_cnn import TileLayer
-from models_cnn import TimeWeightLayer
 from models_cnn import layer_GatedConv2DLayer
 from models_cnn import layer_context
 
