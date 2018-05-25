@@ -20,7 +20,7 @@ class TestSmoke(unittest.TestCase):
         cfg = percivaltts.configuration()
 
         text_file = open(cptest+'/info.py', "w")
-        text_file.write("fs = 32000\n")
+        text_file.write("fs = 16000\n")
         text_file.write("shift = 0.005\n")
         text_file.close()
         cfg.mergefiles([cptest+'/info.py'])
@@ -86,9 +86,9 @@ class TestSmoke(unittest.TestCase):
 
         outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
         Ys = data.load(outdir, fids, shape=None, frameshift=0.005, verbose=1, label='Ys: ')
-        print(len(Ys))
+        print('len(Ys)='+str(len(Ys)))
         self.assertTrue(len(Ys)==10)
-        print(Ys[0].shape)
+        print('Ys[0].shape'+str(Ys[0].shape))
         self.assertTrue(Ys[0].shape==(666, 83))
 
         wdir = cptest+'wav_fwlspec65_weights/*.w:(-1,1)'
@@ -101,10 +101,10 @@ class TestSmoke(unittest.TestCase):
 
         Xs_w_stop = data.addstop(Xs)
 
-        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', inouttimesync=False)
-        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift')
-        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='begendbigger')
-        X_train, MX_train, Y_train, MY_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='all')
+        X_train, MX_train, Y_train, MY_train, W_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', inouttimesync=False)
+        X_train, MX_train, Y_train, MY_train, W_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift')
+        X_train, MX_train, Y_train, MY_train, W_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='begendbigger')
+        X_train, MX_train, Y_train, MY_train, W_train = data.load_inoutset(indir, outdir, wdir, fids, length=None, lengthmax=100, maskpadtype='randshift', cropmode='all')
 
         worst_val = data.cost_0pred_rmse(Ys)
         print('worst_val={}'.format(worst_val))

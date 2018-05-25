@@ -154,7 +154,9 @@ def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.750/0.00
     for ki in xrange(len(w)):   # For each sample of the data set
 
         if cropmode=='begend':
-            speechidx = np.where(w[ki]>thresh)[0]
+            if len(w[ki].shape)>1:      speechidx = np.where(w[ki][:,0]>thresh)[0]
+            else:                       speechidx = np.where(w[ki]>thresh)[0]
+
             starti = min(speechidx)
             endi = max(speechidx)
 
@@ -168,7 +170,9 @@ def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.750/0.00
 
         elif cropmode=='begendbigger':
             # Start as usual...
-            keep = w[ki]>thresh
+            if len(w[ki].shape)>1:      keep=w[ki][:,0]>thresh
+            else:                       keep=w[ki]>thresh
+
             speechidx = np.where(keep)[0]
             # ... and replace the False where the distance is small
             speechidxd = np.diff(speechidx)
@@ -186,7 +190,10 @@ def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.750/0.00
             w[ki] = w[ki][speechidx,]
 
         elif cropmode=='all':
-            speechidx = np.where(w[ki]>thresh)[0]
+
+            if len(w[ki].shape)>1:      speechidx = np.where(w[ki][:,0]>thresh)[0]
+            else:                       speechidx = np.where(w[ki]>thresh)[0]
+
             for x in xs:
                 # print('cropsilences: {} {}'.format(starti, endi))
                 x[ki] = x[ki][speechidx,]       # TODO This is changing the reference!
@@ -275,13 +282,13 @@ def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=No
 
     # Maskify the validation data according to the batchsize
     if inouttimesync:
-        [X_val, Y_val], MX_val = maskify([X_val, Y_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
+        [X_val, Y_val, W_val], MX_val = maskify([X_val, Y_val, W_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
         MY_val = MX_val
-    else:
+    else:     # TODO rm
         [X_val], MX_val = maskify([X_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
         [Y_val], MY_val = maskify([Y_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
 
-    return X_val, MX_val, Y_val, MY_val
+    return X_val, MX_val, Y_val, MY_val, W_val
 
 
 # Evaluation functions ---------------------------------------------------------

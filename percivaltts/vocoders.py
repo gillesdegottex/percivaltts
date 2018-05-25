@@ -37,6 +37,26 @@ class Vocoder:
         self.fs = _fs
         self.shift = _shift
 
+    def preprocwav(self, wav, fs, highpass=None):
+        '''
+        Should always be called at the beginning of the analysis function accessing the waveform.
+        '''
+
+        if fs!=self.fs:
+            print('    Resampling the waveform (new fs={}Hz)'.format(self.fs))
+            wav = sp.resample(wav, fs, self.fs, method=2, deterministic=True)
+            fs = self.fs
+
+        if not highpass is None:
+            print('    High-pass filter the waveform (cutt-off={}Hz)'.format(highpass))
+            from scipy import signal as sig
+            b, a = sig.butter(4, highpass/(self.fs/0.5), btype='high')
+            wav = sig.filtfilt(b, a, wav)
+
+        wav = np.ascontiguousarray(wav) # Often necessary for some cython implementations
+
+        return wav
+
         # if pp_spec_extrapfreq>0:
         #     idxlim = int(dftlen*pp_spec_extrapfreq/self.fs)
         #     for n in xrange(SPEC.shape[0]):
@@ -145,12 +165,15 @@ class VocoderPML(VocoderF0Spec):
 
     def noisesize(self): return self.nm_size
 
-    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, fnm):              # pragma: no cover  coverage not detected
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, fnm, preproc_hp=None):  # This extra option can be usefull to remove blobs in recordings: preproc_hp=f0_min
         print('Extracting PML features from: '+fwav)
-        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, verbose=1)
 
-    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts):   # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid))
+        if preproc_hp=='auto': preproc_hp=f0_min
+
+        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, preproc_fs=self.fs, preproc_hp=preproc_hp, verbose=1)
+
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, preproc_hp=None):   # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), preproc_hp=preproc_hp)
 
     def synthesis(self, fs, CMP, pp_mcep=False):
 
@@ -192,10 +215,13 @@ class VocoderWORLD(VocoderF0Spec):
     def noisesize(self): return self.aper_size
     def vuvsize(self): return 1
 
-    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv):
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv, preproc_hp=None):
         print('Extracting WORLD features from: '+fwav)
 
         wav, fs, _ = sp.wavread(fwav)
+
+        if preproc_hp=='auto': preproc_hp=f0_min
+        self.preprocwav(wav, fs, highpass=preproc_hp)
 
         import pyworld as pw
 
@@ -249,8 +275,8 @@ class VocoderWORLD(VocoderF0Spec):
 
         # return CMP
 
-    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts):              # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid))
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, preproc_hp=None):              # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid), preproc_hp=preproc_hp)
 
     def synthesis(self, fs, CMP, pp_mcep=False):
         import pyworld as pw

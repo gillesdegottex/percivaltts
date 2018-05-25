@@ -45,5 +45,7 @@ fi
 
 unset LD_PRELOAD
 
+echo "Run command: "$@
+
 # Finally, run the scripts' arguments as a command
 $@

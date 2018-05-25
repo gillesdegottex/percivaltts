@@ -33,6 +33,7 @@ before_install:
     - echo "CI=$CI"
 
     - sudo apt-get -qq update
+    - sudo apt-get -qq install sox
 
     - if [ ! -d $HOME/miniconda/bin ] ; then
         echo "Install Miniconda";

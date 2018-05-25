@@ -54,6 +54,7 @@ class Optimizer:
     _model = None # The model whose parameters will be optimised.
 
     _errtype = 'WGAN' # or 'LSE'
+    _WGAN_incnoise = True # Include noise in the WGAN loss
     _LSWGANtransflc = 0.5 # Params hardcoded
     _LSWGANtransc = 1.0/8.0 # Params hardcoded
 
@@ -136,11 +137,7 @@ class Optimizer:
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
 
-            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, hiddensize=self._model._hiddensize, nbcnnlayers=self._model._nbcnnlayers, nbfilters=self._model._nbfilters, spec_freqlen=self._model._spec_freqlen, noise_freqlen=self._model._noise_freqlen, windur=self._model._windur, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc)
-
-            print('    Discriminator architecture')
-            for l in lasagne.layers.get_all_layers(discri):
-                print('        {}:{}'.format(l.name, l.output_shape))
+            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc, use_WGAN_incnoise=self._WGAN_incnoise)
 
             # Create expression for passing real data through the discri
             real_out = lasagne.layers.get_output(discri)
@@ -164,8 +161,11 @@ class Optimizer:
                     specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
                     wganls_weights_els.append(nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.specsize()), self._LSWGANtransc)) # For spec
                     if self._model.vocoder.noisesize()>0:
-                        noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
-                        wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)) # For noise
+                        if self._WGAN_incnoise:
+                            noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
+                            wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)) # For noise
+                        else:
+                            wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
                     if self._model.vocoder.vuvsize()>0:
                         wganls_weights_els.append([0.0]) # For vuv
                     wganls_weights_ = np.hstack(wganls_weights_els)
@@ -173,7 +173,7 @@ class Optimizer:
                     # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)))
                     # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc), [0.0]))
 
-                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # TODO TODO TODO
+                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG
                     wganls_weights_ *= (1.0-cfg.train_LScoef)
 
                     wganls_weights_gan = theano.shared(value=wganls_weights_, name='wganls_weights_gan')
@@ -200,12 +200,16 @@ class Optimizer:
             discri_loss = discri_loss + cfg.train_pg_lambda*grad_penalty
 
             # Create update expressions for training
-            generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
             discri_params = lasagne.layers.get_all_params(discri, trainable=True)
-            generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
-
             discri_updates = lasagne.updates.adam(discri_loss, discri_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
+            print('    Discriminator architecture')
+            print_network(discri, discri_params)
+
+            generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
+            generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
             self._optim_updates.extend([generator_updates, discri_updates])
+            print('    Generator architecture')
+            print_network(self._model.net_out, generator_params)
 
             # Compile functions performing a training step on a mini-batch (according
             # to the updates dictionary) and returning the corresponding score:
@@ -221,6 +225,7 @@ class Optimizer:
 
         elif self._errtype=='LSE':
             print('    LSE Training')
+            print_network(self._model.net_out, params)
             predicttrain_values = lasagne.layers.get_output(self._model.net_out, deterministic=False)
             costout = (predicttrain_values - self._target_values)**2
 
@@ -243,17 +248,19 @@ class Optimizer:
         epochstart = 1
         if cont:
             print('    reloading previous training state ...')
-            _, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg)
+            savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg)
             np.random.set_state(rngstate)
             cost_val = extras['cost_val']
-            best_val = extras['best_val']
             # Restoring some local variables
             costs = extras['costs']
             epochs_modelssaved = extras['epochs_modelssaved']
             epochs_durs = extras['epochs_durs']
-            nbnodecepochs = extras['nbnodecepochs']
             generator_updates = extras['generator_updates']
             epochstart = extras['epoch']+1
+            # Restore the saving criteria only none of those 3 cfg values changed:
+            if (savedcfg.train_min_nbepochs==cfg.train_min_nbepochs) and (savedcfg.train_max_nbepochs==cfg.train_max_nbepochs) and (savedcfg.train_cancel_nodecepochs==cfg.train_cancel_nodecepochs):
+                best_val = extras['best_val']
+                nbnodecepochs = extras['nbnodecepochs']
 
         print_log("    start training ...")
         for epoch in range(epochstart,1+cfg.train_max_nbepochs):
@@ -272,7 +279,7 @@ class Optimizer:
 
                 # Load training data online, because data is often too heavy to hold in memory
                 fid_lst_trab = [fid_lst_tra[bidx] for bidx in rndidxb[k]]
-                X_trab, _, Y_trab, _ = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype, cropmode=cfg.cropmode)
+                X_trab, _, Y_trab, _, W_trab = data.load_inoutset(indir, outdir, wdir, fid_lst_trab, length=cfg.train_batch_length, lengthmax=cfg.train_batch_lengthmax, maskpadtype=cfg.train_batch_padtype, cropmode=cfg.train_batch_cropmode)
 
                 if 0: # Plot batch
                     import matplotlib.pyplot as plt
@@ -285,18 +292,17 @@ class Optimizer:
 
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
+
+                    random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
+                    discri_returns = discri_train_fn(X_trab, Y_trab, random_epsilon)        # Train the discrimnator
+                    costs_tra_discri_batches.append(float(discri_returns))
+
                     # TODO The params below are supposed to ensure the discri is "almost" fully converged
                     #      when training the generator. How to evaluate this? Is it the case currently?
                     if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded
                         discri_runs = 10 # TODO Params hardcoded
                     else:
                         discri_runs = 5 # TODO Params hardcoded
-
-                    random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
-
-                    discri_returns = discri_train_fn(X_trab, Y_trab, random_epsilon)        # Train the discrimnator
-                    costs_tra_discri_batches.append(float(discri_returns))
-
                     if k%discri_runs==0:
                         # Train the generator
                         trainargs = [X_trab]
@@ -347,13 +353,13 @@ class Optimizer:
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
-            if epoch>cfg.train_cancel_nodecepochs and ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation AND assume no model is good enough before cfg.train_cancel_nodecepochs epoch
-                best_val = cost_val
-                self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f})'.format(epoch, best_val))
-                epochs_modelssaved.append(epoch)
-                nbnodecepochs = 0
-            else:
-                if epoch>cfg.train_cancel_nodecepochs:
+            if epoch>=cfg.train_min_nbepochs: # Assume no model is good enough before cfg.train_min_nbepochs
+                if ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation
+                    best_val = cost_val
+                    self._model.saveAllParams(params_savefile, cfg=cfg, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f})'.format(epoch, best_val))
+                    epochs_modelssaved.append(epoch)
+                    nbnodecepochs = 0
+                else:
                     nbnodecepochs += 1
 
             if cfg.train_log_plot:
@@ -424,11 +430,13 @@ class Optimizer:
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses
         cfg.train_validation_ltm_winlen = 20
 
+        cfg.train_min_nbepochs = 200
         cfg.train_max_nbepochs = 300
-        cfg.train_cancel_nodecepochs = 100
+        cfg.train_cancel_nodecepochs = 50
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
-        cfg.train_batch_size = 5                # [potential hyper-parameter] # TODO Rename batch_size ?
+        cfg.train_batch_size = 5                # [potential hyper-parameter]
         cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
+        cfg.train_batch_cropmode = 'begendbigger'     # 'begend', 'begendbigger', 'all'
         cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
         cfg.train_batch_lengthmax = None        # Maximum duration [frames] of each batch
         cfg.train_nbtrials = 1                  # Just run one training only
@@ -449,6 +457,8 @@ class Optimizer:
         X_vals = data.load(indir, fid_lst_val, verbose=1, label='Context labels: ')
         Y_vals = data.load(outdir, fid_lst_val, verbose=1, label='Output features: ')
         X_vals, Y_vals = data.croplen([X_vals, Y_vals])
+        print('    {} validation files'.format(len(fid_lst_val)))
+        print('    {:.2f}% of validation files for number of train files'.format(100.0*float(len(fid_lst_val))/len(fid_lst_tra)))
 
         if cfg.train_nbtrials>1:
             self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-init.pkl', cfg=cfg, printfn=print_log)

@@ -78,16 +78,13 @@ class Model:
 
         self.net_out = net_out
 
-        print('    architecture:')
-        for l in lasagne.layers.get_all_layers(self.net_out):
-            print('        {}:{}'.format(l.name, l.output_shape))
+        print('    Architecture:')
+        print_network(self.net_out)
 
         self.params_all = lasagne.layers.get_all_params(self.net_out)
         self.params_trainable = lasagne.layers.get_all_params(self.net_out, trainable=True)
 
-        print('    params={}'.format(self.params_all))
-
-        print('    compiling prediction function ...')
+        print('    Compiling prediction function ...')
         self.inputs = [self._input_values]
 
         predicted_values = lasagne.layers.get_output(self.net_out, deterministic=True)
@@ -98,7 +95,7 @@ class Model:
 
 
     def nbParams(self):
-        return paramss_count(self.params_all)
+        return params_count(self.params_all)
 
     def saveAllParams(self, fmodel, cfg=None, extras=None, printfn=print, infostr=''):
         if extras is None: extras=dict()
@@ -133,7 +130,7 @@ class Model:
             CMP.astype('float32').tofile(outpath.replace('*',fid_lst[vi]))
 
 
-    def generate_wav(self, inpath, outpath, fid_lst, syndir, cfg, vocoder, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]], do_objmeas=True, do_resynth=True
+    def generate_wav(self, inpath, outpath, fid_lst, syndir, vocoder, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]], do_objmeas=True, do_resynth=True
             , pp_mcep=False
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
@@ -167,6 +164,7 @@ class Model:
             return CMP
 
         if not os.path.isdir(syndir): os.makedirs(syndir)
+        if do_resynth and (not os.path.isdir(syndir+'-resynth')): os.makedirs(syndir+'-resynth')
 
         for vi in xrange(len(X_test)):
 
@@ -175,15 +173,15 @@ class Model:
 
             if do_resynth:
                 CMP = denormalise(y_test[vi], wins=[])
-                resyn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=False)
-                sp.wavwrite(syndir+'/'+fid_lst[vi]+'-resynth.wav', resyn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
+                resyn = vocoder.synthesis(vocoder.fs, CMP, pp_mcep=False)
+                sp.wavwrite(syndir+'-resynth/'+fid_lst[vi]+'.wav', resyn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
             CMP = CMP[0,:,:]
 
             CMP = denormalise(CMP, wins=wins)
-            syn = vocoder.synthesis(cfg.vocoder_fs, CMP, pp_mcep=pp_mcep)
-            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, cfg.vocoder_fs, norm_abs=True, force_norm_abs=True, verbose=1)
+            syn = vocoder.synthesis(vocoder.fs, CMP, pp_mcep=pp_mcep)
+            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             if do_objmeas: vocoder.objmeasures_add(CMP, y_test[vi])
 

@@ -26,6 +26,7 @@ cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 cfg.wdir = cptest+'wav_fwlspec65_weights/*.w:(-1,1)'
 
 cfg.train_batch_size = 2
+cfg.train_min_nbepochs = 1
 cfg.train_cancel_nodecepochs = 2
 
 fid_lst_tra = fid_lst[:cfg.id_train_nb()]
@@ -51,6 +52,8 @@ class TestSmokeTheano(unittest.TestCase):
         print("modgan.nbParams={}".format(model.nbParams()))
         self.assertEqual(model.nbParams(), 2163)
 
+        import models_generic
+
         # LSE optimizer
         import optimizer
         cfg.train_max_nbepochs = 5
@@ -62,7 +65,7 @@ class TestSmokeTheano(unittest.TestCase):
         model.saveAllParams('tests/test_made__smoke_theano_model/smokymodelparams.pkl')
 
         # Generate waveforms
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', vocoder, wins=[], do_objmeas=True, do_resynth=True)
 
 
         # Extra test along side the simple test above
@@ -122,9 +125,9 @@ class TestSmokeTheano(unittest.TestCase):
 
         model.generate_cmp(cfg.indir, 'tests/test_made__smoke_theano_model_train/smokymodelparams-cmp', fid_lst_val)
 
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True)
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_extrapfreq', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_extrapfreq=8000)
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_pf_coef', cfg, vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_pf_coef=1.2)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd', vocoder, wins=[], do_objmeas=True, do_resynth=True)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_extrapfreq', vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_extrapfreq=8000)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams-snd-pp_spec_pf_coef', vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_pf_coef=1.2)
 
         # Test MLPG
         mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
@@ -134,7 +137,7 @@ class TestSmokeTheano(unittest.TestCase):
         optiganwdeltas = optimizer.Optimizer(modelwdeltas, errtype='LSE')
         optiganwdeltas.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modelwdeltas.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl', cfgtomerge=cfg, cont=False)
         modelwdeltas.saveAllParams('tests/test_made__smoke_theano_model_train/smokymodelparams_wdeltas.pkl')
-        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams_wdeltas-snd', cfg, vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True)
+        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train/smokymodelparams_wdeltas-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True)
         # Restore the non-MLPG features
         cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 
@@ -152,7 +155,7 @@ class TestSmokeTheano(unittest.TestCase):
         optilse = optimizer.Optimizer(model, errtype='LSE')
         optilse.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         model.saveAllParams('tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams.pkl')
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams-snd', cfg, vocoder_world, wins=[], do_objmeas=True, do_resynth=True)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD/smokymodelparams-snd', vocoder_world, wins=[], do_objmeas=True, do_resynth=True)
         # Test MLPG
         modelwdeltas = models_basic.ModelFC(lab_size, vocoder_world, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=2)
         # Use the MLPG features
@@ -160,7 +163,7 @@ class TestSmokeTheano(unittest.TestCase):
         optiganwdeltas = optimizer.Optimizer(modelwdeltas, errtype='LSE')
         optiganwdeltas.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modelwdeltas.params_trainable, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas.pkl', cfgtomerge=cfg, cont=False)
         modelwdeltas.saveAllParams('tests/test_made__smoke_theano_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas.pkl')
-        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas-snd', cfg, vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True)
+        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_theano_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True)
 
         # Restore PML and non-MLPG features
         cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
@@ -182,7 +185,7 @@ class TestSmokeTheano(unittest.TestCase):
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         # model.generate_wav('test/test_made__smoke_theano_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
 
-        model = models_basic.ModelGeneric(lab_size, vocoder, mlpg_wins=[], layertypes=['FC', 'BLSTM'], hiddensize=4)
+        model = models_generic.ModelGeneric(lab_size, vocoder, mlpg_wins=[], layertypes=['FC', 'BLSTM'], hiddensize=4)
         optigan = optimizer.Optimizer(model, errtype='LSE')
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
 

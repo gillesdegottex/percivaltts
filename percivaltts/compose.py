@@ -25,6 +25,7 @@ import re
 
 import numpy as np
 numpy_force_random_seed()
+import scipy.signal
 
 import data
 
@@ -198,7 +199,6 @@ def compose(featurepaths, fids, outfilepath, wins=None, id_valid_start=-1, normf
     outfilepath = re.sub(r':[^:]+$', "", outfilepath)   # ignore any shape suffix in the output path
     if not os.path.isdir(os.path.dirname(outfilepath)): os.mkdir(os.path.dirname(outfilepath))
 
-    if len(wins)>0: import scipy.signal
     size = None
     mins = None
     maxs = None
