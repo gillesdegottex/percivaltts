@@ -37,6 +37,14 @@ import runpy
 # import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ET # safer version
 
+if sys.stdout.isatty():
+    try:
+        from termcolor import colored
+    except:
+        def colored(txt, color): return txt
+else:
+    def colored(txt, color): return txt
+
 
 def readids(fileids):
     with open(fileids) as f:
