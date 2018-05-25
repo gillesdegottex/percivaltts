@@ -67,8 +67,10 @@ cfg.vocoder_f0_min, cfg.vocoder_f0_max = 70, 600
 vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _nm_size=33)
 # vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
+use_WGAN = True # TODO TODO TODO
+
 do_mlpg = False
-pp_mcep = False # Set to True to apply Merlin's post-processing to enhance formants. You need mcep command line from SPTK.
+pp_mcep = not use_WGAN # Set to True to apply Merlin's post-processing to enhance formants. You need mcep command line from SPTK.
 
 mlpg_wins = []
 if do_mlpg: mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
@@ -110,8 +112,12 @@ cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each b
                                            # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
 cfg.wpath = labs_wpath # labs_wpath or feats_wpath. By def. ignore silences according to input labels.
 cfg.train_LScoef = 0.25         # LS loss weights 0.25 and WGAN for the rest (even though LS loss is in [0,oo) whereas WGAN loss is on (-oo,+oo))
+cfg.train_min_nbepochs = 200
 cfg.train_max_nbepochs = 300    # (Can stop much earlier for 3 stacked BLSTM or 6 stacked FC)
 cfg.train_cancel_nodecepochs = 50 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)
+if not use_WGAN:
+    cfg.train_min_nbepochs = 20
+    cfg.train_cancel_nodecepochs = 10
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
 # cfg.train_nbtrials = 12
@@ -181,11 +187,11 @@ def training(cont=False):
     fid_lst_val = fids[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
     print('    {} validation files; ratio of validation data over training data: {:.2f}%'.format(len(fid_lst_val), 100.0*float(len(fid_lst_val))/len(fid_lst_tra)))
 
-    model = build_model()
+    mod = build_model()
 
     import optimizer
-    optigan = optimizer.Optimizer(model, errtype='WGAN') # 'WGAN' or 'LSE'
-    optigan.train_multipletrials(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, model.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
+    opti = optimizer.Optimizer(mod, errtype='WGAN' if use_WGAN else 'LSE') # 'WGAN' or 'LSE'
+    opti.train_multipletrials(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, mod.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 
 def generate(fparams=cfg.fparams_fullset):
