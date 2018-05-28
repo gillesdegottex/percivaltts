@@ -70,21 +70,13 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
 def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize, nonlinearity, bn_axes=None, grad_clipping=50):
     if bn_axes is None: bn_axes=[0,1]
 
-    if 1:   # TODO TODO TODO Use CNN in layer_context instead of BLSTM
-        layer_ctx = ll.dimshuffle(layer_ctx, [0, 'x', 1, 2], name='ctx.dimshuffle_to_2DCNN')
-        for layi in xrange(ctx_nblayers):
-            layerstr = 'ctx.l'+str(1+layi)+'_CNN{}x{}x{}'.format(ctx_nbfilters,ctx_winlen,1)
-            layer_ctx = ll.batch_norm(ll.Conv2DLayer(layer_ctx, num_filters=ctx_nbfilters, filter_size=[ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-            # layer_ctx = ll.batch_norm(layer_GatedConv2DLayer(layer_ctx, ctx_nbfilters, [ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-        layer_ctx = ll.dimshuffle(layer_ctx, [0, 2, 3, 1], name='ctx.dimshuffle_back')
-        layer_ctx = ll.flatten(layer_ctx, outdim=3, name='ctx.flatten')
-
-    else:
-        for layi in xrange(ctx_nblayers):
-            layerstr = 'ctx.l'+str(1+layi)+'_BLSTM{}'.format(hiddensize)
-            fwd = models_basic.layer_LSTM(layer_ctx, hiddensize, nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
-            bck = models_basic.layer_LSTM(layer_ctx, hiddensize, nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.bck')
-            layer_ctx = ll.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
+    layer_ctx = ll.dimshuffle(layer_ctx, [0, 'x', 1, 2], name='ctx.dimshuffle_to_2DCNN')
+    for layi in xrange(ctx_nblayers):
+        layerstr = 'ctx.l'+str(1+layi)+'_CNN{}x{}x{}'.format(ctx_nbfilters,ctx_winlen,1)
+        layer_ctx = ll.batch_norm(ll.Conv2DLayer(layer_ctx, num_filters=ctx_nbfilters, filter_size=[ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
+        # layer_ctx = ll.batch_norm(layer_GatedConv2DLayer(layer_ctx, ctx_nbfilters, [ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
+    layer_ctx = ll.dimshuffle(layer_ctx, [0, 2, 3, 1], name='ctx.dimshuffle_back')
+    layer_ctx = ll.flatten(layer_ctx, outdim=3, name='ctx.flatten')
 
     for layi in xrange(2):
         layerstr = 'ctx.l'+str(1+ctx_nblayers+layi)+'_FC{}'.format(hiddensize)
