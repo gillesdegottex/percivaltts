@@ -96,7 +96,7 @@ cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
 # Model architecture options
 cfg.model_ctx_nblayers = 1
 cfg.model_ctx_nbfilters = 4     # 4 seems enough
-cfg.model_ctx_winlen = 41       # Too big (>41,200ms) seems to bring noise in the synth (might lack data)
+cfg.model_ctx_winlen = 21       # Too big (>41,200ms) seems to bring noise in the synth (might lack data)
 cfg.model_hiddensize = 256     # For all arch 256
 cfg.model_nbcnnlayers = 8       # CNN only 8
 cfg.model_nbfilters = 16        # CNN only 16
