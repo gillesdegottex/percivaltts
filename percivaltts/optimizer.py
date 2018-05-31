@@ -418,7 +418,7 @@ class Optimizer:
 
         # LSE
         cfg.train_learningrate_log10 = -3.39794 # [potential hyper-parameter] (10**-3.39794=0.0004)
-        cfg.train_adam_beta1 = 0.98             # [potential hyper-parameter] 0.9 seems better for BLSTM TODO TODO TODO
+        cfg.train_adam_beta1 = 0.9              # [potential hyper-parameter]
         cfg.train_adam_beta2 = 0.999            # [potential hyper-parameter]
         cfg.train_adam_epsilon_log10 = -8       # [potential hyper-parameter]
         # WGAN
