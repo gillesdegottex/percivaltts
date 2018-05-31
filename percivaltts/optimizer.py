@@ -173,15 +173,17 @@ class Optimizer:
                     # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)))
                     # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc), [0.0]))
 
-                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG
+                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
                     wganls_weights_ *= (1.0-cfg.train_LScoef)
-
-                    wganls_weights_gan = theano.shared(value=wganls_weights_, name='wganls_weights_gan')
 
                     lserr = lasagne.objectives.squared_error(genout, self._target_values)
                     wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
 
-                    generator_loss = -(fake_out*wganls_weights_gan).mean() + (lserr*wganls_weights_ls).mean() # TODO A term in [-oo,oo] and one in [0,oo] .. ?
+                    wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
+                    lsepart = lserr*wganls_weights_ls
+
+
+                    generator_loss = -wganpart.mean() + lsepart.mean() # TODO A term in [-oo,oo] and one in [0,oo] .. ?
 
             else:
                 # Standard WGAN, no special mixing with LSE
@@ -416,7 +418,7 @@ class Optimizer:
 
         # LSE
         cfg.train_learningrate_log10 = -3.39794 # [potential hyper-parameter] (10**-3.39794=0.0004)
-        cfg.train_adam_beta1 = 0.98             # [potential hyper-parameter] 0.9 seems better for BLSTM TODO TODO TODO
+        cfg.train_adam_beta1 = 0.9              # [potential hyper-parameter]
         cfg.train_adam_beta2 = 0.999            # [potential hyper-parameter]
         cfg.train_adam_epsilon_log10 = -8       # [potential hyper-parameter]
         # WGAN
