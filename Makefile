@@ -24,10 +24,10 @@ all: build
 submodule_init:
 	git submodule update --init --recursive
 
-build_pulsemodel: submodule_init
+build_pulsemodel:
 	cd percivaltts/external/pulsemodel; make
 
-build: submodule_init build_pulsemodel
+build: build_pulsemodel
 
 describe:
 	@git describe
