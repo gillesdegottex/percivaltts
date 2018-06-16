@@ -1,0 +1,62 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+image: ubuntu:18.04
+
+stages:
+  - test
+
+
+before_script:
+    - echo "Install apt packages..."
+    - apt update -qq
+    # - apt -qq -y install lsb
+    - apt -qq -y install g++
+    - apt -qq -y install cmake
+    - apt -qq -y install sox
+    # - apt -qq -y install pip
+
+    # - lsb_release -a
+    - uname -a
+    - cmake --version
+
+    - if [ ! -d $HOME/miniconda/bin ] ; then
+      echo "Install Miniconda";
+      mkdir -p $HOME/download;
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O $HOME/download/miniconda.sh;
+      bash $HOME/download/miniconda.sh -u -b -p $HOME/miniconda;
+    fi
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - conda update --yes conda
+    - conda install --yes pip
+    - conda info -a
+
+    - echo "Install pip packages..."
+    - pip install codecov
+    - pip install codacy-coverage
+    - pip install defusedxml
+    - pip install bandmat
+    - conda install --yes cython=0.26.1 libffi=3.2.1 libgcc-ng=7.2.0 libstdcxx-ng=7.2.0 numpy=1.12.1 scipy=0.19.1 mako=1.0.6 theano=0.9.0 # TODO Really need mako ?
+    - conda install --yes matplotlib=2.0.2 # Has to be done separately otherwise conda crashes
+    - conda info -a
+
+test:
+  stage: test
+  script:
+
+    # - mkdir -p build_simple
+    # - cd build_simple
+    # - cmake ..
+    # - make
+    - ls -l
+    # - cd ..
+    #
+    # - mkdir -p build_full
+    # - cd build_full
+    # - cmake -DFFTSCARF_BUILD_TEST:BOOL=ON -DFFTSCARF_PLAN_PROTECTACCESS:BOOL=ON -DFFTSCARF_PRECISION_SINGLE:BOOL=ON -DFFTSCARF_PRECISION_DOUBLE:BOOL=ON -DFFTSCARF_PRECISION_LONGDOUBLE:BOOL=ON -DFFTSCARF_PRECISION_DEFAULT=32 -DFFTSCARF_FFT_OOURA:BOOL=ON -DFFTSCARF_FFT_FFTREAL:BOOL=ON -DFFTSCARF_FFT_PFFFT:BOOL=ON -DFFTSCARF_FFT_FFTW3:BOOL=ON -DFFTSCARF_FFT_FFTS:BOOL=ON ..
+    # - make
+    # - ls -l
+    # - cd test
+    # - ctest -V
+    # - cd ..
+    # - cd ..
