@@ -45,7 +45,7 @@ before_script:
 
 test:
   stage: test
-  coverage: '/Code coverage: \d+\.\d+/' # TODO TODO TODO 
+  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
   script:
     - pwd
     - ls -l
