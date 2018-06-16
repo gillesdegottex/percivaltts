@@ -21,11 +21,11 @@ before_script:
     - cmake --version
 
     - if [ ! -d $HOME/miniconda/bin ] ; then
-      echo "Install Miniconda";
-      mkdir -p $HOME/download;
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O $HOME/download/miniconda.sh;
-      bash $HOME/download/miniconda.sh -u -b -p $HOME/miniconda;
-    fi
+            echo "Install Miniconda";
+            mkdir -p $HOME/download;
+            wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O $HOME/download/miniconda.sh;
+            bash $HOME/download/miniconda.sh -u -b -p $HOME/miniconda;
+        fi
     - export PATH="$HOME/miniconda/bin:$PATH"
     - conda update --yes conda
     - conda install --yes pip
