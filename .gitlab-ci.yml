@@ -45,6 +45,7 @@ before_script:
 
 test:
   stage: test
+  coverage: '/Code coverage: \d+\.\d+/' # TODO TODO TODO 
   script:
     - pwd
     - ls -l
