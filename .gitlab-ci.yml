@@ -14,6 +14,7 @@ before_script:
     - apt -qq -y install g++
     - apt -qq -y install cmake
     - apt -qq -y install sox
+    - apt -qq -y install wget
     # - apt -qq -y install pip
 
     # - lsb_release -a
