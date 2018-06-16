@@ -200,6 +200,14 @@ However, when using the GPU and 2D Convolutional layers, the results will differ
 It should be possible to make them repeatable by uncommenting some lines in `setenv.sh` under repeatability section, at the expense of some computational time.
 
 
+### Training optimisation
+
+Even though WGAN is more robust than the original GAN, there are still a few elements to verify to be sure a training went well.
+1) The `discri_training` has to be higher than zero. If it goes negative, it surely means the either the critic or the generator converges too fast.
+2) `model_training_wgan_lse_ratio` is the ratio between the WGAN loss and the LSE loss. If it goes very close to zero, it means the LSE loss is drowning the WGAN loss. In such a case, you  might want to decrease `cfg.train_LScoef` closer to zero.
+3) if `discri_validation` doesn't decrease overall over the end of your training, it might be that you should run your training longer.
+
+
 ### Cloning
 
 Managing multiple experiments in parallel, fixing bugs and try new ideas while keeping track of all the changes this can imply can become quite problematic. In Percival, there is a simple script `clone.sh` that allows you to clone the whole code source and place it in an experiment directory:
