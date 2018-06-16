@@ -45,20 +45,13 @@ before_script:
 test:
   stage: test
   script:
-
-    # - mkdir -p build_simple
-    # - cd build_simple
-    # - cmake ..
-    # - make
+    - pwd
     - ls -l
-    # - cd ..
-    #
-    # - mkdir -p build_full
-    # - cd build_full
-    # - cmake -DFFTSCARF_BUILD_TEST:BOOL=ON -DFFTSCARF_PLAN_PROTECTACCESS:BOOL=ON -DFFTSCARF_PRECISION_SINGLE:BOOL=ON -DFFTSCARF_PRECISION_DOUBLE:BOOL=ON -DFFTSCARF_PRECISION_LONGDOUBLE:BOOL=ON -DFFTSCARF_PRECISION_DEFAULT=32 -DFFTSCARF_FFT_OOURA:BOOL=ON -DFFTSCARF_FFT_FFTREAL:BOOL=ON -DFFTSCARF_FFT_PFFFT:BOOL=ON -DFFTSCARF_FFT_FFTW3:BOOL=ON -DFFTSCARF_FFT_FFTS:BOOL=ON ..
-    # - make
-    # - ls -l
-    # - cd test
-    # - ctest -V
-    # - cd ..
-    # - cd ..
+
+    - make
+    - cd percivaltts
+    - tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
+    - coverage run --source=. --omit="tests/*","external/*" -m tests.test_base
+    - coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke
+    - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke_theano
+    - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_run
