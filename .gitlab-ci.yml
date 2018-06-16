@@ -41,6 +41,8 @@ before_script:
     - pip install defusedxml
     - pip install bandmat
 
+    - python --version
+
 test:
   stage: test
   script:
@@ -54,6 +56,8 @@ test:
     - coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke
     - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke_theano
     - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_run
+
+    - coverage report -m
 
     # - codecov
 
