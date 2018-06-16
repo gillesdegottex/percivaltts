@@ -15,7 +15,7 @@ before_script:
     - apt -qq -y install cmake
     - apt -qq -y install sox
     - apt -qq -y install wget
-    # - apt -qq -y install pip
+    - apt -qq -y install git
 
     # - lsb_release -a
     - uname -a
@@ -29,7 +29,7 @@ before_script:
         fi
     - export PATH="$HOME/miniconda/bin:$PATH"
     - conda update --yes conda
-    - conda install --yes pip
+    - conda install --yes pip # Install pip in conda to ensure versions consistency
     - conda info -a
 
     - echo "Install conda packages..."
