@@ -181,25 +181,25 @@ def print_sysinfo():
     print_log('System information')
     print('  Working directory: '+os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)))
     print('  PATH:')
-    env_PATHs = os.getenv('PATH')
+    env_PATHs = str(os.getenv('PATH'))
     if env_PATHs:
         env_PATHs = env_PATHs.split(':')
         for p in env_PATHs:
             if len(p)>0: print('      '+p)
     print('  CPATH:')
-    env_CPATHs = os.getenv('CPATH')
+    env_CPATHs = str(os.getenv('CPATH'))
     if env_CPATHs:
         env_CPATHs = env_CPATHs.split(':')
         for p in env_CPATHs:
             if len(p)>0: print('      '+p)
     print('  LIBRARY_PATH:')
-    env_LIBRARY_PATHs = os.getenv('LIBRARY_PATH')
+    env_LIBRARY_PATHs = str(os.getenv('LIBRARY_PATH'))
     if env_LIBRARY_PATHs:
         env_LIBRARY_PATHs = env_LIBRARY_PATHs.split(':')
         for p in env_LIBRARY_PATHs:
             if len(p)>0: print('      '+p)
     print('  LD_LIBRARY_PATH:')
-    env_LD_LIBRARY_PATHs = os.getenv('LD_LIBRARY_PATH')
+    env_LD_LIBRARY_PATHs = str(os.getenv('LD_LIBRARY_PATH'))
     if env_LD_LIBRARY_PATHs:
         env_LD_LIBRARY_PATHs = env_LD_LIBRARY_PATHs.split(':')
         for p in env_LD_LIBRARY_PATHs:
@@ -207,7 +207,7 @@ def print_sysinfo():
     print('  Python executable: '+sys.executable)
     print('  Python version: '+sys.version.replace('\n',''))
     print('    PYTHONPATH:')
-    env_PYTHONPATHs = os.getenv('PYTHONPATH')
+    env_PYTHONPATHs = str(os.getenv('PYTHONPATH'))
     if env_PYTHONPATHs:
         env_PYTHONPATHs = env_PYTHONPATHs.split(':')
         for p in env_PYTHONPATHs:
@@ -236,9 +236,9 @@ def print_sysinfo():
             ret = os.system('git {} {} diff > git.diff'.format(diropts[0], diropts[1]))
 
     print('  HOSTNAME: '+socket.getfqdn())
-    print('  USER: '+os.getenv('USER'))
+    print('  USER: '+str(os.getenv('USER')))
     print('  PID: '+str(os.getpid()))
-    PBS_JOBID = os.getenv('PBS_JOBID')
+    PBS_JOBID = str(os.getenv('PBS_JOBID'))
     if PBS_JOBID:
         print('  PBS_JOBID: '+PBS_JOBID)                    # pragma: no cover
 
