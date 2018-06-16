@@ -5,7 +5,6 @@ image: ubuntu:18.04
 
 stages:
     - test
-    - after_success
 
 before_script:
     - echo "Install apt packages..."
@@ -56,11 +55,7 @@ test:
     - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke_theano
     - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_run
 
-after_success:
-    stage: after_success
-    when: on_success
-    script:
-        - codecov
-        - coverage xml
-        - export CODACY_PROJECT_TOKEN=4bb1b6ba55634fc1a149c93c939b2242
-        - python-codacy-coverage -r coverage.xml
+    - codecov
+    - coverage xml
+    - export CODACY_PROJECT_TOKEN=4bb1b6ba55634fc1a149c93c939b2242
+    - python-codacy-coverage -r coverage.xml
