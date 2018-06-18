@@ -159,7 +159,7 @@ class ModelCNN(model.Model):
                 fwd = models_basic.layer_LSTM(layer_f0, self._hiddensize, nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
                 bck = models_basic.layer_LSTM(layer_f0, self._hiddensize, nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.bck')
                 layer_f0 = ll.ConcatLayer((fwd, bck), axis=2, name=layerstr+'.concat')
-                # TODO TODO TODO Replace by CNN ?? It didn't work well, maybe didn't work well with WGAN loss, but f0 is not more on WGAN loss
+                # TODO Replace by CNN ?? It didn't work well, maybe didn't work well with WGAN loss, but f0 is not more on WGAN loss
             layer_f0 = ll.DenseLayer(layer_f0, num_units=vocoder.f0size(), nonlinearity=None, num_leading_axes=2, name='f0_lout_projection')
             layers_toconcat.append(layer_f0)
 
