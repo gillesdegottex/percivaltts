@@ -94,7 +94,7 @@ By default, this post-processing is disabled since WGAN optimisation solves over
 
 First clone the git repository:
 ```
-$ git clone git@github.com:gillesdegottex/percivaltts.git
+$ git clone https://gitlab.com/gillesdegottex/percivaltts.git
 ```
 Then, go into the repository directory and compile the various tools neccessary
 to run Percival:
@@ -223,4 +223,4 @@ The `Makefile` has also all the corresponding commands (clone, run, clone_run_gr
 Gilles Degottex <gad27@cam.ac.uk>
 
 ### Contact
-To raise bug reports, questions, suggestions, etc. please use the [issue managment](https://github.com/gillesdegottex/percivaltts/issues) only.
+To raise bug reports, questions, suggestions, etc. please use the [issue managment](https://gitlab.com/gillesdegottex/dfasma/issues) only.
