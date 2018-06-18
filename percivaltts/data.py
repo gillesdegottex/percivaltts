@@ -32,6 +32,16 @@ import re
 import numpy as np
 numpy_force_random_seed()
 
+def getpath(path):
+    """
+    Split a path into a standard UNIX-style path, discarding any optional 'shape extension' that defines the shape of the data in each file.
+    """
+    matches = re.findall(r'(.*):\((.*)\)', path)
+    if len(matches)>0:
+        path = matches[0][0]
+
+    return path
+
 def getpathandshape(path, shape=None):
     """
     Split a path into a standard UNIX-style path and an optional 'shape extension' that defines the shape of the data in each file.
