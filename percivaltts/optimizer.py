@@ -200,6 +200,7 @@ class Optimizer:
             else:
                 # Standard WGAN, no special mixing with LSE
                 generator_loss = -fake_out.mean()
+                generator_lossratio = abs(wganpart.mean())
 
             critic_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
 
@@ -230,8 +231,7 @@ class Optimizer:
             print('Compiling generator training function...')
             generator_train_fn_ins = [self._model._input_values]
             if cfg.train_LScoef>0.0: generator_train_fn_ins.append(self._target_values)
-            generator_train_fn_outs = [generator_loss]
-            if cfg.train_LScoef>0.0: generator_train_fn_outs.append(generator_lossratio)
+            generator_train_fn_outs = [generator_loss, generator_lossratio]
             train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
             train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
             print('Compiling critic training function...')
@@ -343,7 +343,7 @@ class Optimizer:
                         print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
                         raise ValueError('ERROR: Training cost is nan!')
                     costs_tra_batches.append(cost_tra)
-                    if self._errtype=='WGAN' and cfg.train_LScoef>0: costs_tra_gen_wgan_lse_ratios.append(gen_ratio)
+                    if self._errtype=='WGAN': costs_tra_gen_wgan_lse_ratios.append(gen_ratio)
             print_tty('\r                                                           \r')
             if self._errtype=='WGAN':
                 costs['model_training'].append(0.1*np.mean(costs_tra_batches))
@@ -362,7 +362,6 @@ class Optimizer:
                 costs['critic_training'].append(np.mean(costs_tra_critic_batches))
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
                 critic_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
-                critic_train_validation_fn_args.append(W_vals)
                 costs['critic_validation'].append(data.cost_model_mfn(critic_train_validation_fn, critic_train_validation_fn_args))
                 costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-cfg.train_validation_ltm_winlen:]))
 
