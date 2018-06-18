@@ -29,7 +29,6 @@ Author
 print('')
 
 from percivaltts import *  # Always include this first to setup a few things for percival
-from backend_theano import *
 import data
 import vocoders
 import compose
