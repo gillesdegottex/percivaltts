@@ -33,6 +33,8 @@ import lasagne
 import lasagne.layers as ll
 # lasagne.random.set_rng(np.random)
 
+from external.pulsemodel import sigproc as sp
+
 from backend_theano import *
 
 import vocoders
@@ -116,8 +118,9 @@ class ModelGeneric(model.Model):
         layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
 
         if use_LSweighting: # Using weighted WGAN+LS
-            print('WGAN Weighted LS - Discri - SPEC')
-            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX),  int(LSWGANtransflc*vocoder.specsize()), LSWGANtransc)
+            print('WGAN Weighted LS - Discri - SPEC (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
+            # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.specsize()), LSWGANtranscoef)
+            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX), sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.specsize()), LSWGANtranscoef)
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
             layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 
@@ -135,8 +138,9 @@ class ModelGeneric(model.Model):
             layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
 
             if use_LSweighting: # Using weighted WGAN+LS
-                print('WGAN Weighted LS - Discri - NM')
-                wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  int(LSWGANtransflc*vocoder.noisesize()), LSWGANtransc)
+                print('WGAN Weighted LS - Discri - NM (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
+                # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.noisesize()), LSWGANtranscoef)
+                wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.noisesize()), LSWGANtranscoef)
                 wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
                 layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
 

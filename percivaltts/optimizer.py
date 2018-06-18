@@ -40,8 +40,9 @@ import theano.tensor as T
 import lasagne
 # lasagne.random.set_rng(np.random)
 
-import data
+from external.pulsemodel import sigproc as sp
 
+import data
 
 if th_cuda_available():
     from pygpu.gpuarray import GpuArrayException   # pragma: no cover
@@ -55,8 +56,8 @@ class Optimizer:
 
     _errtype = 'WGAN' # or 'LSE'
     _WGAN_incnoise = True # Include noise in the WGAN loss
-    _LSWGANtransflc = 0.5 # Params hardcoded
-    _LSWGANtransc = 1.0/8.0 # Params hardcoded
+    _LSWGANtransfreqcutoff = 4000 # [Hz] Params hardcoded
+    _LSWGANtranscoef = 1.0/8.0 # Params hardcoded
 
     _target_values = None
     _params_trainable = None
@@ -159,11 +160,12 @@ class Optimizer:
                     wganls_weights_els = []
                     wganls_weights_els.append([0.0]) # For f0
                     specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
-                    wganls_weights_els.append(nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.specsize()), self._LSWGANtransc)) # For spec
+                    # wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
+                    wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
                     if self._model.vocoder.noisesize()>0:
                         if self._WGAN_incnoise:
                             noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
-                            wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)) # For noise
+                            wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
                         else:
                             wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
                     if self._model.vocoder.vuvsize()>0:
