@@ -230,7 +230,7 @@ class Optimizer:
             print('Compiling generator training function...')
             generator_train_fn_ins = [self._model._input_values]
             if cfg.train_LScoef>0.0: generator_train_fn_ins.append(self._target_values)
-            generator_train_fn_outs = generator_loss
+            generator_train_fn_outs = [generator_loss]
             if cfg.train_LScoef>0.0: generator_train_fn_outs.append(generator_lossratio)
             train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
             train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
