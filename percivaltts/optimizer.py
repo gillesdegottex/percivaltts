@@ -133,7 +133,14 @@ class Optimizer:
         nbbatches = int(len(fid_lst_tra)/cfg.train_batch_size)
         print('    using {} batches of {} sentences each'.format(nbbatches, cfg.train_batch_size))
         print('    model #parameters={}'.format(self._model.nbParams()))
-        print('    #parameters/#frame={:.2f}'.format(float(self._model.nbParams())/(nbbatches*cfg.train_batch_size)))
+
+        nbtrainframes = 0
+        for fid in fid_lst_tra:
+            X = data.loadfile(outdir, fid)
+            nbtrainframes += X.shape[0]
+        frameshift = 0.005 # TODO
+        print('    Training set: {} sentences, #frames={} ({})'.format(len(fid_lst_tra), nbtrainframes, time.strftime('%H:%M:%S', time.gmtime((nbtrainframes*frameshift)))))
+        print('    #parameters/#frames={:.2f}'.format(float(self._model.nbParams())/nbtrainframes))
 
         if self._errtype=='WGAN':
             print('Preparing discriminator for WGAN...')
