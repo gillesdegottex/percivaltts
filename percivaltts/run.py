@@ -56,7 +56,7 @@ lab_path = cp+lab_dir+'/*.lab'
 lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/merlin/questions-radio_dnn_416.hed')
 in_size = 416+9
 labbin_path = cp+lab_dir+'_bin'+str(in_size)+'/*.lab'
-cfg.inpath = cp+lab_dir+'_bin'+str(in_size)+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
+cfg.inpath = os.path.dirname(labbin_path)+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
 labs_wpath = cp+lab_dir+'_weights/*.w:(-1,1)' # Ignore silences based on labs
 
 # Output features
@@ -136,10 +136,16 @@ def features_extraction():
     # ... or uncomment these line to extract them file by file.
     # for fid in fids: pfs_map_vocoder(fid)
 
-
     # Create time weights (column vector in [0,1]). The frames at begining or end of
     # each file whose weights are smaller than 0.5 will be ignored by the training
     compose.create_weights_spec(spec_path+':(-1,'+str(vocoder.specsize())+')', fids, feats_wpath)
+
+    # Compose the outputs
+    outpaths = [f0_path, spec_path+':(-1,'+str(vocoder.specsize())+')', noise_path+':(-1,'+str(vocoder.noisesize())+')']
+    normfn = compose.normalise_meanstd
+    if isinstance(vocoder, vocoders.VocoderPML):        normfn=compose.normalise_meanstd_nmnoscale
+    elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)   # pragma: no cover
+    compose.compose(outpaths, fids, cfg.outpath, id_valid_start=cfg.id_valid_start, normfn=normfn, wins=mlpg_wins)
 
 
 def contexts_extraction():
@@ -152,28 +158,17 @@ def contexts_extraction():
 
     compose.create_weights_lab(lab_path, cfg.fileids, labs_wpath, silencesymbol='sil', shift=cfg.vocoder_shift)
 
-
-def composition_normalisation():
-
     # Compose the inputs
     # The input files are binary labels, as they come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
-    compose.compose([labbin_path+':(-1,'+str(in_size)+')'], fids, cfg.inpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[])
-
-    # Compose the outputs
-    outpaths = [f0_path, spec_path+':(-1,'+str(vocoder.specsize())+')', noise_path+':(-1,'+str(vocoder.noisesize())+')']
-    normfn = compose.normalise_meanstd
-    if isinstance(vocoder, vocoders.VocoderPML):        normfn=compose.normalise_meanstd_nmnoscale
-    elif isinstance(vocoder, vocoders.VocoderWORLD):    outpaths.append(vuv_path)   # pragma: no cover
-    compose.compose(outpaths, fids, cfg.outpath, id_valid_start=cfg.id_valid_start, normfn=normfn, wins=mlpg_wins)
+    compose.compose([labbin_path+':(-1,'+str(in_size)+')'], fids, cfg.inpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[], do_finalcheck=True)
 
 
 def build_model():
-    model = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
+    mod = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
-    # model = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
-    # model = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], hiddensize=cfg.model_hiddensize)
 
-    return model
+
+    return mod
 
 
 def training(cont=False):
@@ -206,6 +201,5 @@ def generate(fparams=cfg.fparams_fullset):
 if  __name__ == "__main__" :                                 # pragma: no cover
     features_extraction()
     contexts_extraction()
-    composition_normalisation()
     training(cont='--continue' in sys.argv)
     generate()
