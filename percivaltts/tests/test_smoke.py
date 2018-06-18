@@ -49,7 +49,7 @@ class TestSmoke(unittest.TestCase):
         percivaltts.print_sysinfo()
 
         # percivaltts.print_sysinfo_theano() TODO
-        # percivaltts.log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_discri=[]) TODO
+        # percivaltts.log_plot_costs(costs_tra, costs_val, worst_val, fname, epochs_modelssaved, costs_critic=[]) TODO
         # percivaltts.log_plot_costs(costs, worst_val, fname, epochs_modelssaved) TODO
         # percivaltts.log_plot_samples() TODO
 

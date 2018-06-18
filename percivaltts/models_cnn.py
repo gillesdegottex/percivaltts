@@ -72,7 +72,7 @@ def layer_GatedConv2DLayer(incoming, num_filters, filter_size, stride=(1, 1), pa
     lout = ll.ElemwiseMergeLayer([la, lg], T.mul, cropping=None, name=name+'.mul_merge')
     return lout
 
-def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize, nonlinearity, bn_axes=None, bn_cnn_axes=None, discri=False):
+def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize, nonlinearity, bn_axes=None, bn_cnn_axes=None, critic=False):
 
     layer_ctx = ll.dimshuffle(layer_ctx, [0, 'x', 1, 2], name='ctx.dimshuffle_to_2DCNN')
     for layi in xrange(ctx_nblayers):
@@ -80,7 +80,7 @@ def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize
         layer_ctx = ll.Conv2DLayer(layer_ctx, num_filters=ctx_nbfilters, filter_size=[ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr)
         if not bn_cnn_axes is None: layer_ctx=ll.batch_norm(layer_ctx, axes=bn_cnn_axes)
         # layer_ctx = ll.batch_norm(layer_GatedConv2DLayer(layer_ctx, ctx_nbfilters, [ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-        # if discri: layer_ctx=ll.LocalResponseNormalization2DLayer(layer_ctx) # TODO TODO TODO
+        # if critic: layer_ctx=ll.LocalResponseNormalization2DLayer(layer_ctx) # TODO TODO TODO
     layer_ctx = ll.dimshuffle(layer_ctx, [0, 2, 3, 1], name='ctx.dimshuffle_back')
     layer_ctx = ll.flatten(layer_ctx, outdim=3, name='ctx.flatten')
 
@@ -206,19 +206,19 @@ class ModelCNN(model.Model):
         self.init_finish(layer) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=True):
+    def build_critic(self, critic_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=True):
 
-        layer_discri = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
+        layer_critic = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=critic_input_var, name='input')
 
         winlen = int(0.5*self._windur/0.005)*2+1
 
         layerstoconcats = []
 
         # Amplitude spectrum
-        layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
+        layer = ll.SliceLayer(layer_critic, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
 
         if use_LSweighting: # Using weighted WGAN+LS
-            print('WGAN Weighted LS - Discri - SPEC (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
+            print('WGAN Weighted LS - critic - SPEC (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
             # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.specsize()), LSWGANtranscoef)
             wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX), sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.specsize()), LSWGANtranscoef)
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
@@ -234,11 +234,11 @@ class ModelCNN(model.Model):
         layer_spec = ll.flatten(layer, outdim=3, name='spec_flatten')
         layerstoconcats.append(layer_spec)
 
-        if use_WGAN_incnoisefeature and vocoder.noisesize()>0: # Add noise in discriminator
-            layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
+        if use_WGAN_incnoisefeature and vocoder.noisesize()>0: # Add noise in critic
+            layer = ll.SliceLayer(layer_critic, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
 
             if use_LSweighting: # Using weighted WGAN+LS
-                print('WGAN Weighted LS - Discri - NM (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
+                print('WGAN Weighted LS - critic - NM (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
                 # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.noisesize()), LSWGANtranscoef)
                 wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.noisesize()), LSWGANtranscoef)
                 wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
@@ -255,7 +255,7 @@ class ModelCNN(model.Model):
 
         # Add the contexts
         layer_ctx_input = ll.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=None, bn_cnn_axes=None, discri=True)
+        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=None, bn_cnn_axes=None, critic=True)
         layerstoconcats.append(layer_ctx)
 
         # Concatenate the features analysis with the contexts...
@@ -268,4 +268,4 @@ class ModelCNN(model.Model):
 
         # output layer (linear)
         layer = ll.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
-        return [layer, layer_discri, layer_ctx_input]
+        return [layer, layer_critic, layer_ctx_input]

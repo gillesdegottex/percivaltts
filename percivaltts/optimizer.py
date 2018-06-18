@@ -152,17 +152,17 @@ class Optimizer:
             print('        train_max_nbepochs={}'.format(cfg.train_max_nbepochs))
 
         if self._errtype=='WGAN':
-            print('Preparing discriminator for WGAN...')
-            discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
+            print('Preparing critic for WGAN...')
+            critic_input_var = T.tensor3('critic_input') # Either real data to predict/generate, or, fake data that has been generated
 
-            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransfreqcutoff=self._LSWGANtransfreqcutoff, LSWGANtranscoef=self._LSWGANtranscoef, use_WGAN_incnoisefeature=self._WGAN_incnoisefeature)
+            [critic, layer_critic, layer_cond] = self._model.build_critic(critic_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransfreqcutoff=self._LSWGANtransfreqcutoff, LSWGANtranscoef=self._LSWGANtranscoef, use_WGAN_incnoisefeature=self._WGAN_incnoisefeature)
 
-            # Create expression for passing real data through the discri
-            real_out = lasagne.layers.get_output(discri)
-            # Create expression for passing fake data through the discri
+            # Create expression for passing real data through the critic
+            real_out = lasagne.layers.get_output(critic)
+            # Create expression for passing fake data through the critic
             genout = lasagne.layers.get_output(self._model.net_out)
-            indict = {layer_discri:lasagne.layers.get_output(self._model.net_out), layer_cond:self._model._input_values}
-            fake_out = lasagne.layers.get_output(discri, indict)
+            indict = {layer_critic:lasagne.layers.get_output(self._model.net_out), layer_cond:self._model._input_values}
+            fake_out = lasagne.layers.get_output(critic, indict)
 
             # Create generator's loss expression
             if cfg.train_LScoef>0.0:
@@ -201,27 +201,27 @@ class Optimizer:
                 # Standard WGAN, no special mixing with LSE
                 generator_loss = -fake_out.mean()
 
-            discri_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
+            critic_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
 
             # Improved training for Wasserstein GAN
             epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
-            mixed_X = (epsi * genout) + (1-epsi) * discri_input_var
-            indict = {layer_discri:mixed_X, layer_cond:self._model._input_values}
-            output_D_mixed = lasagne.layers.get_output(discri, inputs=indict)
+            mixed_X = (epsi * genout) + (1-epsi) * critic_input_var
+            indict = {layer_critic:mixed_X, layer_cond:self._model._input_values}
+            output_D_mixed = lasagne.layers.get_output(critic, inputs=indict)
             grad_mixed = T.grad(T.sum(output_D_mixed), mixed_X)
             norm_grad_mixed = T.sqrt(T.sum(T.square(grad_mixed),axis=[1,2]))
             grad_penalty = T.mean(T.square(norm_grad_mixed -1))
-            discri_loss = discri_loss + cfg.train_pg_lambda*grad_penalty
+            critic_loss = critic_loss + cfg.train_pg_lambda*grad_penalty
 
             # Create update expressions for training
-            discri_params = lasagne.layers.get_all_params(discri, trainable=True)
-            discri_updates = lasagne.updates.adam(discri_loss, discri_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
+            critic_params = lasagne.layers.get_all_params(critic, trainable=True)
+            critic_updates = lasagne.updates.adam(critic_loss, critic_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
             print('    Critic architecture')
-            print_network(discri, discri_params)
+            print_network(critic, critic_params)
 
             generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
             generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
-            self._optim_updates.extend([generator_updates, discri_updates])
+            self._optim_updates.extend([generator_updates, critic_updates])
             print('    Generator architecture')
             print_network(self._model.net_out, generator_params)
 
@@ -234,10 +234,10 @@ class Optimizer:
             if cfg.train_LScoef>0.0: generator_train_fn_outs.append(generator_lossratio)
             train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
             train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
-            print('Compiling discriminator training function...')
-            discri_train_fn_ins = [self._model._input_values, discri_input_var, epsi]
-            discri_train_fn = theano.function(discri_train_fn_ins, discri_loss, updates=discri_updates)
-            discri_train_validation_fn = theano.function(discri_train_fn_ins, discri_loss, no_default_updates=True)
+            print('Compiling critic training function...')
+            critic_train_fn_ins = [self._model._input_values, critic_input_var, epsi]
+            critic_train_fn = theano.function(critic_train_fn_ins, critic_loss, updates=critic_updates)
+            critic_train_validation_fn = theano.function(critic_train_fn_ins, critic_loss, no_default_updates=True)
 
         elif self._errtype=='LSE':
             print('    LSE Training')
@@ -287,7 +287,7 @@ class Optimizer:
             cost_tra = None
             costs_tra_batches = []
             costs_tra_gen_wgan_lse_ratios = []
-            costs_tra_discri_batches = []
+            costs_tra_critic_batches = []
             load_times = []
             train_times = []
             for k in xrange(nbbatches):
@@ -312,17 +312,17 @@ class Optimizer:
                 if self._errtype=='WGAN':
 
                     random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
-                    discri_returns = discri_train_fn(X_trab, Y_trab, random_epsilon)        # Train the discrimnator
-                    costs_tra_discri_batches.append(float(discri_returns))
+                    critic_returns = critic_train_fn(X_trab, Y_trab, random_epsilon)        # Train the criticmnator
+                    costs_tra_critic_batches.append(float(critic_returns))
 
-                    # TODO The params below are supposed to ensure the discri is "almost" fully converged
+                    # TODO The params below are supposed to ensure the critic is "almost" fully converged
                     #      when training the generator. How to evaluate this? Is it the case currently?
                     if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded
-                        discri_runs = 10 # TODO Params hardcoded 10
+                        critic_runs = 10 # TODO Params hardcoded 10
                     else:
-                        discri_runs = 5 # TODO Params hardcoded 5
+                        critic_runs = 5 # TODO Params hardcoded 5
                     # martinarjovsky: "- Loss of the critic should never be negative, since outputing 0 would yeald a better loss so this is a huge red flag."
-                    if discri_returns>0 and k%discri_runs==0: # Train only if the estimate of the Wasserstein distance makes sense, and, each N critic iteration
+                    if critic_returns>0 and k%critic_runs==0: # Train only if the estimate of the Wasserstein distance makes sense, and, each N critic iteration
                         # Train the generator
                         trainargs = [X_trab]
                         if cfg.train_LScoef>0.0: trainargs.append(Y_trab)
@@ -359,14 +359,14 @@ class Optimizer:
                 train_validation_fn_args = [X_vals]
                 if cfg.train_LScoef>0.0: train_validation_fn_args.append(Y_vals)
                 costs['model_validation'].append(0.1*data.cost_model_mfn(train_validation_fn, train_validation_fn_args))
-                costs['discri_training'].append(np.mean(costs_tra_discri_batches))
+                costs['critic_training'].append(np.mean(costs_tra_critic_batches))
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
-                discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
-                discri_train_validation_fn_args.append(W_vals)
-                costs['discri_validation'].append(data.cost_model_mfn(discri_train_validation_fn, discri_train_validation_fn_args))
-                costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_validation_ltm_winlen:]))
+                critic_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
+                critic_train_validation_fn_args.append(W_vals)
+                costs['critic_validation'].append(data.cost_model_mfn(critic_train_validation_fn, critic_train_validation_fn_args))
+                costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-cfg.train_validation_ltm_winlen:]))
 
-                cost_val = costs['discri_validation_ltm'][-1]
+                cost_val = costs['critic_validation_ltm'][-1]
             elif self._errtype=='LSE':
                 cost_val = costs['model_rmse_validation'][-1]
 

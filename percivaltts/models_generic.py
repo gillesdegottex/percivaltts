@@ -95,7 +95,7 @@ class ModelGeneric(model.Model):
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-    # WGAN: Discriminant arch. parameters
+    # WGAN: Critic arch. parameters
     #       These are usually symmetrical with the model, but it the model can be very different in the case of a generic model, so make D as in CNN model.
     _ctx_nblayers = 1
     _ctx_nbfilters = 4
@@ -107,19 +107,19 @@ class ModelGeneric(model.Model):
     _windur = 0.025
     _postlayers_nb = 6
 
-    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=True):
+    def build_critic(self, critic_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=True):
 
-        layer_discri = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
+        layer_critic = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=critic_input_var, name='input')
 
         winlen = int(0.5*self._windur/0.005)*2+1
 
         layerstoconcats = []
 
         # Amplitude spectrum
-        layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
+        layer = ll.SliceLayer(layer_critic, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
 
         if use_LSweighting: # Using weighted WGAN+LS
-            print('WGAN Weighted LS - Discri - SPEC (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
+            print('WGAN Weighted LS - critic - SPEC (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
             # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.specsize()), LSWGANtranscoef)
             wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX), sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.specsize()), LSWGANtranscoef)
             wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
@@ -135,11 +135,11 @@ class ModelGeneric(model.Model):
         layer_spec = ll.flatten(layer, outdim=3, name='spec_flatten')
         layerstoconcats.append(layer_spec)
 
-        if use_WGAN_incnoisefeature and vocoder.noisesize()>0: # Add noise in discriminator
-            layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
+        if use_WGAN_incnoisefeature and vocoder.noisesize()>0: # Add noise in critic
+            layer = ll.SliceLayer(layer_critic, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
 
             if use_LSweighting: # Using weighted WGAN+LS
-                print('WGAN Weighted LS - Discri - NM (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
+                print('WGAN Weighted LS - critic - NM (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
                 # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.noisesize()), LSWGANtranscoef)
                 wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.noisesize()), LSWGANtranscoef)
                 wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
@@ -156,7 +156,7 @@ class ModelGeneric(model.Model):
 
         # Add the contexts
         layer_ctx_input = ll.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=None, bn_cnn_axes=None, discri=True)
+        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=None, bn_cnn_axes=None, critic=True)
         layerstoconcats.append(layer_ctx)
 
         # Concatenate the features analysis with the contexts...
@@ -169,4 +169,4 @@ class ModelGeneric(model.Model):
 
         # output layer (linear)
         layer = ll.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
-        return [layer, layer_discri, layer_ctx_input]
+        return [layer, layer_critic, layer_ctx_input]
