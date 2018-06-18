@@ -141,6 +141,15 @@ class Optimizer:
         frameshift = 0.005 # TODO
         print('    Training set: {} sentences, #frames={} ({})'.format(len(fid_lst_tra), nbtrainframes, time.strftime('%H:%M:%S', time.gmtime((nbtrainframes*frameshift)))))
         print('    #parameters/#frames={:.2f}'.format(float(self._model.nbParams())/nbtrainframes))
+        if cfg.train_nbepochs_scalewdata:
+            # During an epoch, the whole data is _not_ seen by the training since cfg.train_batch_lengthmax is limited and smaller to the sentence size.
+            # To compensate for it and make the config below less depedent on the data, the min ans max nbepochs are scaled according to the missing number of frames seen.
+            epochcoef = nbtrainframes/float((cfg.train_batch_lengthmax*len(fid_lst_tra)))
+            print('    scale number of epochs wrt number of frames')
+            cfg.train_min_nbepochs = int(cfg.train_min_nbepochs*epochcoef)
+            cfg.train_max_nbepochs = int(cfg.train_max_nbepochs*epochcoef)
+            print('        train_min_nbepochs={}'.format(cfg.train_min_nbepochs))
+            print('        train_max_nbepochs={}'.format(cfg.train_max_nbepochs))
 
         if self._errtype=='WGAN':
             print('Preparing discriminator for WGAN...')
@@ -448,6 +457,7 @@ class Optimizer:
 
         cfg.train_min_nbepochs = 200
         cfg.train_max_nbepochs = 300
+        cfg.train_nbepochs_scalewdata = True
         cfg.train_cancel_nodecepochs = 50
         cfg.train_cancel_validthresh = 10.0     # Cancel train if valid err is more than N times higher than the initial worst valid err
         cfg.train_batch_size = 5                # [potential hyper-parameter]
