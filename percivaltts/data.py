@@ -261,7 +261,9 @@ def maskify(xs, length=None, lengthmax=None, padtype='randshift'):
         if length>lengthmax: length=lengthmax
 
     xbs = [None]*len(xs)
-    for xi in xrange(len(xs)): xbs[xi] = np.zeros((len(xs[xi]), length, xs[xi][0].shape[1]), dtype='float32')
+    for xi in xrange(len(xs)):
+        featsize = 1 if len(xs[xi][0].shape)==1 else xs[xi][0].shape[1]
+        xbs[xi] = np.zeros((len(xs[xi]), length, featsize), dtype='float32')
     MB = np.zeros((len(xs[0]), length), dtype='float32')
 
     shift = 0
