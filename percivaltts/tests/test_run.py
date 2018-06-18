@@ -41,7 +41,6 @@ class TestRun(unittest.TestCase):
 
         run.features_extraction()
         run.contexts_extraction()
-        run.composition_normalisation()
         run.training(cont=False)
         run.generate('model-last.pkl')
 
