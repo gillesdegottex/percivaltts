@@ -463,7 +463,7 @@ class Optimizer:
         cfg.train_batch_size = 5                # [potential hyper-parameter]
         cfg.train_batch_padtype = 'randshift'   # See load_inoutset(..., maskpadtype)
         cfg.train_batch_cropmode = 'begendbigger'     # 'begend', 'begendbigger', 'all'
-        cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift')
+        cfg.train_batch_length = None           # Duration [frames] of each batch (def. None, i.e. the shortest duration of the batch if using maskpadtype = 'randshift') # TODO Remove for lengthmax
         cfg.train_batch_lengthmax = None        # Maximum duration [frames] of each batch
         cfg.train_nbtrials = 1                  # Just run one training only
         cfg.train_hypers=[]
