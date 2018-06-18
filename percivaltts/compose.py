@@ -426,6 +426,7 @@ def create_weights_lab(labpath, fids, outfilepath, silencesymbol='sil', shift=0.
                 tend   = float(lineels[1])*1e-7
                 # print('{}-{}'.format(tstart, tend))
                 phones = re.findall(r'([^\^]+)\^([^-]+)-([^\+]+)\+([^=]+)=([^@]+)@(.+)', lineels[2])[0]
+                # phones = re.findall(r'([^\~]+)\~([^-]+)-([^\+]+)\+([^=]+)=([^:]+):(.+)', lineels[2])[0]
                 if phones[2]==silencesymbol:
                     weight[int(np.floor(tstart/shift)):int(np.ceil(tend/shift))] = 0.0
 
