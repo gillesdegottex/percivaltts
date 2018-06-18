@@ -105,6 +105,7 @@ class ModelGeneric(model.Model):
     _spec_freqlen = 5
     _noise_freqlen = 5
     _windur = 0.025
+    _postlayers_nb = 6
 
     def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=True):
 
