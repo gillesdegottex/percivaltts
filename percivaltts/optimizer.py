@@ -216,7 +216,7 @@ class Optimizer:
             # Create update expressions for training
             discri_params = lasagne.layers.get_all_params(discri, trainable=True)
             discri_updates = lasagne.updates.adam(discri_loss, discri_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
-            print('    Discriminator architecture')
+            print('    Critic architecture')
             print_network(discri, discri_params)
 
             generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
