@@ -201,7 +201,7 @@ class Optimizer:
                 # Standard WGAN, no special mixing with LSE
                 generator_loss = -fake_out.mean()
 
-            discri_loss = fake_out.mean() - real_out.mean()
+            discri_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
 
             # Improved training for Wasserstein GAN
             epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
