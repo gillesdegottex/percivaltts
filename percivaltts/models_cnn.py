@@ -34,6 +34,9 @@ import lasagne.layers as ll
 from external.pulsemodel import sigproc as sp
 
 from backend_theano import *
+# TODO Should have this import here or before to ensure repeatability?
+from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+
 import model
 import vocoders
 
@@ -86,8 +89,41 @@ def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize
 
     return layer_ctx
 
+
+class UniformNoiseLayer(ll.Layer):
+    """Uniform noise layer.
+    """
+    _size = 100
+    _low  = 0.0
+    _high = 1.0
+
+    def __init__(self, incoming, size, low=0.0, high=1.0, **kwargs):
+        super(UniformNoiseLayer, self).__init__(incoming, **kwargs)
+        self._srng = RandomStreams(np.random.randint(1, 2147462579))
+        self._size = size
+        self._low = low
+        self._high = high
+
+    def get_output_for(self, input, deterministic=False, **kwargs):
+        """
+        Parameters
+        ----------
+        input : tensor
+            output from the previous layer
+        deterministic : bool
+            If true noise is disabled, see notes
+        """
+        shape = tuple([input.shape[0], input.shape[1], self._size])
+        unirnd = self._srng.uniform(shape, low=self._low, high=self._high)
+        return unirnd
+
+    def get_output_shape_for(self, input_shape):
+        return [input_shape[0], input_shape[1], self._size]
+
+
 class ModelCNN(model.Model):
-    def __init__(self, insize, vocoder, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctx_nblayers=1, ctx_nbfilters=2, ctx_winlen=21, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, windur=0.025, bn_axes=None):
+
+    def __init__(self, insize, vocoder, hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, ctx_nblayers=1, ctx_nbfilters=2, ctx_winlen=21, nbcnnlayers=8, nbfilters=16, spec_freqlen=5, noise_freqlen=5, windur=0.025, bn_axes=None, noisesize=100):
         if bn_axes is None: bn_axes=[0,1]
         model.Model.__init__(self, insize, vocoder, hiddensize)
 
@@ -105,7 +141,10 @@ class ModelCNN(model.Model):
 
         layer_ctx_input = ll.InputLayer(shape=(None, None, insize), input_var=self._input_values, name='ctx.input')
 
-        self._layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
+        layer_noise_input = UniformNoiseLayer(layer_ctx_input, noisesize, name='noise.input')
+        layer_ctx_input = ll.ConcatLayer((layer_ctx_input, layer_noise_input), axis=2, name='concat.input') # TODO Put the noise later on
+
+        self._layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=[0,1], bn_cnn_axes=[0,2,3])
 
         layers_toconcat = []
 
