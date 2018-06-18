@@ -76,6 +76,24 @@ def getlastdim(path):
     if size is None: return 1
     else:            return size[-1]
 
+def loadfile(fpath, fbase=None, shape=None):
+    if not fbase is None:
+        fpath = fpath.replace('*',fbase)
+
+    fpath, shape = getpathandshape(fpath, shape)
+
+    if not os.path.isfile(fpath):
+        raise ValueError('{} does not exists'.format(fpath))# pragma: no cover
+
+    X = np.fromfile(fpath, dtype='float32')
+    if not shape is None:
+        X = X.reshape(shape)
+
+    if np.isnan(X).any(): ValueError('ERROR: There are nan in {}'.format(fpath))
+    if np.isinf(X).any(): ValueError('ERROR: There are inf in {}'.format(fpath))
+
+    return X
+
 def load(dirpath, fbases, shape=None, frameshift=0.005, verbose=0, label=''):
     """
     Load data into a list of matrices.
