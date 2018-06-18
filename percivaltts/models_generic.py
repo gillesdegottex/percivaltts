@@ -106,8 +106,8 @@ class ModelGeneric(model.Model):
     _noise_freqlen = 5
     _windur = 0.025
 
-    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, bn_axes=None, use_LSweighting=True, LSWGANtransflc=0.5, LSWGANtransc=1.0/8.0, use_WGAN_incnoise=True, use_bn=False):
-        if bn_axes is None: bn_axes=[0,1]
+    def build_discri(self, discri_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=True):
+
         layer_discri = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=discri_input_var, name='input')
 
         winlen = int(0.5*self._windur/0.005)*2+1
@@ -129,12 +129,12 @@ class ModelGeneric(model.Model):
             layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._spec_freqlen)
             # strides>1 make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
             layer = layer_GatedConv2DLayer(layer, self._nbfilters, [winlen,self._spec_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
-            if use_bn: layer=ll.batch_norm(layer)
+            # layer = ll.LocalResponseNormalization2DLayer(layer) # TODO TODO TODO
         layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='spec_dimshuffle')
         layer_spec = ll.flatten(layer, outdim=3, name='spec_flatten')
         layerstoconcats.append(layer_spec)
 
-        if use_WGAN_incnoise and vocoder.noisesize()>0: # Add noise in discriminator
+        if use_WGAN_incnoisefeature and vocoder.noisesize()>0: # Add noise in discriminator
             layer = ll.SliceLayer(layer_discri, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
 
             if use_LSweighting: # Using weighted WGAN+LS
@@ -148,25 +148,23 @@ class ModelGeneric(model.Model):
             for layi in xrange(np.max((1,int(np.ceil(self._nbcnnlayers/2))))):
                 layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._noise_freqlen)
                 layer = layer_GatedConv2DLayer(layer, self._nbfilters, [winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
-                if use_bn: layer=ll.batch_norm(layer)
+                # layer = ll.LocalResponseNormalization2DLayer(layer) # TODO TODO TODO
             layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
             layer_bndnm = ll.flatten(layer, outdim=3, name='nm_flatten')
             layerstoconcats.append(layer_bndnm)
 
         # Add the contexts
         layer_ctx_input = ll.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-
-        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=bn_axes)
+        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=None, bn_cnn_axes=None, discri=True)
         layerstoconcats.append(layer_ctx)
 
         # Concatenate the features analysis with the contexts...
-        layer = ll.ConcatLayer(layerstoconcats, axis=2, name='ctx_features_concat')
+        layer = ll.ConcatLayer(layerstoconcats, axis=2, name='ctx_features.concat')
 
         # ... and finalize with a common FC network
         for layi in xrange(postlayers_nb):
-            layerstr = 'post_l'+str(1+layi)+'_FC'+str(self._hiddensize)
+            layerstr = 'post.l'+str(1+layi)+'_FC'+str(self._hiddensize)
             layer = ll.DenseLayer(layer, self._hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
-            if use_bn: layer=ll.batch_norm(layer, axes=_bn_axes)
 
         # output layer (linear)
         layer = ll.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
