@@ -53,9 +53,9 @@ else:
 class Optimizer:
 
     # A few hardcoded values
-    _WGAN_incnoisefeature = False # Set it to True to include noise in the WGAN loss
     _LSWGANtransfreqcutoff = 4000 # [Hz] Params hardcoded
     _LSWGANtranscoef = 1.0/8.0 # Params hardcoded
+    _WGAN_incnoisefeature = False # Set it to True to include noise in the WGAN loss
 
     # Variables
     _errtype = 'WGAN' # or 'LSE'
