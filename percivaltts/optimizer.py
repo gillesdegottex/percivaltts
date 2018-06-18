@@ -52,13 +52,14 @@ else:
 
 class Optimizer:
 
-    _model = None # The model whose parameters will be optimised.
-
-    _errtype = 'WGAN' # or 'LSE'
-    _WGAN_incnoise = True # Include noise in the WGAN loss
+    # A few hardcoded values
+    _WGAN_incnoisefeature = False # Set it to True to include noise in the WGAN loss
     _LSWGANtransfreqcutoff = 4000 # [Hz] Params hardcoded
     _LSWGANtranscoef = 1.0/8.0 # Params hardcoded
 
+    # Variables
+    _errtype = 'WGAN' # or 'LSE'
+    _model = None # The model whose parameters will be optimised.
     _target_values = None
     _params_trainable = None
     _optim_updates = []  # The variables of the optimisation algo, for restoring a training that crashed
@@ -138,7 +139,7 @@ class Optimizer:
             print('Preparing discriminator for WGAN...')
             discri_input_var = T.tensor3('discri_input') # Either real data to predict/generate, or, fake data that has been generated
 
-            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransflc=self._LSWGANtransflc, LSWGANtransc=self._LSWGANtransc, use_WGAN_incnoise=self._WGAN_incnoise)
+            [discri, layer_discri, layer_cond] = self._model.build_discri(discri_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransfreqcutoff=self._LSWGANtransfreqcutoff, LSWGANtranscoef=self._LSWGANtranscoef, use_WGAN_incnoisefeature=self._WGAN_incnoisefeature)
 
             # Create expression for passing real data through the discri
             real_out = lasagne.layers.get_output(discri)
@@ -149,43 +150,36 @@ class Optimizer:
 
             # Create generator's loss expression
             if cfg.train_LScoef>0.0:
-                if 0:
-                    # Use Standard WGAN+LS (no special weighting curve in spectral domain)
-                    print('Overall additive LS solution')
-                    generator_loss = -(1.0-cfg.train_LScoef)*fake_out.mean() + cfg.train_LScoef*lasagne.objectives.squared_error(genout, self._target_values).mean()
-                else:
-                    # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
-                    print('WGAN Weighted LS - Generator part')
+                # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
+                print('WGAN Weighted LS - Generator part')
 
-                    wganls_weights_els = []
-                    wganls_weights_els.append([0.0]) # For f0
-                    specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
-                    # wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
-                    wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
-                    if self._model.vocoder.noisesize()>0:
-                        if self._WGAN_incnoise:
-                            noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
-                            wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
-                        else:
-                            wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
-                    if self._model.vocoder.vuvsize()>0:
-                        wganls_weights_els.append([0.0]) # For vuv
-                    wganls_weights_ = np.hstack(wganls_weights_els)
+                wganls_weights_els = []
+                wganls_weights_els.append([0.0]) # For f0
+                specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
+                # wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
+                wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
+                if self._model.vocoder.noisesize()>0:
+                    if self._WGAN_incnoisefeature:
+                        noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
+                        wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
+                    else:
+                        wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
+                if self._model.vocoder.vuvsize()>0:
+                    wganls_weights_els.append([0.0]) # For vuv
+                wganls_weights_ = np.hstack(wganls_weights_els)
 
-                    # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc)))
-                    # wganls_weights_ = np.hstack(([0.0], nonlin_sigmoidparm(specvs,  int(self._LSWGANtransflc*self._model.vocoder.spec_size), self._LSWGANtransc), nonlin_sigmoidparm(noisevs,  int(self._LSWGANtransflc*self._model.vocoder.noisesize()), self._LSWGANtransc), [0.0]))
+                # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
+                wganls_weights_ *= (1.0-cfg.train_LScoef)
 
-                    # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
-                    wganls_weights_ *= (1.0-cfg.train_LScoef)
+                lserr = lasagne.objectives.squared_error(genout, self._target_values)
+                wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
 
-                    lserr = lasagne.objectives.squared_error(genout, self._target_values)
-                    wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
+                wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
+                lsepart = lserr*wganls_weights_ls
 
-                    wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
-                    lsepart = lserr*wganls_weights_ls
+                generator_loss = -wganpart.mean() + lsepart.mean() # A term in [-oo,oo] and one in [0,oo] ... why not, LSE as to be small enough for WGAN to do something.
 
-
-                    generator_loss = -wganpart.mean() + lsepart.mean() # TODO A term in [-oo,oo] and one in [0,oo] .. ?
+                generator_lossratio = abs(wganpart.mean())/abs(lsepart.mean())
 
             else:
                 # Standard WGAN, no special mixing with LSE
@@ -220,7 +214,9 @@ class Optimizer:
             print('Compiling generator training function...')
             generator_train_fn_ins = [self._model._input_values]
             if cfg.train_LScoef>0.0: generator_train_fn_ins.append(self._target_values)
-            train_fn = theano.function(generator_train_fn_ins, generator_loss, updates=generator_updates)
+            generator_train_fn_outs = generator_loss
+            if cfg.train_LScoef>0.0: generator_train_fn_outs.append(generator_lossratio)
+            train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
             train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
             print('Compiling discriminator training function...')
             discri_train_fn_ins = [self._model._input_values, discri_input_var, epsi]
@@ -272,7 +268,9 @@ class Optimizer:
             rndidx = np.arange(int(nbbatches*cfg.train_batch_size))    # Need to restart from ordered state to make the shuffling repeatable after reloading training state, the shuffling will be different anyway
             np.random.shuffle(rndidx)
             rndidxb = np.split(rndidx, nbbatches)
+            cost_tra = None
             costs_tra_batches = []
+            costs_tra_gen_wgan_lse_ratios = []
             costs_tra_discri_batches = []
             load_times = []
             train_times = []
@@ -311,7 +309,7 @@ class Optimizer:
                         # Train the generator
                         trainargs = [X_trab]
                         if cfg.train_LScoef>0.0: trainargs.append(Y_trab)
-                        cost_tra = train_fn(*trainargs)
+                        [cost_tra, gen_ratio] = train_fn(*trainargs)
                         cost_tra = float(cost_tra)
                         generator_updates += 1
 
@@ -321,14 +319,20 @@ class Optimizer:
 
                 train_times.append(time.time()-timetrainstart)
 
-                print_tty('err={:.4f} (iter train: {:.4f}s)                  '.format(cost_tra,train_times[-1]))
-                if np.isnan(cost_tra):                      # pragma: no cover
-                    print_log('    previous costs: {}'.format(costs_tra_batches))
-                    print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
-                    raise ValueError('ERROR: Training cost is nan!')
-                costs_tra_batches.append(cost_tra)
+                if not cost_tra is None:
+                    print_tty('err={:.4f} (iter train: {:.4f}s)                  '.format(cost_tra,train_times[-1]))
+                    if np.isnan(cost_tra):                      # pragma: no cover
+                        print_log('    previous costs: {}'.format(costs_tra_batches))
+                        print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
+                        raise ValueError('ERROR: Training cost is nan!')
+                    costs_tra_batches.append(cost_tra)
+                    if self._errtype=='WGAN' and cfg.train_LScoef>0: costs_tra_gen_wgan_lse_ratios.append(gen_ratio)
             print_tty('\r                                                           \r')
-            costs['model_training'].append(np.mean(costs_tra_batches))
+            if self._errtype=='WGAN':
+                costs['model_training'].append(0.1*np.mean(costs_tra_batches))
+                if cfg.train_LScoef>0: costs['model_training_wgan_lse_ratio'].append(0.1*np.mean(costs_tra_gen_wgan_lse_ratios))
+            else:
+                costs['model_training'].append(np.mean(costs_tra_batches))
 
             # Eval validation cost
             cost_validation_rmse = data.cost_model_prediction_rmse(self._model, [X_vals], Y_vals)
@@ -337,10 +341,11 @@ class Optimizer:
             if self._errtype=='WGAN':
                 train_validation_fn_args = [X_vals]
                 if cfg.train_LScoef>0.0: train_validation_fn_args.append(Y_vals)
-                costs['model_validation'].append(data.cost_model_mfn(train_validation_fn, train_validation_fn_args))
+                costs['model_validation'].append(0.1*data.cost_model_mfn(train_validation_fn, train_validation_fn_args))
                 costs['discri_training'].append(np.mean(costs_tra_discri_batches))
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
                 discri_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
+                discri_train_validation_fn_args.append(W_vals)
                 costs['discri_validation'].append(data.cost_model_mfn(discri_train_validation_fn, discri_train_validation_fn_args))
                 costs['discri_validation_ltm'].append(np.mean(costs['discri_validation'][-cfg.train_validation_ltm_winlen:]))
 
@@ -348,7 +353,7 @@ class Optimizer:
             elif self._errtype=='LSE':
                 cost_val = costs['model_rmse_validation'][-1]
 
-            print_log("    E{} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}% RMSE)  {} MiB GPU {} MiB RAM".format(epoch, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_validation_rmse/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
+            print_log("    E{}/{} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}% RMSE)  {} MiB GPU {} MiB RAM".format(epoch, cfg.train_max_nbepochs, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_validation_rmse/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
             sys.stdout.flush()
 
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
