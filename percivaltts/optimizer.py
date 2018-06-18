@@ -321,6 +321,8 @@ class Optimizer:
                         discri_runs = 10 # TODO Params hardcoded 10
                     else:
                         discri_runs = 5 # TODO Params hardcoded 5
+                    # martinarjovsky: "- Loss of the critic should never be negative, since outputing 0 would yeald a better loss so this is a huge red flag."
+                    if discri_returns>0 and k%discri_runs==0: # Train only if the estimate of the Wasserstein distance makes sense, and, each N critic iteration
                         # Train the generator
                         trainargs = [X_trab]
                         if cfg.train_LScoef>0.0: trainargs.append(Y_trab)
