@@ -200,7 +200,7 @@ class Optimizer:
             else:
                 # Standard WGAN, no special mixing with LSE
                 generator_loss = -fake_out.mean()
-                generator_lossratio = abs(wganpart.mean())
+                generator_lossratio = abs(generator_loss.mean())
 
             critic_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
 
