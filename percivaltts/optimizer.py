@@ -318,10 +318,9 @@ class Optimizer:
                     # TODO The params below are supposed to ensure the discri is "almost" fully converged
                     #      when training the generator. How to evaluate this? Is it the case currently?
                     if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded
-                        discri_runs = 10 # TODO Params hardcoded
+                        discri_runs = 10 # TODO Params hardcoded 10
                     else:
-                        discri_runs = 5 # TODO Params hardcoded
-                    if k%discri_runs==0:
+                        discri_runs = 5 # TODO Params hardcoded 5
                         # Train the generator
                         trainargs = [X_trab]
                         if cfg.train_LScoef>0.0: trainargs.append(Y_trab)
