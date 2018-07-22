@@ -452,7 +452,7 @@ class Optimizer:
         cfg.train_G_adam_beta1 = 0.5            # [potential hyper-parameter]
         cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
         cfg.train_pg_lambda = 10                # [potential hyper-parameter]
-        cfg.train_LScoef = 0.10                 # If >0, mix LSE and WGAN losses (def. 0.10)
+        cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses (def. 0.25)
         cfg.train_validation_ltm_winlen = 20    # Now that I'm using min and max epochs, I could use the actuall D cost and not the ltm(D cost) TODO
 
         cfg.train_min_nbepochs = 200
