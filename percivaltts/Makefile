@@ -19,7 +19,7 @@ FILETORUN=run.py
 SETENVSCRIPT=setenv.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 
-CODEDIR=percivaltts
+CODEDIR=$(shell basename $(shell pwd))
 CMDTORUN=../${CODEDIR}/$(SETENVSCRIPT) python ../${CODEDIR}/${FILETORUN} --continue
 
 # Maintenance targets ----------------------------------------------------------
