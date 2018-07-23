@@ -56,8 +56,8 @@ else
     ssh ${EXPDIR%:*} /bin/mkdir -p ${EXPDIR#*:}/$OUTDIR;
 fi
 
-# Do the actual copy using rsync to avoid re-copying files already copied
-# from any previous cloning.
+# Do the actual copy using rsync to mirror exactely the source directory and
+# avoid re-copying files already copied from any previous cloning.
 # cp -fr $CODESRCDIR $EXPDIR
 rsync -qav $CODESRCDIR/ $EXPDIR/$CODEDIR/ --exclude .git --exclude .git/
 
