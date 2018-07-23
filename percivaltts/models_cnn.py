@@ -78,7 +78,7 @@ def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize
     for layi in xrange(ctx_nblayers):
         layerstr = 'ctx.l'+str(1+layi)+'_CNN{}x{}x{}'.format(ctx_nbfilters,ctx_winlen,1)
         layer_ctx = ll.Conv2DLayer(layer_ctx, num_filters=ctx_nbfilters, filter_size=[ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr)
-        if not bn_cnn_axes is None: layer_ctx=ll.batch_norm(layer_ctx, axes=bn_cnn_axes)
+        if not critic and (not bn_cnn_axes is None): layer_ctx=ll.batch_norm(layer_ctx, axes=bn_cnn_axes)
         # layer_ctx = ll.batch_norm(layer_GatedConv2DLayer(layer_ctx, ctx_nbfilters, [ctx_winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
         if critic and useLRN: layer_ctx=ll.LocalResponseNormalization2DLayer(layer_ctx)
     layer_ctx = ll.dimshuffle(layer_ctx, [0, 2, 3, 1], name='ctx.dimshuffle_back')
@@ -87,7 +87,7 @@ def layer_context(layer_ctx, ctx_nblayers, ctx_nbfilters, ctx_winlen, hiddensize
     for layi in xrange(2):
         layerstr = 'ctx.l'+str(1+ctx_nblayers+layi)+'_FC{}'.format(hiddensize)
         layer_ctx = ll.DenseLayer(layer_ctx, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
-        if not bn_axes is None: layer_ctx=ll.batch_norm(layer_ctx, axes=bn_axes)
+        if  not critic and (not bn_axes is None): layer_ctx=ll.batch_norm(layer_ctx, axes=bn_axes)
 
     return layer_ctx
 
