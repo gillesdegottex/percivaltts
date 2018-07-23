@@ -367,10 +367,10 @@ def log_plot_samples(Y_vals, Y_preds, nbsamples, fname, vocoder, title=''):
         NM_val = Y_vals[sidx][:,1+vocoder.spec_size:]
         NM_pred = Y_preds[sidx][:,1+vocoder.spec_size:]
         plt.subplot(5,nbsamples,3*nbsamples+1+sidx)
-        plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)
+        plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='gray', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)  # TODO grey ?
         plt.axis('off')
         plt.subplot(5,nbsamples,4*nbsamples+1+sidx)
-        plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)
+        plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='gray', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)
         plt.axis('off')
 
     if not title is None: plt.suptitle(title)
