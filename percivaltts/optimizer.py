@@ -144,6 +144,7 @@ class Optimizer:
         if cfg.train_nbepochs_scalewdata and not cfg.train_batch_lengthmax is None:
             # During an epoch, the whole data is _not_ seen by the training since cfg.train_batch_lengthmax is limited and smaller to the sentence size.
             # To compensate for it and make the config below less depedent on the data, the min ans max nbepochs are scaled according to the missing number of frames seen.
+            # TODO Should consider only non-silent frames, many recordings have a lot of pre and post silences
             epochcoef = nbtrainframes/float((cfg.train_batch_lengthmax*len(fid_lst_tra)))
             print('    scale number of epochs wrt number of frames')
             cfg.train_min_nbepochs = int(cfg.train_min_nbepochs*epochcoef)
