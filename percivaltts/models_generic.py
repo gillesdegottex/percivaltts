@@ -109,7 +109,7 @@ class ModelGeneric(model.Model):
 
     def build_critic(self, critic_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=False):
 
-        useLRN = False # TODO TODO TODO
+        useLRN = False # TODO
 
         layer_critic = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=critic_input_var, name='input')
 

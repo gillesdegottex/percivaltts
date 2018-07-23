@@ -322,7 +322,7 @@ class Optimizer:
                         critic_runs = 5 # TODO Params hardcoded 5
                     # martinarjovsky: "- Loss of the critic should never be negative, since outputing 0 would yeald a better loss so this is a huge red flag."
                     # if critic_returns>0 and k%critic_runs==0: # Train only if the estimate of the Wasserstein distance makes sense, and, each N critic iteration TODO Doesn't work well though
-                    if k%critic_runs==0: # Train only if the estimate of the Wasserstein distance makes sense, and, each N critic iteration # TODO TODO TODO
+                    if k%critic_runs==0: # Train each N critic iteration
                         # Train the generator
                         trainargs = [X_trab]
                         trainargs.append(Y_trab)
