@@ -231,7 +231,7 @@ class Optimizer:
             # to the updates dictionary) and returning the corresponding score:
             print('Compiling generator training function...')
             generator_train_fn_ins = [self._model._input_values]
-            if cfg.train_LScoef>0.0: generator_train_fn_ins.append(self._target_values)
+            generator_train_fn_ins.append(self._target_values)
             generator_train_fn_outs = [generator_loss, generator_lossratio]
             train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
             train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
@@ -327,10 +327,12 @@ class Optimizer:
                     if k%critic_runs==0: # Train only if the estimate of the Wasserstein distance makes sense, and, each N critic iteration # TODO TODO TODO
                         # Train the generator
                         trainargs = [X_trab]
-                        if cfg.train_LScoef>0.0: trainargs.append(Y_trab)
+                        trainargs.append(Y_trab)
                         [cost_tra, gen_ratio] = train_fn(*trainargs)
                         cost_tra = float(cost_tra)
                         generator_updates += 1
+
+                        if 0: log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+'{:07}.png'.format(generator_updates), vocoder=self._model.vocoder, title='E{} I{}'.format(epoch,generator_updates))
 
                 elif self._errtype=='LSE':
                     train_returns = train_fn(X_trab, Y_trab)
@@ -359,7 +361,7 @@ class Optimizer:
 
             if self._errtype=='WGAN':
                 train_validation_fn_args = [X_vals]
-                if cfg.train_LScoef>0.0: train_validation_fn_args.append(Y_vals)
+                train_validation_fn_args.append(Y_vals)
                 costs['model_validation'].append(0.1*data.cost_model_mfn(train_validation_fn, train_validation_fn_args))
                 costs['critic_training'].append(np.mean(costs_tra_critic_batches))
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
