@@ -263,7 +263,7 @@ class Optimizer:
         nbnodecepochs = 0
         generator_updates = 0
         epochstart = 1
-        if cont:
+        if cont and os.path.exists(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl'):
             print('    reloading previous training state ...')
             savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg)
             np.random.set_state(rngstate)
