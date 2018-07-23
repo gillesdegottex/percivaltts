@@ -166,7 +166,9 @@ def contexts_extraction():
 def build_model():
     mod = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
-
+    # mod = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
+    # mod = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], hiddensize=cfg.model_hiddensize)
+    # mod = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=[['CNN',cfg.model_ctx_nbfilters,cfg.model_ctx_winlen], 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
 
     return mod
 
