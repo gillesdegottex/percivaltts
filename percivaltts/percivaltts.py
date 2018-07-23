@@ -264,7 +264,7 @@ def nvidia_smi_current_gpu():                               # pragma: no cover
             for proc in gpu.find('processes').findall('process_info'):
                 if int(proc.find('pid').text) == os.getpid():
                     return int(gpu.find('minor_number').text)
-    except OSError:
+    except:
         return -1
     return -1
 
@@ -288,7 +288,7 @@ def nvidia_smi_gpu_memused():                               # pragma: no cover
             for proc in gpu.find('processes').findall('process_info'):
                 if int(proc.find('pid').text) == os.getpid():
                     return int(proc.find('used_memory').text.split(' ')[0])
-    except OSError:
+    except:
         return -1
     return -1
 
