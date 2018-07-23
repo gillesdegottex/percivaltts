@@ -166,42 +166,40 @@ class Optimizer:
             fake_out = lasagne.layers.get_output(critic, indict)
 
             # Create generator's loss expression
-            if cfg.train_LScoef>0.0:
-                # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
-                print('WGAN Weighted LS - Generator part')
+            # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
+            print('WGAN Weighted LS - Generator part')
 
-                wganls_weights_els = []
-                wganls_weights_els.append([0.0]) # For f0
-                specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
-                # wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
-                wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
-                if self._model.vocoder.noisesize()>0:
-                    if self._WGAN_incnoisefeature:
-                        noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
-                        wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
-                    else:
-                        wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
-                if self._model.vocoder.vuvsize()>0:
-                    wganls_weights_els.append([0.0]) # For vuv
-                wganls_weights_ = np.hstack(wganls_weights_els)
-
-                # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
-                wganls_weights_ *= (1.0-cfg.train_LScoef)
-
-                lserr = lasagne.objectives.squared_error(genout, self._target_values)
-                wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
-
-                wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
-                lsepart = lserr*wganls_weights_ls
-
-                generator_loss = -wganpart.mean() + lsepart.mean() # A term in [-oo,oo] and one in [0,oo] ... why not, LSE as to be small enough for WGAN to do something.
-
-                generator_lossratio = abs(wganpart.mean())/abs(lsepart.mean())
-
+            wganls_weights_els = []
+            wganls_weights_els.append([0.0]) # For f0
+            specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
+            if cfg.train_LScoef==0.0:
+                wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
             else:
-                # Standard WGAN, no special mixing with LSE
-                generator_loss = -fake_out.mean()
-                generator_lossratio = abs(generator_loss.mean())
+                wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
+            if self._model.vocoder.noisesize()>0:
+                if self._WGAN_incnoisefeature:
+                    noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
+                    wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
+                else:
+                    wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
+            if self._model.vocoder.vuvsize()>0:
+                wganls_weights_els.append([0.0]) # For vuv
+            wganls_weights_ = np.hstack(wganls_weights_els)
+
+            # TODO build wganls_weights_ for LSE instead for WGAN, for consistency with the paper
+
+            # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
+            wganls_weights_ *= (1.0-cfg.train_LScoef)
+
+            lserr = lasagne.objectives.squared_error(genout, self._target_values)
+            wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
+
+            wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
+            lsepart = lserr*wganls_weights_ls             # Spectral weighting as complement of the WGAN part spectral weighting
+
+            generator_loss = -wganpart.mean() + lsepart.mean() # A term in [-oo,oo] and one in [0,oo] ... why not, LSE as to be small enough for WGAN to do something.
+
+            generator_lossratio = abs(wganpart.mean())/abs(lsepart.mean())
 
             critic_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
 
