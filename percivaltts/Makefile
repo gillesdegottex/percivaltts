@@ -20,7 +20,7 @@ SETENVSCRIPT=setenv.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 
 CODEDIR=percivaltts
-CMDTORUN=../${CODEDIR}/"$(SETENVSCRIPT)" python ../${CODEDIR}/${FILETORUN}
+CMDTORUN=../${CODEDIR}/$(SETENVSCRIPT) python ../${CODEDIR}/${FILETORUN} --continue
 
 # Maintenance targets ----------------------------------------------------------
 
@@ -39,14 +39,8 @@ clean: tests_clean
 run:
 	mkdir -p ../out; cd ../out; bash ${CMDTORUN}
 
-run_continue:
-	cd ../out; bash ${CMDTORUN} --continue
-
 run_grid:
 	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ${CMDTORUN}
-
-run_grid_continue:
-	cd ../out; "$(QSUBCMD)" ${CMDTORUN} --continue
 
 clone:
 	@test "$(DEST)"
