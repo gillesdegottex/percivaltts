@@ -36,15 +36,15 @@
 # The root experiment directory where CODEDIR and OUTDIR will appear.
 EXPDIR=$1
 
-# This two variables are hard coded because all the arguments after $1 is
-# the command to run.
-CODEDIR=percivaltts
+# The directory name where the content of the current directory will be cloned.
+CODEDIR=$(basename $(pwd))
+# The output directory of the experiment
+# (his variables is hard coded bcs arguments after $1 are the command to run)
 OUTDIR=out
 
-# The source code is where clone.sh is. Hack CODESRCDIR if you want otherwise.
-CODESRCDIR=$(dirname "$0")              # relative
-CODESRCDIR=$( ( cd "$CODESRCDIR" && pwd ) )
-echo -n Cloning \"$CODESRCDIR\" in \"$EXPDIR\"
+# The source code is the current directory. Hack CODESRCDIR if you want otherwise.
+CODESRCDIR=$(pwd)
+echo -n Cloning \"$CODESRCDIR\" in \"$EXPDIR/$CODEDIR\"
 
 # Create the destination directory
 if [[ $EXPDIR = '/'* ]] ; then
