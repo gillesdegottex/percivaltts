@@ -166,6 +166,7 @@ class ModelCNN(model.Model):
         if vocoder.specsize()>0:
             # Amplitude spectrum - 2D Gated Conv layers
             layer_spec_proj = ll.batch_norm(ll.DenseLayer(self._layer_ctx, vocoder.specsize(), nonlinearity=nonlinearity, num_leading_axes=2, name='spec_projection'), axes=bn_axes)
+            # layer_spec_proj = ll.DenseLayer(self._layer_ctx, vocoder.specsize(), nonlinearity=None, num_leading_axes=2, name='spec_projection')
             layer_spec = ll.dimshuffle(layer_spec_proj, [0, 'x', 1, 2], name='spec_dimshuffle')
             for layi in xrange(nbcnnlayers):
                 layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._spec_freqlen)
@@ -173,6 +174,7 @@ class ModelCNN(model.Model):
             layer_spec = ll.Conv2DLayer(layer_spec, 1, [winlen,self._spec_freqlen], pad='same', nonlinearity=None, name='spec_lout_2DC')
             layer_spec = ll.dimshuffle(layer_spec, [0, 2, 3, 1], name='spec_dimshuffle')
             layer_spec = ll.flatten(layer_spec, outdim=3, name='spec_flatten')
+            # layer_spec = ll.ElemwiseSumLayer([layer_spec, layer_spec_proj], name='skip')
             layers_toconcat.append(layer_spec)
 
         if vocoder.noisesize()>0:
