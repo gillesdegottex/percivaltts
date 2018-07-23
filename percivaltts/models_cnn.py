@@ -178,17 +178,14 @@ class ModelCNN(model.Model):
             layers_toconcat.append(layer_spec)
 
         if vocoder.noisesize()>0:
-            # Noise mask - 2D Gated Conv layers
-            layer_noise = ll.batch_norm(ll.DenseLayer(self._layer_ctx, vocoder.noisesize(), nonlinearity=nonlinearity, num_leading_axes=2, name='nm_projection'), axes=bn_axes)
-            layer_noise = ll.dimshuffle(layer_noise, [0, 'x', 1, 2], name='nm_dimshuffle')
+            layer_noise = self._layer_ctx
             for layi in xrange(np.max((1,int(np.ceil(nbcnnlayers/2))))):
-                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._noise_freqlen)
-                layer_noise = ll.batch_norm(layer_GatedConv2DLayer(layer_noise, self._nbfilters, [winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr))
-            noise_nonlinearity = None
-            if isinstance(vocoder, vocoders.VocoderPML): nonlinearity=nonlin_saturatedsigmoid # Force the output in [-0.005,1.005] lasagne.nonlinearities.sigmoid
-            layer_noise = ll.Conv2DLayer(layer_noise, 1, [winlen,self._noise_freqlen], pad='same', nonlinearity=noise_nonlinearity, name='nm_lout_2DC')
-            layer_noise = ll.dimshuffle(layer_noise, [0, 2, 3, 1], name='nm_dimshuffle')
-            layer_noise = ll.flatten(layer_noise, outdim=3, name='nm_flatten')
+                layerstr = 'noise_l'+str(1+layi)+'_FC{}'.format(hiddensize)
+                layer_noise = ll.DenseLayer(layer_noise, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
+            if isinstance(vocoder, vocoders.VocoderPML):
+                layer_noise = ll.DenseLayer(layer_noise, num_units=vocoder.nm_size, nonlinearity=lasagne.nonlinearities.sigmoid, num_leading_axes=2, name='lo_noise') # sig is best among nonlin_saturatedsigmoid nonlin_tanh_saturated nonlin_tanh_bysigmoid
+            else:
+                layer_noise = ll.DenseLayer(layer_noise, num_units=vocoder.nm_size, nonlinearity=None, num_leading_axes=2, name='lo_noise')
             layers_toconcat.append(layer_noise)
 
         if vocoder.vuvsize()>0:
