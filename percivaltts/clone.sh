@@ -87,7 +87,7 @@ if [[ "${@:2}" ]]; then
         # Go into the output directory
         cd $EXPDIR/$OUTDIR
 
-# Keep it unindented to avoid undesired empty spaces before the command.
+# (keep it unindented to avoid undesired empty spaces before the command)
 # ${@:2} > log 2>&1
 ${@:2}
 
