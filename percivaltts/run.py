@@ -195,7 +195,7 @@ def generate(fparams=cfg.fparams_fullset):
     mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=pp_mcep)
 
     # And generate all of them for listening tests
-    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', cfg, vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=False, pp_mcep=pp_mcep)
+    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=pp_mcep)
 
 
 if  __name__ == "__main__" :                                 # pragma: no cover
