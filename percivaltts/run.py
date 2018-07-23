@@ -1,7 +1,7 @@
 '''
 This script coordinates the overall pipeline execution:
 * Feature extraction
-* Data composition/preparation (e.g. output composition, normalisation)
+* Context label extraction
 * Training
 * Generation
 If you want to skip a step: comment the lines concerned at the very end.
