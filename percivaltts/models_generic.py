@@ -95,7 +95,7 @@ class ModelGeneric(model.Model):
         self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
 
 
-    # WGAN: Critic arch. parameters
+    # WGAN: Critic arch. parameters TODO Use cfg's
     #       These are usually symmetrical with the model, but it the model can be very different in the case of a generic model, so make D as in CNN model.
     _ctx_nblayers = 1
     _ctx_nbfilters = 4
