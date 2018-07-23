@@ -55,13 +55,15 @@ clone_run_grid:
 	./clone.sh "$(DEST)" "$(QSUBCMD)" ${CMDTORUN}
 
 # Run in background
-run_bck:
+run_back:
 	mkdir -p ../out; cd ../out; nohup ${CMDTORUN} </dev/null >> bck.log 2>&1 &
 
 # Clone on given path and run in background
-# TODO This works only with ssh cloning (i.e. by specifying a hostname before the path) for obscure nohup-bash-arguments reasons.
-clone_run_bck:
+# TODO This works only with ssh cloning (i.e. by specifying a hostname before
+# the path) for obscure nohup-bash-arguments reasons.
+clone_run_back:
 	./clone.sh "$(DEST)" 'nohup ${CMDTORUN} </dev/null >> bck.log 2>&1 &'
+
 
 # Testing ----------------------------------------------------------------------
 
