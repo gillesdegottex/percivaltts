@@ -124,10 +124,13 @@ def normalise_meanstd(filepath, fids, outfilepath=None, featurepaths=None, keepi
 
 def normalise_meanstd_nmnoscale(filepath, fids, outfilepath=None, featurepaths=None, keepidx=None, verbose=1):
     """
-    Normalisation function for compose.compose(.): Normalise mean and standard-deviation values to 0 and 1, respectively, except last feature (likely Noise Mask (NM)), which is not normalised (keept in [0,1] if NM values).
+    Normalisation function for compose.compose(.): Normalise mean and
+    standard-deviation values to 0 and 1, respectively, except the 3rd feature
+    (e.g. the Noise Mask (NM) for PML vocoder), which is not normalised
+    (kept in [0,1]).
     """
 
-    print('Normalise data using mean and standard-deviation (in={}, out={})'.format(filepath,outfilepath))
+    print('Normalise data using mean and standard-deviation (in={}, out={}) (without normalising the 3rd feature)'.format(filepath,outfilepath))
     if outfilepath is None:
         outfilepath=filepath
         print('Overwrite files in {}'.format(filepath))
@@ -143,9 +146,9 @@ def normalise_meanstd_nmnoscale(filepath, fids, outfilepath=None, featurepaths=N
         specsize = data.getlastdim(featurepaths[1])
         nmsize = data.getlastdim(featurepaths[2])
         outsizeori = f0size+specsize+nmsize
-        print('sizes f0:{} spec:{} noise:{}'.format(f0size, specsize, nmsize))
+        print('    sizes f0:{} spec:{} noise:{}'.format(f0size, specsize, nmsize))
 
-        # Hack the moments for bndnm to avoid any normalisation
+        # Hack the moments for the 3rd feature to avoid any normalisation
         means[f0size+specsize:f0size+specsize+nmsize] = 0.0
         stds[f0size+specsize:f0size+specsize+nmsize] = 1.0
 
@@ -180,17 +183,20 @@ def normalise_meanstd_nmnoscale(filepath, fids, outfilepath=None, featurepaths=N
 
 def compose(featurepaths, fids, outfilepath, wins=None, id_valid_start=-1, normfn=None, shift=0.005, dropzerovardims=False, do_finalcheck=False, verbose=1):
     """
-    For each file indices in fileidspath, compose a set of features (can be input or output data) into a single file and normalise if according to statistics and normfn.
+    For each file index in fids, compose a set of features (can be input or
+    output data) into a single file and normalise it according to statistics and
+    normfn.
 
-    The outfilepath will be populated by the composed/normlised files, and, by statistics files that can be used for de-composition.
+    The outfilepath will be populated by the composed/normlised files, and,
+    by statistics files that can be used for de-composition.
 
     Parameters
     ----------
-    featurepaths : path of features to concatenate for each file
-    fids : file IDs
-    outfilepath : outputpath of the resulted composition and normalisation.
-    wins : list of numpy arrays
-        E.g. values in Merlin are wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
+    featurepaths :  path of features to concatenate for each file
+    fids :          file IDs
+    outfilepath :   outputpath of the resulted composition and normalisation.
+    wins :          list of numpy arrays
+                    E.g. values in Merlin are wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
     """
     print('Compose data (id_valid_start={})'.format(id_valid_start))
 
@@ -355,9 +361,10 @@ def compose(featurepaths, fids, outfilepath, wins=None, id_valid_start=-1, normf
 def create_weights_spec(specfeaturepath, fids, outfilepath, thresh=-32, dftlen=4096, spec_type='fwlspec'):
     """
     This function creates a one-column vector with one weight value per frame.
-    By default, in this implementation, the weight is computed as a silence
-    coefficient. During training, silent segments will be dropped (i.e. dropped
-    if weight<0.5), if present at the very begining or very end of the sample.
+    This weight is computed as a silence coefficient. During training, silent
+    segments will be dropped (i.e. dropped if weight<0.5), if present at the
+    very begining or very end of the sample (or optionnaly within a sentence if
+    the silence is particularly long).
 
     thresh : [dB] The weight of the frames whose energy < threshold are set
              weight = 0, and 1 otherwise.
@@ -382,12 +389,14 @@ def create_weights_spec(specfeaturepath, fids, outfilepath, thresh=-32, dftlen=4
         elif spec_type=='mcep':
             Ymcep = np.fromfile(infilepath, dtype='float32')
             Ymcep = Ymcep.reshape(shape)
-            ener = mag2db(np.exp(Ymcep[:,0]))    # Just extract the first coef
+            ener = mag2db(np.exp(Ymcep[:,0]))    # Just need the first coef
         elif spec_type=='fwcep':
             Ymcep = np.fromfile(infilepath, dtype='float32')
             Ymcep = Ymcep.reshape(shape)
-            ener = mag2db(np.exp(Ymcep[:,0]))    # Just extract the first coef
+            ener = mag2db(np.exp(Ymcep[:,0]))    # Just need the first coef
 
+        # Normalise by the strongest value
+        # That might not be very reliable if the estimated spec env is very noisy.
         ener -= np.max(ener)
 
         weight = ener.copy()
@@ -405,7 +414,15 @@ def create_weights_spec(specfeaturepath, fids, outfilepath, thresh=-32, dftlen=4
 
     print_tty('\r                                                           \r')
 
-def create_weights_lab(labpath, fids, outfilepath, silencesymbol='sil', shift=0.005):
+def create_weights_lab(labpath, fids, outfilepath, lineheadregexp=r'([^\^]+)\^([^-]+)-([^\+]+)\+([^=]+)=([^@]+)@(.+)', silencesymbol='sil', shift=0.005):
+    """
+    This function creates a one-column vector with one weight value per frame.
+    This weight is created based on the silence symbol that is at the head of
+    each lab line.
+
+    Some lab file formats uses: r'([^\~]+)\~([^-]+)-([^\+]+)\+([^=]+)=([^:]+):(.+)'
+    """
+
     makedirs(os.path.dirname(outfilepath))
 
     outfilepath, _ = data.getpathandshape(outfilepath)
@@ -425,8 +442,7 @@ def create_weights_lab(labpath, fids, outfilepath, silencesymbol='sil', shift=0.
                 tstart = float(lineels[0])*1e-7
                 tend   = float(lineels[1])*1e-7
                 # print('{}-{}'.format(tstart, tend))
-                phones = re.findall(r'([^\^]+)\^([^-]+)-([^\+]+)\+([^=]+)=([^@]+)@(.+)', lineels[2])[0]
-                # phones = re.findall(r'([^\~]+)\~([^-]+)-([^\+]+)\+([^=]+)=([^:]+):(.+)', lineels[2])[0]
+                phones = re.findall(lineheadregexp, lineels[2])[0]
                 if phones[2]==silencesymbol:
                     weight[int(np.floor(tstart/shift)):int(np.ceil(tend/shift))] = 0.0
 

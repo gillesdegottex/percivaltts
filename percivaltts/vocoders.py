@@ -1,5 +1,6 @@
 '''
-Vocoder classes (backend independent)
+Vocoder classes.
+This is fully independent on the machine learning toolbox used.
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
@@ -90,7 +91,7 @@ class Vocoder:
     def name(self): return self._name
 
     def featuressize(self):
-        raise ValueError('This member function needs to be re-implemented in the sub-classes')           # pragma: no cover
+        raise ValueError('This member function has to be re-implemented in the sub-classes')           # pragma: no cover
     def f0size(self): return -1
     def specsize(self): return -1
     def noisesize(self): return -1
