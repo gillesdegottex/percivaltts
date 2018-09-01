@@ -65,7 +65,7 @@ cfg.vocoder_f0_min, cfg.vocoder_f0_max = 70, 600
 vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _nm_size=33)
 # vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
-use_WGAN = True # Switch it to False and it will turn Merling's post-processing on (see below)
+use_WGAN = True # Switch it to False and it will also turn Merlin's post-processing on (see below)
 
 do_mlpg = False # Switch it to True and deltas will be added in the input and the MLPG will be used during generation.
 pp_mcep = not use_WGAN # Set to True to apply Merlin's post-processing to enhance formants. You need mcep command line from SPTK.
@@ -93,7 +93,7 @@ cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
 
 # Model architecture options
 cfg.model_ctx_nblayers = 1
-cfg.model_ctx_nbfilters = 4     # 4 seems enough
+cfg.model_ctx_nbfilters = 4     # 4 seems enough, more adds noise
 cfg.model_ctx_winlen = 21       # Too big (>41,200ms) seems to bring noise in the synth (might lack data)
 cfg.model_hiddensize = 256      # For all arch 256
 cfg.model_nbcnnlayers = 8       # CNN only 8
