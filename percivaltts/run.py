@@ -68,7 +68,6 @@ vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129,
 use_WGAN = True # Switch it to False and it will also turn Merlin's post-processing on (see below)
 
 do_mlpg = False # Switch it to True and deltas will be added in the input and the MLPG will be used during generation.
-pp_mcep = not use_WGAN # Set to True to apply Merlin's post-processing to enhance formants. You need mcep command line from SPTK.
 
 mlpg_wins = []
 if do_mlpg: mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
@@ -193,10 +192,12 @@ def generate(fparams=cfg.fparams_fullset):
     fid_lst_test = fids[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
 
     demostart = cfg.id_test_demostart if hasattr(cfg, 'id_test_demostart') else 0
-    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=pp_mcep)
+    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=False)
+    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-pp-snd', vocoder, wins=mlpg_wins, do_objmeas=False, do_resynth=False, pp_mcep=True)
 
     # And generate all of them for listening tests
-    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=pp_mcep)
+    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=False)
+    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-pp-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=True)
 
 
 if  __name__ == "__main__" :                                 # pragma: no cover
