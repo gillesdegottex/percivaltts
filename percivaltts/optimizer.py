@@ -26,6 +26,7 @@ import sys
 import os
 import copy
 import time
+from functools import partial
 
 import cPickle
 from collections import defaultdict
@@ -33,21 +34,48 @@ from collections import defaultdict
 import numpy as np
 numpy_force_random_seed()
 
-from backend_theano import *
-import theano
-import theano.tensor as T
-
-import lasagne
-# lasagne.random.set_rng(np.random)
+from backend_tensorflow import *
+from tensorflow import keras
+import tensorflow.keras.backend as K
 
 from external.pulsemodel import sigproc as sp
 
 import data
 
-if th_cuda_available():
+if tf_cuda_available():
     from pygpu.gpuarray import GpuArrayException   # pragma: no cover
 else:
     class GpuArrayException(Exception): pass       # declare a dummy one if pygpu is not loaded
+
+
+class RandomWeightedAverage(keras.layers.merge._Merge):
+    batchsize = None
+    def __init__(self, batchsize):
+        keras.layers.merge._Merge.__init__(self)
+        self.batchsize = batchsize
+    def _merge_function(self, inputs):
+        weights = keras.backend.random_uniform((tf.shape(inputs[0])[0], 1, 1))
+        return (weights * inputs[0]) + ((1 - weights) * inputs[1])
+
+def gradient_penalty_loss(y_true, y_pred, averaged_samples):
+    """
+    Computes gradient penalty based on prediction and weighted real / fake samples
+    """
+    gradients = K.gradients(y_pred, averaged_samples)[0]
+    # compute the euclidean norm by squaring ...
+    gradients_sqr = K.square(gradients)
+    #   ... summing over the rows ...
+    gradients_sqr_sum = K.sum(gradients_sqr,
+                              axis=np.arange(1, len(gradients_sqr.shape)))
+    #   ... and sqrt
+    gradient_l2_norm = K.sqrt(gradients_sqr_sum)
+    # compute lambda * (1 - ||grad||)^2 still for each single sample
+    gradient_penalty = K.square(1 - gradient_l2_norm)
+    # return the mean as loss over all the batch samples
+    return K.mean(gradient_penalty)
+
+def wasserstein_loss(y_true, y_pred):
+    return K.mean(y_true * y_pred)
 
 
 class Optimizer:
@@ -60,69 +88,88 @@ class Optimizer:
     # Variables
     _errtype = 'WGAN' # or 'LSE'
     _model = None # The model whose parameters will be optimised.
-    _target_values = None
-    _params_trainable = None
-    _optim_updates = []  # The variables of the optimisation algo, for restoring a training that crashed
 
     def __init__(self, model, errtype='WGAN'):
         self._model = model
 
         self._errtype = errtype
 
-        self._target_values = T.ftensor3('target_values')
-
     def saveTrainingState(self, fstate, cfg=None, extras=None, printfn=print):
-        # https://github.com/Lasagne/Lasagne/issues/159
         if extras is None: extras=dict()
         printfn('    saving training state in {} ...'.format(fstate), end='')
         sys.stdout.flush()
 
-        paramsvalues = [(str(p), p.get_value()) for p in self._model.params_all] # The network parameters
+        # Save the model parameters
+        # tf.keras.models.save_model(self._model._kerasmodel, fstate+'.model.h5', include_optimizer=True)
+        tf.keras.models.save_model(self._model._kerasmodel, fstate+'.model.h5', include_optimizer=False) # TODO TODO TODO include_optimizer=True: In case of WGAN, this model is actually never compiled with an optimizer
 
-        ovs = []
-        for ov in self._optim_updates:
-            ovs.append([p.get_value() for p in ov.keys()]) # The optim algo state
+        # Save the extra data
+        DATA = [cfg, extras, np.random.get_state()]
+        cPickle.dump(DATA, open(fstate+'.cfgextras.pkl', 'wb'))
 
-        DATA = [paramsvalues, ovs, cfg, extras, np.random.get_state()]
-        cPickle.dump(DATA, open(fstate, 'wb'))
+        if self._errtype=='LSE':
+            # Apparently the tf.keras.models.save_model saves the optimizer setup, but doesn't
+            # save its current parameter values. So save then in a seperate file.
+            # Or only necessary when using TF optimizers?
+            # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
+            symbolic_weights = getattr(self._model._kerasmodel.optimizer, 'weights')
+            weight_values = tf.keras.backend.batch_get_value(symbolic_weights)
+            with open(fstate+'.optimizer.pkl', 'wb') as f:
+                cPickle.dump(weight_values, f)
+
+        # elif self._errtype=='WGAN':
+            # TODO Save the Critic
 
         print(' done')
         sys.stdout.flush()
 
     def loadTrainingState(self, fstate, cfg, printfn=print):
-        # https://github.com/Lasagne/Lasagne/issues/159
         printfn('    reloading parameters from {} ...'.format(fstate), end='')
         sys.stdout.flush()
 
-        DATA = cPickle.load(open(fstate, 'rb'))
-        for p, v in zip(self._model.params_all, DATA[0]): p.set_value(v[1])    # The network parameters
+        # Load the model parameters
+        self._model._kerasmodel = tf.keras.models.load_model(fstate+'.model.h5', compile=True)
 
-        for ov, da in zip(self._optim_updates, DATA[1]):
-            for p, value in zip(ov.keys(), da): p.set_value(value)
+        # Reload the extra data
+        DATA = cPickle.load(open(fstate+'.cfgextras.pkl', 'rb'))
+
+        if self._errtype=='LSE':
+            # Apparently the tf.keras.models.save_model saves the optimizer setup, but doesn't
+            # save its current parameter values. So load them from a seperate file.
+            # Or only necessary when using TF optimizers?
+            # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
+            self._model._kerasmodel._make_train_function()
+            with open(fstate+'.optimizer.pkl', 'rb') as f:
+                weight_values = cPickle.load(f)
+            self._model._kerasmodel.optimizer.set_weights(weight_values)
+
+            # TODO Load the Critic too!
 
         print(' done')
         sys.stdout.flush()
 
-        if cfg.__dict__!=DATA[2].__dict__:
+        cfg_restored = DATA[0]
+
+        if cfg.__dict__!=cfg_restored.__dict__:
             printfn('        configurations are not the same!')
             for attr in cfg.__dict__:
-                if attr in DATA[2].__dict__:
-                    if cfg.__dict__[attr]!=DATA[2].__dict__[attr]:
-                        print('            attribute {}: new state {}, saved state {}'.format(attr, cfg.__dict__[attr], DATA[2].__dict__[attr]))
+                if attr in cfg_restored.__dict__:
+                    if cfg.__dict__[attr]!=cfg_restored.__dict__[attr]:
+                        print('            attribute {}: new state {}, saved state {}'.format(attr, cfg.__dict__[attr], cfg_restored.__dict__[attr]))
                 else:
                     print('            attribute {}: is not in the saved configuration state'.format(attr))
-            for attr in DATA[2].__dict__:
+            for attr in cfg_restored.__dict__:
                 if attr not in cfg.__dict__:
                     print('            attribute {}: is not in the new configuration state'.format(attr))
 
-        return DATA[2:]
+        return DATA
 
     # Training =================================================================
 
-    def train(self, params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
+    def train_oneparamset(self, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr='', cont=None):
 
         print('Model initial status before training')
-        worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
+        worst_val = data.cost_0pred_rmse(Y_vals)
         print("    0-pred validation RMSE = {} (100%)".format(worst_val))
         init_pred_rms = data.prediction_rms(self._model, [X_vals])
         print('    initial RMS of prediction = {}'.format(init_pred_rms))
@@ -132,7 +179,7 @@ class Optimizer:
 
         nbbatches = int(len(fid_lst_tra)/cfg.train_batch_size)
         print('    using {} batches of {} sentences each'.format(nbbatches, cfg.train_batch_size))
-        print('    model #parameters={}'.format(self._model.nbParams()))
+        print('    model #parameters={}'.format(self._model.count_params()))
 
         nbtrainframes = 0
         for fid in fid_lst_tra:
@@ -140,7 +187,7 @@ class Optimizer:
             nbtrainframes += X.shape[0]
         frameshift = 0.005 # TODO
         print('    Training set: {} sentences, #frames={} ({})'.format(len(fid_lst_tra), nbtrainframes, time.strftime('%H:%M:%S', time.gmtime((nbtrainframes*frameshift)))))
-        print('    #parameters/#frames={:.2f}'.format(float(self._model.nbParams())/nbtrainframes))
+        print('    #parameters/#frames={:.2f}'.format(float(self._model.count_params())/nbtrainframes))
         if cfg.train_nbepochs_scalewdata and not cfg.train_batch_lengthmax is None:
             # During an epoch, the whole data is _not_ seen by the training since cfg.train_batch_lengthmax is limited and smaller to the sentence size.
             # To compensate for it and make the config below less depedent on the data, the min ans max nbepochs are scaled according to the missing number of frames seen.
@@ -152,106 +199,176 @@ class Optimizer:
             print('        train_min_nbepochs={}'.format(cfg.train_min_nbepochs))
             print('        train_max_nbepochs={}'.format(cfg.train_max_nbepochs))
 
-        if self._errtype=='WGAN':
-            print('Preparing critic for WGAN...')
-            critic_input_var = T.tensor3('critic_input') # Either real data to predict/generate, or, fake data that has been generated
-
-            [critic, layer_critic, layer_cond] = self._model.build_critic(critic_input_var, self._model._input_values, self._model.vocoder, self._model.insize, use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransfreqcutoff=self._LSWGANtransfreqcutoff, LSWGANtranscoef=self._LSWGANtranscoef, use_WGAN_incnoisefeature=self._WGAN_incnoisefeature)
-
-            # Create expression for passing real data through the critic
-            real_out = lasagne.layers.get_output(critic)
-            # Create expression for passing fake data through the critic
-            genout = lasagne.layers.get_output(self._model.net_out)
-            indict = {layer_critic:lasagne.layers.get_output(self._model.net_out), layer_cond:self._model._input_values}
-            fake_out = lasagne.layers.get_output(critic, indict)
-
-            # Create generator's loss expression
-            # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
-            print('WGAN Weighted LS - Generator part')
-
-            wganls_weights_els = []
-            wganls_weights_els.append([0.0]) # For f0
-            specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
-            if cfg.train_LScoef==0.0:
-                wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
-            else:
-                wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
-            if self._model.vocoder.noisesize()>0:
-                if self._WGAN_incnoisefeature:
-                    noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
-                    wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
-                else:
-                    wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
-            if self._model.vocoder.vuvsize()>0:
-                wganls_weights_els.append([0.0]) # For vuv
-            wganls_weights_ = np.hstack(wganls_weights_els)
-
-            # TODO build wganls_weights_ for LSE instead for WGAN, for consistency with the paper
-
-            # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
-            wganls_weights_ *= (1.0-cfg.train_LScoef)
-
-            lserr = lasagne.objectives.squared_error(genout, self._target_values)
-            wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
-
-            wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
-            lsepart = lserr*wganls_weights_ls             # Spectral weighting as complement of the WGAN part spectral weighting
-
-            generator_loss = -wganpart.mean() + lsepart.mean() # A term in [-oo,oo] and one in [0,oo] ... why not, LSE as to be small enough for WGAN to do something.
-
-            generator_lossratio = abs(wganpart.mean())/abs(lsepart.mean())
-
-            critic_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
-
-            # Improved training for Wasserstein GAN
-            epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
-            mixed_X = (epsi * genout) + (1-epsi) * critic_input_var
-            indict = {layer_critic:mixed_X, layer_cond:self._model._input_values}
-            output_D_mixed = lasagne.layers.get_output(critic, inputs=indict)
-            grad_mixed = T.grad(T.sum(output_D_mixed), mixed_X)
-            norm_grad_mixed = T.sqrt(T.sum(T.square(grad_mixed),axis=[1,2]))
-            grad_penalty = T.mean(T.square(norm_grad_mixed -1))
-            critic_loss = critic_loss + cfg.train_pg_lambda*grad_penalty
-
-            # Create update expressions for training
-            critic_params = lasagne.layers.get_all_params(critic, trainable=True)
-            critic_updates = lasagne.updates.adam(critic_loss, critic_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
-            print('    Critic architecture')
-            print_network(critic, critic_params)
-
-            generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
-            generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
-            self._optim_updates.extend([generator_updates, critic_updates])
-            print('    Generator architecture')
-            print_network(self._model.net_out, generator_params)
-
-            # Compile functions performing a training step on a mini-batch (according
-            # to the updates dictionary) and returning the corresponding score:
-            print('Compiling generator training function...')
-            generator_train_fn_ins = [self._model._input_values]
-            generator_train_fn_ins.append(self._target_values)
-            generator_train_fn_outs = [generator_loss, generator_lossratio]
-            train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
-            train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
-            print('Compiling critic training function...')
-            critic_train_fn_ins = [self._model._input_values, critic_input_var, epsi]
-            critic_train_fn = theano.function(critic_train_fn_ins, critic_loss, updates=critic_updates)
-            critic_train_validation_fn = theano.function(critic_train_fn_ins, critic_loss, no_default_updates=True)
-
-        elif self._errtype=='LSE':
+        if self._errtype=='LSE':
             print('    LSE Training')
-            print_network(self._model.net_out, params)
-            predicttrain_values = lasagne.layers.get_output(self._model.net_out, deterministic=False)
-            costout = (predicttrain_values - self._target_values)**2
 
-            self.cost = T.mean(costout) # self.cost = T.mean(T.sum(costout, axis=-1)) ?
+            # opti = tf.train.RMSPropOptimizer(float(10**cfg.train_learningrate_log10))  # Saving training states doesn't work with these ones
+            # opti = keras.optimizers.RMSprop(lr=float(10**cfg.train_learningrate_log10)) #
+            opti = keras.optimizers.Adam(lr=float(10**cfg.train_learningrate_log10), beta_1=float(cfg.train_adam_beta1), beta_2=float(cfg.train_adam_beta2), epsilon=float(10**cfg.train_adam_epsilon_log10), decay=0.0, amsgrad=False)
+            print('    optimizer: {}'.format(type(opti).__name__))
 
-            print("    creating parameters updates ...")
-            updates = lasagne.updates.adam(self.cost, params, learning_rate=float(10**cfg.train_learningrate_log10), beta1=float(cfg.train_adam_beta1), beta2=float(cfg.train_adam_beta2), epsilon=float(10**cfg.train_adam_epsilon_log10))
-
-            self._optim_updates.append(updates)
+            # self._optim_updates.append(updates)
             print("    compiling training function ...")
-            train_fn = theano.function(self._model.inputs+[self._target_values], self.cost, updates=updates)
+            self._model._kerasmodel.compile(loss=['mse'], optimizer=opti)
+            self._model._kerasmodel.summary()
+
+        elif self._errtype=='WGAN':
+            print('Preparing critic for WGAN...')
+
+            critic_in, critic_in_ctx, critic_out = self._model.build_critic(use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransfreqcutoff=self._LSWGANtransfreqcutoff, LSWGANtranscoef=self._LSWGANtranscoef, use_WGAN_incnoisefeature=self._WGAN_incnoisefeature)
+
+            generator = self._model._kerasmodel
+
+            # Construct Computational Graph for Critic
+
+            critic = keras.Model(inputs=[critic_in, critic_in_ctx], outputs=critic_out)
+            critic.summary()
+            # Create a frozen generator for the critic training
+            # Use the Network class to avoid irrelevant warning: https://github.com/keras-team/keras/issues/8585
+            frozen_generator = keras.engine.network.Network(self._model._kerasmodel.inputs, self._model._kerasmodel.outputs)
+            frozen_generator.trainable = False
+
+            # Input for a real sample
+            real_sample = keras.layers.Input(shape=(None,self._model.vocoder.featuressize()))
+            # Generate an artifical (fake) sample
+            fake_sample = frozen_generator(critic_in_ctx)
+
+            # Discriminator determines validity of the real and fake images
+            fake = critic([fake_sample, critic_in_ctx])
+            valid = critic([real_sample, critic_in_ctx])
+
+            # Construct weighted average between real and fake images
+            interpolated_sample = RandomWeightedAverage(cfg.train_batch_size)([real_sample, fake_sample])
+            # Determine validity of weighted sample
+            validity_interpolated = critic([interpolated_sample, critic_in_ctx])
+
+            # Use Python partial to provide loss function with additional
+            # 'averaged_samples' argument
+            partial_gp_loss = partial(gradient_penalty_loss, averaged_samples=interpolated_sample)
+            partial_gp_loss.__name__ = 'gradient_penalty' # Keras requires function names
+
+            print('    compiling critic')
+            critic_opti = keras.optimizers.Adam(lr=float(10**cfg.train_D_learningrate_log10), beta_1=float(cfg.train_D_adam_beta1), beta_2=float(cfg.train_D_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
+            print('        optimizer: {}'.format(type(critic_opti).__name__))
+            critic_model = keras.Model(inputs=[real_sample, critic_in_ctx],
+                                        outputs=[valid, fake, validity_interpolated])
+            critic_model.compile(loss=[wasserstein_loss, wasserstein_loss, partial_gp_loss],
+                                        optimizer=critic_opti, loss_weights=[1, 1, cfg.train_pg_lambda])
+
+            # Construct Computational Graph for Generator
+
+            # Create a frozen critic for the generator training
+            frozen_critic = keras.engine.network.Network([critic_in,critic_in_ctx], critic_out)
+            frozen_critic.trainable = False
+
+            # Sampled noise for input to generator
+            ctx_gen = keras.layers.Input(shape=(None, self._model.ctxsize))
+            # Generate images based of noise
+            pred_sample = generator(ctx_gen)
+            # Discriminator determines validity
+            valid = frozen_critic([pred_sample,ctx_gen])
+            # Defines generator model
+            print('    compiling generator')
+            gen_opti = keras.optimizers.Adam(lr=float(10**cfg.train_G_learningrate_log10), beta_1=float(cfg.train_G_adam_beta1), beta_2=float(cfg.train_G_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
+            print('        optimizer: {}'.format(type(gen_opti).__name__))
+            generator_model = keras.Model(ctx_gen, valid)
+            generator_model.compile(loss=wasserstein_loss, optimizer=gen_opti)
+
+            wgan_valid = -np.ones((cfg.train_batch_size, 1, 1))
+            wgan_fake =  np.ones((cfg.train_batch_size, 1, 1))
+            wgan_dummy = np.zeros((cfg.train_batch_size, 1, 1)) # Dummy gt for gradient penalty
+
+            def train_validation_fn(x, y):
+                return generator_model.evaluate(x=x, y=y, batch_size=1, verbose=0)
+
+            def critic_train_validation_fn(y, x):
+                rets = critic_model.evaluate(x=[y, x], y=[wgan_valid[:1,], wgan_fake[:1,], wgan_dummy[:1,]], batch_size=1, verbose=0)
+                return rets[0]
+
+        elif self._errtype=='WLSWGAN':
+            raise ValueError('TODO')
+
+            # TODO WLSWGAN
+            # # Create expression for passing real data through the critic
+            # real_out = lasagne.layers.get_output(critic)
+            # # Create expression for passing fake data through the critic
+            # genout = lasagne.layers.get_output(self._model.net_out)
+            # indict = {layer_critic:lasagne.layers.get_output(self._model.net_out), layer_cond:self._model._input_values}
+            # fake_out = lasagne.layers.get_output(critic, indict)
+            #
+            # # Create generator's loss expression
+            # # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
+            # print('WGAN Weighted LS - Generator part')
+            #
+            # wganls_weights_els = []
+            # wganls_weights_els.append([0.0]) # For f0
+            # specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
+            # if cfg.train_LScoef==0.0:
+            #     wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
+            # else:
+            #     wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
+            # if self._model.vocoder.noisesize()>0:
+            #     if self._WGAN_incnoisefeature:
+            #         noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
+            #         wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
+            #     else:
+            #         wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
+            # if self._model.vocoder.vuvsize()>0:
+            #     wganls_weights_els.append([0.0]) # For vuv
+            # wganls_weights_ = np.hstack(wganls_weights_els)
+            #
+            # # TODO build wganls_weights_ for LSE instead for WGAN, for consistency with the paper
+            #
+            # # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
+            # wganls_weights_ *= (1.0-cfg.train_LScoef)
+            #
+            # lserr = lasagne.objectives.squared_error(genout, self._target_values)
+            # wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
+            #
+            # wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
+            # lsepart = lserr*wganls_weights_ls             # Spectral weighting as complement of the WGAN part spectral weighting
+            #
+            # generator_loss = -wganpart.mean() + lsepart.mean() # A term in [-oo,oo] and one in [0,oo] ... why not, LSE as to be small enough for WGAN to do something.
+            #
+            # generator_lossratio = abs(wganpart.mean())/abs(lsepart.mean())
+            #
+            # critic_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
+            #
+            # # Improved training for Wasserstein GAN
+            # epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
+            # mixed_X = (epsi * genout) + (1-epsi) * critic_input_var
+            # indict = {layer_critic:mixed_X, layer_cond:self._model._input_values}
+            # output_D_mixed = lasagne.layers.get_output(critic, inputs=indict)
+            # grad_mixed = T.grad(T.sum(output_D_mixed), mixed_X)
+            # norm_grad_mixed = T.sqrt(T.sum(T.square(grad_mixed),axis=[1,2]))
+            # grad_penalty = T.mean(T.square(norm_grad_mixed -1))
+            # critic_loss = critic_loss + cfg.train_pg_lambda*grad_penalty
+            #
+            # # Create update expressions for training
+            # critic_params = lasagne.layers.get_all_params(critic, trainable=True)
+            # critic_updates = lasagne.updates.adam(critic_loss, critic_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
+            # print('    Critic architecture')
+            # print_network(critic, critic_params)
+            #
+            # generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
+            # generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
+            # self._optim_updates.extend([generator_updates, critic_updates])
+            # print('    Generator architecture')
+            # print_network(self._model.net_out, generator_params)
+            #
+            # # Compile functions performing a training step on a mini-batch (according
+            # # to the updates dictionary) and returning the corresponding score:
+            # print('Compiling generator training function...')
+            # generator_train_fn_ins = [self._model._input_values]
+            # generator_train_fn_ins.append(self._target_values)
+            # generator_train_fn_outs = [generator_loss, generator_lossratio]
+            # train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
+            # train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
+            # print('Compiling critic training function...')
+            # critic_train_fn_ins = [self._model._input_values, critic_input_var, epsi]
+            # critic_train_fn = theano.function(critic_train_fn_ins, critic_loss, updates=critic_updates)
+            # critic_train_validation_fn = theano.function(critic_train_fn_ins, critic_loss, no_default_updates=True)
+
         else:
             raise ValueError('Unknown err type "'+self._errtype+'"')    # pragma: no cover
 
@@ -261,9 +378,9 @@ class Optimizer:
         nbnodecepochs = 0
         generator_updates = 0
         epochstart = 1
-        if cont and os.path.exists(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl'):
+        if cont and os.path.exists(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5.optimizer.pkl'): # TODO TODO TODO .optimizer.pkl
             print('    reloading previous training state ...')
-            savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg)
+            savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5', cfg)
             np.random.set_state(rngstate)
             cost_val = extras['cost_val']
             # Restoring some local variables
@@ -272,7 +389,7 @@ class Optimizer:
             epochs_durs = extras['epochs_durs']
             generator_updates = extras['generator_updates']
             epochstart = extras['epoch']+1
-            # Restore the saving criteria only none of those 3 cfg values changed:
+            # Restore the saving criteria if only none of those 3 cfg values changed:
             if (savedcfg.train_min_nbepochs==cfg.train_min_nbepochs) and (savedcfg.train_max_nbepochs==cfg.train_max_nbepochs) and (savedcfg.train_cancel_nodecepochs==cfg.train_cancel_nodecepochs):
                 best_val = extras['best_val']
                 nbnodecepochs = extras['nbnodecepochs']
@@ -310,9 +427,9 @@ class Optimizer:
                 timetrainstart = time.time()
                 if self._errtype=='WGAN':
 
-                    random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
-                    critic_returns = critic_train_fn(X_trab, Y_trab, random_epsilon)        # Train the criticmnator
-                    costs_tra_critic_batches.append(float(critic_returns))
+                    # random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
+                    critic_returns = critic_model.train_on_batch([Y_trab, X_trab], [wgan_valid, wgan_fake, wgan_dummy])
+                    costs_tra_critic_batches.append(float(critic_returns[0]))
 
                     # TODO The params below are supposed to ensure the critic is "almost" fully converged
                     #      when training the generator. How to evaluate this? Is it the case currently?
@@ -326,14 +443,15 @@ class Optimizer:
                         # Train the generator
                         trainargs = [X_trab]
                         trainargs.append(Y_trab)
-                        [cost_tra, gen_ratio] = train_fn(*trainargs)
+
+                        cost_tra = generator_model.train_on_batch(X_trab, wgan_valid)
                         cost_tra = float(cost_tra)
                         generator_updates += 1
 
                         if 0: log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+'{:07}.png'.format(generator_updates), vocoder=self._model.vocoder, title='E{} I{}'.format(epoch,generator_updates))
 
                 elif self._errtype=='LSE':
-                    train_returns = train_fn(X_trab, Y_trab)
+                    train_returns = self._model._kerasmodel.train_on_batch(X_trab, Y_trab)
                     cost_tra = np.sqrt(float(train_returns))
 
                 train_times.append(time.time()-timetrainstart)
@@ -345,7 +463,7 @@ class Optimizer:
                         print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+k, nbbatches, cost_tra))
                         raise ValueError('ERROR: Training cost is nan!')
                     costs_tra_batches.append(cost_tra)
-                    if self._errtype=='WGAN': costs_tra_gen_wgan_lse_ratios.append(gen_ratio)
+                    # if self._errtype=='WGAN': costs_tra_gen_wgan_lse_ratios.append(gen_ratio) # TODO TODO TODO
             print_tty('\r                                                           \r')
             if self._errtype=='WGAN':
                 costs['model_training'].append(0.1*np.mean(costs_tra_batches))
@@ -358,13 +476,12 @@ class Optimizer:
             costs['model_rmse_validation'].append(cost_validation_rmse)
 
             if self._errtype=='WGAN':
-                train_validation_fn_args = [X_vals]
-                train_validation_fn_args.append(Y_vals)
-                costs['model_validation'].append(0.1*data.cost_model_mfn(train_validation_fn, train_validation_fn_args))
+                train_validation_fn_args = [X_vals, Y_vals]
+                costs['model_validation'].append(10.0*data.cost_model_mfn(train_validation_fn, train_validation_fn_args))  # TODO TODO TODO
                 costs['critic_training'].append(np.mean(costs_tra_critic_batches))
                 random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
-                critic_train_validation_fn_args = [X_vals, Y_vals, random_epsilon]
-                costs['critic_validation'].append(data.cost_model_mfn(critic_train_validation_fn, critic_train_validation_fn_args))
+                critic_train_validation_fn_args = [Y_vals, X_vals]
+                costs['critic_validation'].append(data.cost_model_mfn(critic_train_validation_fn, critic_train_validation_fn_args))   # TODO TODO TODO
                 costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-cfg.train_validation_ltm_winlen:]))
 
                 cost_val = costs['critic_validation_ltm'][-1]
@@ -377,7 +494,7 @@ class Optimizer:
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
             if (self._errtype=='LSE') and (cost_val>=cfg.train_cancel_validthresh*worst_val): raise ValueError('ERROR: Validation cost blew up! It is higher than {} times the worst possible values'.format(cfg.train_cancel_validthresh))
 
-            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
+            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.h5', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
             if epoch>=cfg.train_min_nbepochs: # Assume no model is good enough before cfg.train_min_nbepochs
@@ -406,7 +523,7 @@ class Optimizer:
             epochs_durs.append(time.time()-timeepochstart)
             print_log('    ET: {}   max TT: {}s   train ~time left: {}'.format(time2str(epochs_durs[-1]), time2str(np.median(epochs_durs[-10:])*cfg.train_max_nbepochs), time2str(np.median(epochs_durs[-10:])*(cfg.train_max_nbepochs-epoch))))
 
-            self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.pkl', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
+            self.saveTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5', cfg=cfg, printfn=print_log, extras={'cost_val':cost_val, 'best_val':best_val, 'costs':costs, 'epochs_modelssaved':epochs_modelssaved, 'epochs_durs':epochs_durs, 'nbnodecepochs':nbnodecepochs, 'generator_updates':generator_updates, 'epoch':epoch})
 
             if nbnodecepochs>=cfg.train_cancel_nodecepochs: # pragma: no cover
                 print_log('WARNING: validation error did not decrease for {} epochs. Early stop!'.format(cfg.train_cancel_nodecepochs))
@@ -434,7 +551,7 @@ class Optimizer:
 
         return cfg, hyperstr
 
-    def train_multipletrials(self, indir, outdir, wdir, fid_lst_tra, fid_lst_val, params, params_savefile, cfgtomerge=None, cont=None, **kwargs):
+    def train(self, indir, outdir, wdir, fid_lst_tra, fid_lst_val, params_savefile, cfgtomerge=None, cont=None, **kwargs):
         # Hyp: always uses batches
 
         # All kwargs arguments are specific configuration values
@@ -447,13 +564,13 @@ class Optimizer:
         cfg.train_adam_beta2 = 0.999            # [potential hyper-parameter]
         cfg.train_adam_epsilon_log10 = -8       # [potential hyper-parameter]
         # WGAN
-        cfg.train_D_learningrate = 0.0001       # [potential hyper-parameter]
+        cfg.train_D_learningrate_log10 = -4     # [potential hyper-parameter]
         cfg.train_D_adam_beta1 = 0.5            # [potential hyper-parameter]
         cfg.train_D_adam_beta2 = 0.9            # [potential hyper-parameter]
-        cfg.train_G_learningrate = 0.001        # [potential hyper-parameter]
+        cfg.train_G_learningrate_log10 = -3     # [potential hyper-parameter]
         cfg.train_G_adam_beta1 = 0.5            # [potential hyper-parameter]
         cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
-        cfg.train_pg_lambda = 10                # [potential hyper-parameter]
+        cfg.train_pg_lambda = 10                # [potential hyper-parameter]   # TODO TODO TODO Rename
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses (def. 0.25)
         cfg.train_validation_ltm_winlen = 20    # Now that I'm using min and max epochs, I could use the actuall D cost and not the ltm(D cost) TODO
 
@@ -489,7 +606,7 @@ class Optimizer:
         print('    {:.2f}% of validation files for number of train files'.format(100.0*float(len(fid_lst_val))/len(fid_lst_tra)))
 
         if cfg.train_nbtrials>1:
-            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-init.pkl', cfg=cfg, printfn=print_log)
+            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-init.h5', cfg=cfg, printfn=print_log)
 
         try:
             trials = []
@@ -504,10 +621,10 @@ class Optimizer:
                         trialstr += ','+hyperstr
                         print('    randomized hyper-parameters: '+trialstr)
                     if cfg.train_nbtrials>1:
-                        self._model.loadAllParams(os.path.splitext(params_savefile)[0]+'-init.pkl')
+                        self._model.loadAllParams(os.path.splitext(params_savefile)[0]+'-init.h5')
 
                     timewholetrainstart = time.time()
-                    train_rets = self.train(params, indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr=trialstr, cont=cont)
+                    train_rets = self.train_oneparamset(indir, outdir, wdir, fid_lst_tra, fid_lst_val, X_vals, Y_vals, cfg, params_savefile, trialstr=trialstr, cont=cont)
                     cont = None
                     print_log('Total trial run time: {}s'.format(time2str(time.time()-timewholetrainstart)))
 

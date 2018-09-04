@@ -8,40 +8,26 @@ CUDA_ROOT=/usr/local/cuda-9.0
 . $HOME/miniconda/etc/profile.d/conda.sh
 conda activate
 
+# export MKL_THREADING_LAYER=GNU
+
+# To output some information about TensorFlow, change it to 0
+export TF_CPP_MIN_LOG_LEVEL=3
+# To hide the GPUs and thus force using the CPU (makes runs repeatable)
+# export CUDA_VISIBLE_DEVICES=""
+# This should also help to make runs repeatable
+# export PYTHONHASHSEED=0
+
+# To select one specific GPU on a multiple-GPU machine
+# export CUDA_VISIBLE_DEVICES=0
+
 # Add CUDA
-export PATH=$CUDA_ROOT/bin:$PATH
-export CPATH=$CUDA_ROOT/include:$CPATH
-export LIBRARY_PATH=$CUDA_ROOT/lib64:$LIBRARY_PATH
-export LD_LIBRARY_PATH=$CUDA_ROOT/lib64:$LD_LIBRARY_PATH
+#export PATH=$CUDA_ROOT/bin:$PATH
+#export CPATH=$CUDA_ROOT/include:$CPATH
+#export LIBRARY_PATH=$CUDA_ROOT/lib64:$LIBRARY_PATH
+export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
+#export LD_LIBRARY_PATH=$CUDA_ROOT/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
-# Basic Thenao flags
-export THEANO_FLAGS="floatX=float32,on_unused_input=ignore,"
-
-# Force use of cuDNN. An error will be thrown if cuDNN is not accessible
-# export THEANO_FLAGS="optimizer_including=cudnn,"$THEANO_FLAGS
-# export THEANO_FLAGS="optimizer_excluding=conv_dnn,"$THEANO_FLAGS
-
-#export THEANO_FLAGS="optimizer_including=cudnn:local_ultra_fast_sigmoid,"$THEANO_FLAGS #local_ultra_fast_sigmoid seems to block training
-
-
-# For repeatability with 2D convolution
-# export THEANO_FLAGS="dnn.conv.algo_bwd_filter=deterministic,dnn.conv.algo_bwd_data=deterministic,"$THEANO_FLAGS
-# or just disbale cuDNN completely
-# export THEANO_FLAGS="dnn.enabled=False,"$THEANO_FLAGS
-# and this might help too
-# export THEANO_FLAGS="deterministic=more,"$THEANO_FLAGS
-
-
-# For maximum speed:
-export THEANO_FLAGS="mode=FAST_RUN,device=cuda,"$THEANO_FLAGS
-# For debugging, comment the line above and uncomment the line below
-# export THEANO_FLAGS="device=cuda,exception_verbosity=high,optimizer=None,"$THEANO_FLAGS
-
-# Theano loads way faster by compiling on shm.
-# Hardcode the compute hostnames that have shm here below.
-if [ "$HOSTNAME" == "mila" ]; then
-    export THEANO_FLAGS="base_compiledir=/dev/shm/$USERNAME,"$THEANO_FLAGS
-fi
 
 unset LD_PRELOAD
 

@@ -31,10 +31,11 @@ from percivaltts import *  # Always include this first to setup a few things for
 import data
 import vocoders
 import compose
-import models_cnn
 import models_generic
 import optimizer
 print_sysinfo()
+
+from functools import partial
 
 print_log('Global configurations')
 cfg = configuration() # Init configuration structure
@@ -52,9 +53,9 @@ lab_type = 'state'  # 'state' or 'phone'
 lab_dir = 'label_'+lab_type+'_align'
 lab_path = cp+lab_dir+'/*.lab'
 lab_questions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'external/merlin/questions-radio_dnn_416.hed')
-in_size = 416+9
-labbin_path = cp+lab_dir+'_bin'+str(in_size)+'/*.lab'
-cfg.inpath = os.path.dirname(labbin_path)+'_norm_minmaxm11/*.lab:(-1,'+str(in_size)+')' # Merlin-minmaxm11 eq.
+ctxsize = 416+9 # TODO TODO TODO
+labbin_path = cp+lab_dir+'_bin'+str(ctxsize)+'/*.lab'
+cfg.inpath = os.path.dirname(labbin_path)+'_norm_minmaxm11/*.lab:(-1,'+str(ctxsize)+')' # Merlin-minmaxm11 eq.
 labs_wpath = cp+lab_dir+'_weights/*.w:(-1,1)' # Ignore silences based on labs
 
 # Output features
@@ -158,18 +159,17 @@ def contexts_extraction():
 
     # Compose the inputs
     # The input files are binary labels, as they come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
-    compose.compose([labbin_path+':(-1,'+str(in_size)+')'], fids, cfg.inpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[], do_finalcheck=False)
-
+    compose.compose([labbin_path+':(-1,'+str(ctxsize)+')'], fids, cfg.inpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[], do_finalcheck=False)
 
 def build_model():
-    mod = models_cnn.ModelCNN(in_size, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
+    # mod = models_cnn.ModelCNN(ctxsize, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
-    # mod = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
-    # mod = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], hiddensize=cfg.model_hiddensize)
-    # mod = models_generic.ModelGeneric(in_size, vocoder, mlpg_wins=mlpg_wins, layertypes=[['CNN',cfg.model_ctx_nbfilters,cfg.model_ctx_winlen], 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'LSTM'], hiddensize=cfg.model_hiddensize)
+    mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], hiddensize=cfg.model_hiddensize)
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=[['CNN',cfg.model_ctx_nbfilters,cfg.model_ctx_winlen], 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
 
     return mod
-
 
 def training(cont=False):
     fid_lst_tra = fids[:cfg.id_train_nb()]
@@ -178,7 +178,7 @@ def training(cont=False):
     mod = build_model()
 
     opti = optimizer.Optimizer(mod, errtype='WGAN' if use_WGAN else 'LSE') # 'WGAN' or 'LSE'
-    opti.train_multipletrials(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, mod.params_trainable, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
+    opti.train(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 
 def generate(fparams=cfg.fparams_fullset):

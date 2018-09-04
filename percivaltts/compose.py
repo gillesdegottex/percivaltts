@@ -1,4 +1,6 @@
 '''
+(independent of the ML backend)
+
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
 License

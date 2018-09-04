@@ -1,7 +1,6 @@
 '''
 Load, crop, stack the data into 3D matrices for training for building a data batch during training.
-
-This file is meant to be library-independent (independent of theano, lasagne, tensorflow, etc.)
+(independent of the ML backend)
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
@@ -341,7 +340,7 @@ def cost_0pred_rmse(Y_val):
     return worst_val
 
 def cost_model_mfn(fn, Xs):
-    """Run a function on on the argument Xs and average the returned values."""
+    """Run a function on the argument Xs and average the returned values."""
     cost = 0.0
     if isinstance(Xs[0], list):
         for xi in xrange(len(Xs[0])): # Make them one by one to avoid blowing up the memory TODO still even a single one might be too big
@@ -365,7 +364,6 @@ def cost_model_prediction_rmse(mod, Xs, Y_val, inouttimesync=True):
             ins = []
             for inp in Xs:
                 ins.append(np.reshape(inp[xi],[1]+[s for s in inp[xi].shape]))
-            # from IPython.core.debugger import  Pdb; Pdb().set_trace()
             ypred = mod.predict(*ins)
             cost += np.sum((Y_val[xi]-ypred[0,])**2)
             nbel += ypred[0,].size

@@ -1,5 +1,6 @@
 '''
-Useful functions independent of Theano.
+Setup a few things first and useful functionsself.
+(independent of the ML backend)
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
@@ -22,12 +23,13 @@ from __future__ import print_function
 
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/Lasagne/')
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/external/pulsemodel/external/pyworld/')
 
 import numpy as np
+import random as rn
 def numpy_force_random_seed():
     np.random.seed(123) # Replace this line with a "pass" if you want non-deterministic runs
+    rn.seed(123)
 numpy_force_random_seed()
 
 import time

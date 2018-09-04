@@ -25,98 +25,95 @@ from percivaltts import *  # Always include this first to setup a few things
 import sys
 import os
 import cPickle
+from functools import partial
 
 import numpy as np
 numpy_force_random_seed()
 
-print('\nLoading Theano')
-from backend_theano import *
-print_sysinfo_theano()
-import theano
-import theano.tensor as T
-import lasagne
-# lasagne.random.set_rng(np.random)
+print('\nLoading TensorFlow')
+from backend_tensorflow import *
+print_sysinfo_backend()
+
+import tensorflow as tf
 
 import data
+import vocoders
 
-class Model:
+def layer_final(l_in, vocoder, mlpg_wins):
+    layers_toconcat = []
 
-    # lasagne.nonlinearities.rectify, lasagne.nonlinearities.leaky_rectify, lasagne.nonlinearities.very_leaky_rectify, lasagne.nonlinearities.elu, lasagne.nonlinearities.softplus, lasagne.nonlinearities.tanh, networks.nonlin_softsign
-    _nonlinearity = lasagne.nonlinearities.very_leaky_rectify
+    if isinstance(vocoder, vocoders.VocoderPML):
+        l_out_f0spec = keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_f0spec')(l_in)
+        l_out_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.sigmoid, name='lo_nm')(l_in)
+        # l_out_f0spec = keras.layers.TimeDistributed(keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_f0spec'))(l_in) # TODO TODO TODO ???
+        # l_out_nm = keras.layers.TimeDistributed(keras.layers.Dense(vocoder.nm_size, activation=keras.activations.sigmoid, name='lo_nm'))(l_in)
+        layers_toconcat.extend([l_out_f0spec, l_out_nm])
+        if len(mlpg_wins)>0:
+            l_out_delta_f0spec = keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_delta_f0spec')(l_in)
+            l_out_delta_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.tanh, name='lo_delta_nm')(l_in)
+            layers_toconcat.extend([l_out_delta_f0spec, l_out_delta_nm])
+            if len(mlpg_wins)>1:
+                l_out_deltadelta_f0spec = keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_deltadelta_f0spec')(l_in)
+                l_out_deltadelta_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.tanh, name='lo_deltadelta_nm')(l_in) # TODO TODO TODO keras.activations.tanh/partial(nonlin_tanh_saturated, coef=2.0)
+                layers_toconcat.extend([l_out_deltadelta_f0spec, l_out_deltadelta_nm])
 
-    # Network and Prediction variables
+    elif isinstance(vocoder, vocoders.VocoderWORLD):
+        l_out = keras.layers.Dense(vocoder.featuressize(), name='lo_f0specaper')(l_in)
+        if len(mlpg_wins)>0:
+            l_out_delta = keras.layers.Dense(vocoder.featuressize(), activation=None, name='lo_delta_f0specaper')(l_in)
+            if len(mlpg_wins)>1:
+                l_out_deltadelta = keras.layers.Dense(vocoder.featuressize(), activation=None, name='lo_deltadelta_f0specaper')(l_in)
 
-    insize = -1
-    _input_values = None # Input contextual values (e.g. text, labels)
-    inputs = None   # All the inputs of prediction function
+    if len(layers_toconcat)==1: l_out = layers_toconcat[0]
+    else:                       l_out = keras.layers.Concatenate(axis=-1, name='lo_concatenation')(layers_toconcat)
 
-    params_all = None # All possible parameters, including non trainable, running averages of batch normalisation, etc.
-    params_trainable = None # Trainable parameters
-    updates = []
+    return l_out
 
-    _hiddensize = 256
 
+class ModelTTS:
+
+    # Network variables
+    ctxsize = -1
     vocoder = None
-    net_out = None  # Network output
-    outputs = None  # Outputs of prediction function
 
-    predict = None  # Prection function
+    _kerasmodel = None
 
-    def __init__(self, insize, _vocoder, hiddensize=256):
+    hiddensize = 256
+
+    def __init__(self, ctxsize, vocoder, hiddensize=256):
         # Force additional random inputs is using anyform of GAN
         print("Building the model")
 
-        self.insize = insize
+        self.ctxsize = ctxsize
 
-        self.vocoder = _vocoder
-        self._hiddensize = hiddensize
+        self.vocoder = vocoder
+        self.hiddensize = hiddensize
 
-        self._input_values = T.ftensor3('input_values')
-
-
-    def init_finish(self, net_out):
-
-        self.net_out = net_out
-
-        print('    Architecture:')
-        print_network(self.net_out)
-
-        self.params_all = lasagne.layers.get_all_params(self.net_out)
-        self.params_trainable = lasagne.layers.get_all_params(self.net_out, trainable=True)
-
-        print('    Compiling prediction function ...')
-        self.inputs = [self._input_values]
-
-        predicted_values = lasagne.layers.get_output(self.net_out, deterministic=True)
-        self.outputs = predicted_values
-        self.predict = theano.function(self.inputs, self.outputs, updates=self.updates)
-
-        print('')
+    def predict(self, x):
+        return self._kerasmodel.predict(x)
 
 
-    def nbParams(self):
-        return params_count(self.params_all)
+    def count_params(self):
+        return self._kerasmodel.count_params()
 
     def saveAllParams(self, fmodel, cfg=None, extras=None, printfn=print, infostr=''):
         if extras is None: extras=dict()
-        # https://github.com/Lasagne/Lasagne/issues/159
         printfn('    saving parameters in {} ...'.format(fmodel), end='')
         sys.stdout.flush()
-        paramsvalues = [(str(p), p.get_value()) for p in self.params_all]
-        DATA = [paramsvalues, cfg, extras]
-        cPickle.dump(DATA, open(fmodel, 'wb'))
+        tf.keras.models.save_model(self._kerasmodel, fmodel, include_optimizer=False)
+        DATA = [cfg, extras]
+        cPickle.dump(DATA, open(fmodel+'.cfgextras.pkl', 'wb'))
         print(' done '+infostr)
         sys.stdout.flush()
 
-    def loadAllParams(self, fmodel, printfn=print):
-        # https://github.com/Lasagne/Lasagne/issues/159
+    def loadAllParams(self, fmodel, printfn=print, compile=True):
         printfn('    reloading parameters from {} ...'.format(fmodel), end='')
         sys.stdout.flush()
-        DATA = cPickle.load(open(fmodel, 'rb'))
-        for p, v in zip(self.params_all, DATA[0]): p.set_value(v[1])
+        self._kerasmodel = tf.keras.models.load_model(fmodel, compile=compile)
+        DATA = cPickle.load(open(fmodel+'.cfgextras.pkl', 'rb'))
         print(' done')
         sys.stdout.flush()
-        return DATA[1:]
+        return DATA
 
 
     def generate_cmp(self, inpath, outpath, fid_lst):

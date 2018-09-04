@@ -20,7 +20,8 @@ SETENVSCRIPT=setenv.sh
 QSUBCMD="qsub -l gpu=1 -j y -cwd -S /bin/bash"
 
 CODEDIR=$(shell basename $(shell pwd))
-CMDTORUN=../${CODEDIR}/$(SETENVSCRIPT) python ../${CODEDIR}/${FILETORUN} --continue
+CMDTORUN=../${CODEDIR}/$(SETENVSCRIPT) python ../${CODEDIR}/${FILETORUN}
+CMDTORUN_CONTINUE=${CMDTORUN} --continue
 
 # Maintenance targets ----------------------------------------------------------
 
@@ -37,10 +38,13 @@ clean: tests_clean
 # Run targets ------------------------------------------------------------------
 
 run:
+	mkdir -p ../out; cd ../out; bash ${CMDTORUN_CONTINUE}
+
+run_from_scratch:
 	mkdir -p ../out; cd ../out; bash ${CMDTORUN}
 
 run_grid:
-	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ${CMDTORUN}
+	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ${CMDTORUN_CONTINUE}
 
 clone:
 	@test "$(DEST)"
@@ -48,21 +52,21 @@ clone:
 
 clone_run:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" bash ${CMDTORUN}
+	./clone.sh "$(DEST)" bash ${CMDTORUN_CONTINUE}
 
 clone_run_grid:
 	@test "$(DEST)"
-	./clone.sh "$(DEST)" "$(QSUBCMD)" ${CMDTORUN}
+	./clone.sh "$(DEST)" "$(QSUBCMD)" ${CMDTORUN_CONTINUE}
 
 # Run in background
 run_back:
-	mkdir -p ../out; cd ../out; nohup ${CMDTORUN} </dev/null >> bck.log 2>&1 &
+	mkdir -p ../out; cd ../out; nohup ${CMDTORUN_CONTINUE} </dev/null >> bck.log 2>&1 &
 
 # Clone on given path and run in background
 # TODO This works only with ssh cloning (i.e. by specifying a hostname before
 # the path) for obscure nohup-bash-arguments reasons.
 clone_run_back:
-	./clone.sh "$(DEST)" 'nohup ${CMDTORUN} </dev/null >> bck.log 2>&1 &'
+	./clone.sh "$(DEST)" 'nohup ${CMDTORUN_CONTINUE} </dev/null >> bck.log 2>&1 &'
 
 
 # Testing ----------------------------------------------------------------------

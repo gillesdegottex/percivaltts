@@ -4,7 +4,7 @@
 
 <br/><br/>
 
-Based on Python/Theano/Lasagne, using Wasserstein GAN and training
+Based on Python/TensorFlow/Keras, using Wasserstein GAN and training
 regularization to optimise 2D convolutional layers.
 
 It uses [festival](http://festvox.org/festival/) and [Merlin](https://github.com/CSTR-Edinburgh/merlin) scripts to generate
@@ -16,6 +16,8 @@ the input text labels. The [PML vocoder](https://github.com/gillesdegottex/pulse
 
 Wasserstein GAN [article](https://arxiv.org/abs/1701.07875)
 
+    https://github.com/eriklindernoren/Keras-GAN/blob/master/wgan_gp/wgan_gp.py
+    https://github.com/keras-team/keras-contrib/blob/master/examples/improved_wgan.py
     https://gist.github.com/f0k/f3190ebba6c53887d598d03119ca2066
     https://github.com/martinarjovsky/WassersteinGAN
     https://github.com/fairytale0011/Conditional-WassersteinGAN
@@ -83,15 +85,7 @@ be a nightmare. We strongly suggest to use a package manager
 on top of the OS package manager. Here are versions that are known to work using
 miniconda:
 ```
-libffi                    3.2.1                h4deb6c0_3  
-libgcc-ng                 7.2.0                hcbc56d2_1  
-libgpuarray               0.6.2                         0  
-libstdcxx-ng              7.2.0                h24385c6_1  
-numpy                     1.12.1                   py27_0  
-pygpu                     0.6.2                    py27_0  
-python                    2.7.13              hfff3488_13  
-scipy                     0.19.1              np112py27_0  
-theano                    0.9.0                    py27_0  
+TODO TODO TODO
 ```
 Some packages are not available in conda directly, so install pip in your
 conda, activate the environment and then install also:
@@ -125,7 +119,7 @@ Go into the Python module directory:
 $ cd percivaltts
 ```
 
-Edit `setenv.sh` according to your CUDA/Theano installation (see above).
+Edit `setenv.sh` according to your TensorFlow/Keras installation (see above).
 
 Download the demo data:
 ```
@@ -195,7 +189,7 @@ In Percival, the trick is to specify the shape of the data as a suffix of the fi
 
 #### Batches
 
-A batch has a shape: [size, length, features_dim], that represent the number of samples in the batches, the number of time frames in the batch and the feature dimensionality, respectively. Because Theano/Lasagne needs a "channel" dimension (as in pictures), batches' shape often become temporarily [size, 1, length, features_dim] so that the last two dimensions define a picture of size [length, features_dim].
+A batch has a shape: [size, length, features_dim], that represent the number of samples in the batches, the number of time frames in the batch and the feature dimensionality, respectively. Because TensorFlow/Keras needs a "channel" dimension (as in pictures), batches' shape often become temporarily [size, 1, length, features_dim] so that the last two dimensions define a picture of size [length, features_dim].
 
 #### Features order
 
@@ -204,13 +198,12 @@ The implementation of the models assume the following features order: f0, amplit
 ### Results repeatability
 
 The seed of the random number generator is forced by default.
-In order to have non-deterministic runs, replace the line `np.random.seed(123)` in utils.py by `pass`
+In order to have non-deterministic runs, replace the content of the function `numpy_force_random_seed` in utils.py by `pass`
+https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development
 
 When the seed is forced, and while using the CPU, all training runs are supposed to output the exact same numerical results, no matter the model.
 
-When using the GPU, training a model that is based on Fully-Connected layers or Recurrent layers only should also output the exact same numerical results for each run.
-However, when using the GPU and 2D Convolutional layers, the results will differ (c.f. [Lasagne thread](https://github.com/Lasagne/Lasagne/issues/6) ).
-It should be possible to make them repeatable by uncommenting some lines in `setenv.sh` under repeatability section, at the expense of some computational time.
+When using the GPU, the runs are usually NOT repeatable and thus output different results.
 
 
 ### Training optimisation

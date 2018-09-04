@@ -1,6 +1,7 @@
 '''
 Vocoder classes.
 This is fully independent on the machine learning toolbox used.
+(independent of the ML backend)
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 

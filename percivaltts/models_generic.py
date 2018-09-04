@@ -21,154 +21,87 @@ Author
 from __future__ import print_function
 
 from percivaltts import *  # Always include this first to setup a few things
+numpy_force_random_seed()
+from backend_tensorflow import *
 
 import warnings
-from functools import partial
-
-numpy_force_random_seed()
-
-# import theano
-# import theano.tensor as T
-import lasagne
-import lasagne.layers as ll
-# lasagne.random.set_rng(np.random)
 
 from external.pulsemodel import sigproc as sp
 
-from backend_theano import *
+import modeltts
+# from models_cnn import CstMulLayer
+# from models_cnn import TileLayer
+# from models_cnn import layer_GatedConv2DLayer
+# from models_cnn import layer_context
 
-import vocoders
+from tensorflow import keras
 
-import model
-import models_basic
-from models_cnn import CstMulLayer
-from models_cnn import TileLayer
-from models_cnn import layer_GatedConv2DLayer
-from models_cnn import layer_context
 
-class ModelGeneric(model.Model):
-    def __init__(self, insize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'BLSTM'], hiddensize=256, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, bn_axes=None, grad_clipping=50, nameprefix=None):
-        if bn_axes is None: bn_axes=[0,1]
-        model.Model.__init__(self, insize, vocoder, hiddensize)
+class ModelGeneric(modeltts.ModelTTS):
+    def __init__(self, ctxsize, vocoder, mlpg_wins=[], layertypes=['FC', 'FC', 'FC'], hiddensize=256, nonlinearity=keras.layers.LeakyReLU(alpha=0.3), bn_axis=None, nameprefix=None):
+        if bn_axis is None: bn_axis=-1
+        modeltts.ModelTTS.__init__(self, ctxsize, vocoder, hiddensize)
 
         if nameprefix is None: nameprefix=''
 
-        l_hid = lasagne.layers.InputLayer(shape=(None, None, insize), input_var=self._input_values, name=nameprefix+'input.conditional')
+        l_in = keras.layers.Input(shape=(None, ctxsize), name=nameprefix+'input.conditional')
+        l_out = l_in
 
         for layi in xrange(len(layertypes)):
             layerstr = nameprefix+'l'+str(1+layi)+'_{}{}'.format(layertypes[layi], hiddensize)
 
             if layertypes[layi]=='FC':
-                l_hid = lasagne.layers.DenseLayer(l_hid, num_units=hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
-
-                if len(bn_axes)>0: l_hid=lasagne.layers.batch_norm(l_hid, axes=bn_axes) # Add batch normalisation
-
-            elif layertypes[layi]=='BLSTM':
-                fwd = models_basic.layer_LSTM(l_hid, hiddensize, nonlinearity=nonlinearity, backwards=False, grad_clipping=grad_clipping, name=layerstr+'.fwd')
-                bck = models_basic.layer_LSTM(l_hid, hiddensize, nonlinearity=nonlinearity, backwards=True, grad_clipping=grad_clipping, name=layerstr+'.bck')
-                l_hid = lasagne.layers.ConcatLayer((fwd, bck), axis=2)
-
-                # Don't add batch norm for RNN-based layers
-
+                l_out = keras.layers.Dense(hiddensize, use_bias=False, name=layerstr)(l_out)
+                l_out = keras.layers.BatchNormalization(axis=bn_axis)(l_out)
+                l_out = keras.layers.LeakyReLU(alpha=0.3)(l_out)                  # TODO TODO TODO Using nonlinearity doesn't work! Need to clone it maybe
+            if layertypes[layi]=='GRU' or layertypes[layi]=='BGRU':
+                l_gru = keras.layers.GRU(hiddensize, activation='tanh', use_bias=True, dropout=0.0, recurrent_dropout=0.0, implementation=1, return_sequences=True, reset_after=False, name=layerstr)
+                if layertypes[layi]=='BGRU':    l_out=keras.layers.Bidirectional(l_gru)(l_out)
+                else:                           l_out=l_gru(l_out)
+            if layertypes[layi]=='LSTM' or layertypes[layi]=='BLSTM':
+                # TODO TODO TODO Try CuDNNLSTM
+                # l_out = keras.layers.SimpleRNN(hiddensize, activation='tanh', return_sequences=True)(l_out)
+                l_lstm = keras.layers.LSTM(hiddensize, activation='tanh', recurrent_activation='hard_sigmoid', use_bias=True, dropout=0.0, recurrent_dropout=0.0, implementation=1, return_sequences=True, name=layerstr)
+                if layertypes[layi]=='BLSTM':   l_out=keras.layers.Bidirectional(l_lstm)(l_out)
+                else:                           l_out=l_lstm(l_out)
+                # TODO TODO TODO Test batch normalisation
+                # l_out = keras.layers.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works
             elif isinstance(layertypes[layi], list):
                 if layertypes[layi][0]=='CNN':
-                    # l_hid = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(l_hid, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
-                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name=nameprefix+'dimshuffle')
                     nbfilters = layertypes[layi][1]
                     winlen = layertypes[layi][2]
-                    layerstr = nameprefix+'l'+str(1+layi)+'_CNN{}x{}x{}'.format(nbfilters,winlen,1)
-                    l_hid = lasagne.layers.batch_norm(lasagne.layers.Conv2DLayer(l_hid, num_filters=nbfilters, filter_size=[winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=layerstr))
-                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 2, 3, 1], name=nameprefix+'dimshuffle')
-                    l_hid = lasagne.layers.flatten(l_hid, outdim=3, name=nameprefix+'flatten')
-                if layertypes[layi][0]=='GCNN':
-                    # l_hid = lasagne.layers.batch_norm(lasagne.layers.DenseLayer(l_hid, hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name='projection'), axes=bn_axes)
-                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 'x', 1, 2], name=nameprefix+'dimshuffle')
-                    nbfilters = layertypes[layi][1]
-                    winlen = layertypes[layi][2]
-                    layerstr = nameprefix+'l'+str(1+layi)+'_GCNN{}x{}x{}'.format(nbfilters,winlen,1)
-                    l_hid = lasagne.layers.batch_norm(layer_GatedConv2DLayer(l_hid, nbfilters, [winlen,1], stride=1, pad='same', nonlinearity=nonlinearity, name=nameprefix+layerstr))
-                    l_hid = lasagne.layers.dimshuffle(l_hid, [0, 2, 3, 1], name=nameprefix+'dimshuffle')
-                    l_hid = lasagne.layers.flatten(l_hid, outdim=3, name=nameprefix+'flatten')
+                    l_out = keras.layers.Conv1D(nbfilters*hiddensize, winlen, strides=1, padding='same', dilation_rate=1, activation=None, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros')(l_out)
+                    # TODO TODO TODO Test dilation_rate>1 # TODO TODO TODO nbfilters*hiddensize
+                    l_out = keras.layers.LeakyReLU(alpha=0.3)(l_out)                  # TODO only tanh works
+                # if layertypes[layi][0]=='GCNN':
 
-        l_out = models_basic.layer_final(l_hid, vocoder, mlpg_wins)
+        l_out = modeltts.layer_final(l_out, vocoder, mlpg_wins=[])
 
-        self.init_finish(l_out) # Has to be called at the end of the __init__ to print out the architecture, get the trainable params, etc.
+        self._kerasmodel = keras.Model(inputs=l_in, outputs=l_out)
+        self._kerasmodel.summary()
 
+        # from keras.utils import plot_model
+        # plot_model(self._kerasmodel, to_file='model.png')
 
-    # WGAN: Critic arch. parameters TODO Use cfg's
-    #       These are usually symmetrical with the model, but it the model can be very different in the case of a generic model, so make D as in CNN model.
-    _ctx_nblayers = 1
-    _ctx_nbfilters = 4
-    _ctx_winlen = 21
-    _nbcnnlayers = 8
-    _nbfilters = 16
-    _spec_freqlen = 5
-    _noise_freqlen = 5
-    _windur = 0.025
-    _postlayers_nb = 6
+    def build_critic(self, nonlinearity=nonlin_very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=False):
 
-    def build_critic(self, critic_input_var, condition_var, vocoder, ctxsize, nonlinearity=lasagne.nonlinearities.very_leaky_rectify, postlayers_nb=6, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=False):
+        l_in = keras.layers.Input(shape=(None, self.vocoder.featuressize()), name='input')
 
-        useLRN = False # TODO
+        l_in_ctx = keras.layers.Input(shape=(None, self.ctxsize), name='input_ctx')   # TODO TODO TODO
 
-        layer_critic = ll.InputLayer(shape=(None, None, vocoder.featuressize()), input_var=critic_input_var, name='input')
+        l_out = keras.layers.Concatenate(axis=-1, name='lo_concatenation')([l_in, l_in_ctx])
+        # l_out = l_in
 
-        winlen = int(0.5*self._windur/0.005)*2+1
+        l_out = keras.layers.Dense(self.hiddensize, activation=None)(l_out)    # TODO , use_bias=False
+        l_out = keras.layers.LeakyReLU(alpha=0.3)(l_out)           # TODO TODO TODO Using nonlinearity doesn't work! Need to clone it maybe
 
-        layerstoconcats = []
+        l_out = keras.layers.Dense(self.hiddensize, activation=None)(l_out)    # TODO , use_bias=False
+        l_out = keras.layers.LeakyReLU(alpha=0.3)(l_out)           # TODO TODO TODO Using nonlinearity doesn't work! Need to clone it maybe
 
-        # Amplitude spectrum
-        layer = ll.SliceLayer(layer_critic, indices=slice(vocoder.f0size(),vocoder.f0size()+vocoder.specsize()), axis=2, name='spec_slice') # Assumed feature order
+        l_out = keras.layers.Dense(self.hiddensize, activation=None)(l_out)    # TODO , use_bias=False
+        l_out = keras.layers.LeakyReLU(alpha=0.3)(l_out)           # TODO TODO TODO Using nonlinearity doesn't work! Need to clone it maybe
 
-        if use_LSweighting: # Using weighted WGAN+LS
-            print('WGAN Weighted LS - critic - SPEC (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
-            # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.specsize()), LSWGANtranscoef)
-            wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.specsize(), dtype=theano.config.floatX), sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.specsize()), LSWGANtranscoef)
-            wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
-            layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
+        l_out = keras.layers.Dense(1, activation=None)(l_out)    # TODO , use_bias=False
+        l_out = keras.layers.LeakyReLU(alpha=0.3)(l_out)           # TODO TODO TODO Using nonlinearity doesn't work! Need to clone it maybe
 
-        layer = ll.dimshuffle(layer, [0, 'x', 1, 2], name='spec_dimshuffle')
-        for layi in xrange(self._nbcnnlayers):
-            layerstr = 'spec_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._spec_freqlen)
-            # strides>1 make the first two Conv layers pyramidal. Increase patches' effects here and there, bad.
-            layer = layer_GatedConv2DLayer(layer, self._nbfilters, [winlen,self._spec_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
-            if useLRN: layer = ll.LocalResponseNormalization2DLayer(layer)
-        layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='spec_dimshuffle')
-        layer_spec = ll.flatten(layer, outdim=3, name='spec_flatten')
-        layerstoconcats.append(layer_spec)
-
-        if use_WGAN_incnoisefeature and vocoder.noisesize()>0: # Add noise in critic
-            layer = ll.SliceLayer(layer_critic, indices=slice(vocoder.f0size()+vocoder.specsize(),vocoder.f0size()+vocoder.specsize()+vocoder.noisesize()), axis=2, name='nm_slice')
-
-            if use_LSweighting: # Using weighted WGAN+LS
-                print('WGAN Weighted LS - critic - NM (trans cutoff {}Hz)'.format(LSWGANtransfreqcutoff))
-                # wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  int(LSWGANtransfreqcutoff*vocoder.noisesize()), LSWGANtranscoef)
-                wganls_spec_weights_ = nonlin_sigmoidparm(np.arange(vocoder.noisesize(), dtype=theano.config.floatX),  sp.freq2fwspecidx(LSWGANtransfreqcutoff, vocoder.fs, vocoder.noisesize()), LSWGANtranscoef)
-                wganls_weights = theano.shared(value=np.asarray(wganls_spec_weights_), name='wganls_spec_weights_')
-                layer = CstMulLayer(layer, cstW=wganls_weights, name='cstdot_wganls_weights')
-
-            layer = ll.dimshuffle(layer, [0, 'x', 1, 2], name='nm_dimshuffle')
-            for layi in xrange(np.max((1,int(np.ceil(self._nbcnnlayers/2))))):
-                layerstr = 'nm_l'+str(1+layi)+'_GC{}x{}x{}'.format(self._nbfilters,winlen,self._noise_freqlen)
-                layer = layer_GatedConv2DLayer(layer, self._nbfilters, [winlen,self._noise_freqlen], pad='same', nonlinearity=nonlinearity, name=layerstr)
-                if useLRN: layer = ll.LocalResponseNormalization2DLayer(layer)
-            layer = ll.dimshuffle(layer, [0, 2, 3, 1], name='nm_dimshuffle')
-            layer_bndnm = ll.flatten(layer, outdim=3, name='nm_flatten')
-            layerstoconcats.append(layer_bndnm)
-
-        # Add the contexts
-        layer_ctx_input = ll.InputLayer(shape=(None, None, ctxsize), input_var=condition_var, name='ctx_input')
-        layer_ctx = layer_context(layer_ctx_input, ctx_nblayers=self._ctx_nblayers, ctx_nbfilters=self._ctx_nbfilters, ctx_winlen=self._ctx_winlen, hiddensize=self._hiddensize, nonlinearity=nonlinearity, bn_axes=None, bn_cnn_axes=None, critic=True, useLRN=useLRN)
-        layerstoconcats.append(layer_ctx)
-
-        # Concatenate the features analysis with the contexts...
-        layer = ll.ConcatLayer(layerstoconcats, axis=2, name='ctx_features.concat')
-
-        # ... and finalize with a common FC network
-        for layi in xrange(postlayers_nb):
-            layerstr = 'post.l'+str(1+layi)+'_FC'+str(self._hiddensize)
-            layer = ll.DenseLayer(layer, self._hiddensize, nonlinearity=nonlinearity, num_leading_axes=2, name=layerstr)
-
-        # output layer (linear)
-        layer = ll.DenseLayer(layer, 1, nonlinearity=None, num_leading_axes=2, name='projection') # No nonlin for this output
-        return [layer, layer_critic, layer_ctx_input]
+        return l_in, l_in_ctx, l_out
