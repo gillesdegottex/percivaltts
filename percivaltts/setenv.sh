@@ -12,13 +12,12 @@ conda activate
 
 # To output some information about TensorFlow, change it to 0
 export TF_CPP_MIN_LOG_LEVEL=3
+# To select one specific GPU on a multiple-GPU machine
+# export CUDA_VISIBLE_DEVICES=0
 # To hide the GPUs and thus force using the CPU (makes runs repeatable)
 # export CUDA_VISIBLE_DEVICES=""
 # This should also help to make runs repeatable
 # export PYTHONHASHSEED=0
-
-# To select one specific GPU on a multiple-GPU machine
-# export CUDA_VISIBLE_DEVICES=0
 
 # Add CUDA
 #export PATH=$CUDA_ROOT/bin:$PATH
