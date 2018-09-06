@@ -29,6 +29,8 @@ import tensorflow as tf
 tf.set_random_seed(123)
 from tensorflow import keras
 
+import numpy as np
+
 def print_sysinfo_backend():
     """Print some information about Theano installation"""
     print('    TensorFlow: {} {}'.format(tf.__version__, tf.__file__))
