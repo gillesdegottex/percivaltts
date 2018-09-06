@@ -76,18 +76,23 @@ class ModelTTS:
     ctxsize = -1
     vocoder = None
 
+    cfgarch = None
     _kerasmodel = None
 
-    hiddensize = 256
-
-    def __init__(self, ctxsize, vocoder, hiddensize=256):
+    def __init__(self, ctxsize, vocoder, cfgarch=None, kerasmodel=None):
         # Force additional random inputs is using anyform of GAN
         print("Building the model")
 
         self.ctxsize = ctxsize
 
         self.vocoder = vocoder
-        self.hiddensize = hiddensize
+        self.cfgarch = cfgarch
+
+        if not kerasmodel is None:
+            self._kerasmodel = kerasmodel
+            # self.ctxsize = # TODO
+            self._kerasmodel.summary()
+
 
     def predict(self, x):
         return self._kerasmodel.predict(x)
