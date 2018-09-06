@@ -80,45 +80,26 @@ def wasserstein_loss(valid_true, valid_pred):
 def lse_loss(y_true, y_pred):   # i.e. mse_loss
     return K.mean((y_true - y_pred)**2)
 
-# def weighted_wasserstein_lse_loss(valid_y_true, valid_y_pred, vocoder, cfg):
-#     # Unpack the values first
-#     valid_true = keras.layers.Lambda(lambda x: x[:,:,:1])(valid_y_true)
-#     y_true = keras.layers.Lambda(lambda x: x[:,:,1:])(valid_y_true)
-#     valid_pred = keras.layers.Lambda(lambda x: x[:,:,:1])(valid_y_pred)
-#     y_pred = keras.layers.Lambda(lambda x: x[:,:,1:])(valid_y_pred)
-
-def weighted_wasserstein_lse_loss(valid_true, y_true, valid_pred, y_pred, vocoder, cfg):
-
-    _WGAN_incnoisefeature = False # Set it to True to include noise in the WGAN loss
-    train_LScoef = 0.25         # LS loss weights 0.25 and WGAN for the rest (even though LS loss is in [0,oo) whereas WGAN loss is on (-oo,+oo))
-
-    wganls_weights_els = []
-    wganls_weights_els.append([0.0]) # For f0
-    specvs = np.arange(vocoder.specsize(), dtype=np.float32)
-    if train_LScoef==0.0:
-        wganls_weights_els.append(np.ones(vocoder.specsize()))  # No special weighting for spec
-    else:
-        wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(cfg.train_critic_LSWGANtransfreqcutoff, vocoder.fs, vocoder.specsize()), cfg.train_critic_LSWGANtranscoef)) # For spec
-    if vocoder.noisesize()>0:
-        if cfg.train_critic_use_WGAN_incnoisefeature:
-            noisevs = np.arange(vocoder.noisesize(), dtype=np.float32)
-            wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(cfg.train_critic_LSWGANtransfreqcutoff, vocoder.fs, vocoder.noisesize()), cfg.train_critic_LSWGANtranscoef)) # For noise
-        else:
-            wganls_weights_els.append(np.zeros(vocoder.noisesize()))
-    if vocoder.vuvsize()>0:
-        wganls_weights_els.append([0.0]) # For vuv
-    wganls_weights_ = np.hstack(wganls_weights_els)
-
-    wganls_weights_ *= (1.0-train_LScoef)   # TODO TODO TODO change this!
-
-    wganls_weights_ls = (1.0-wganls_weights_)
+def specweighted_wasserstein_lse_loss(valid_y_true, valid_y_pred, specweight):
+    # Unpack the values first
+    valid_true = keras.layers.Lambda(lambda x: x[:,:,:1])(valid_y_true)
+    y_true = keras.layers.Lambda(lambda x: x[:,:,1:])(valid_y_true)
+    valid_pred = keras.layers.Lambda(lambda x: x[:,:,:1])(valid_y_pred)
+    y_pred = keras.layers.Lambda(lambda x: x[:,:,1:])(valid_y_pred)
 
     lsepart = (y_true - y_pred)**2
 
-    lsepart = lsepart*wganls_weights_ls
+    lsepart = lsepart*specweight
 
-    return np.mean(wganls_weights_)*K.mean(valid_true * valid_pred) + K.mean(lsepart)
+    return np.mean(1.0-specweight)*K.mean(valid_true * valid_pred) + K.mean(lsepart)
 
+def specweighted_lse_loss(y_true, y_pred, specweight):
+
+    lsepart = K.mean((y_true - y_pred)**2)
+
+    lsepart = lsepart*specweight
+
+    return K.mean(lsepart)
 
 class Optimizer:
 
@@ -262,6 +243,7 @@ class Optimizer:
             # Construct Computational Graph for Critic
 
             critic = keras.Model(inputs=[self._critic.input_features, self._critic.input_ctx], outputs=self._critic.output)
+            print('    critic architecture:')
             critic.summary()
 
             # Create a frozen generator for the critic training
@@ -332,25 +314,46 @@ class Optimizer:
 
             elif self._errtype=='WLSWGAN':
                 print('        use WLSWGAN optimization')
-                # First pack the outputs, since there is no possibility of doing many(outpouts)-to-one(loss) in Keras ... :_(
-                outputs = keras.layers.Concatenate(axis=-1, name='lo_concatenation')([valid,pred_sample])
-                generator_model = keras.Model(inputs=ctx_gen, outputs=outputs)
-                # generator_model.compile(loss=[wasserstein_loss, lse_loss], optimizer=gen_opti, loss_weights=[1, 1])
-                generator_model.compile(loss=partial(weighted_wasserstein_lse_loss,vocoder=self._model.vocoder,cfg=cfg), optimizer=gen_opti)
+                # First pack the outputs, since there is no possibility of doing many(outputs)-to-one(loss) in Keras ... :_(
+                # generator_model = keras.Model(inputs=ctx_gen, outputs=keras.layers.Concatenate(axis=-1, name='lo_concatenation')([valid,pred_sample]))
+                generator_model = keras.Model(inputs=ctx_gen, outputs=[valid,pred_sample])
 
-                # TODO Modify https://github.com/keras-team/keras/blob/1.1.0/keras/engine/training.py:514-540 in order to deal with many-to-one case
+                wganls_weights_els = []
+                wganls_weights_els.append([0.0]) # For f0
+                specvs = np.arange(self._model.vocoder.specsize(), dtype=np.float32)
+                if cfg.train_LScoef==0.0:
+                    wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
+                else:
+                    wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(cfg.train_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), cfg.train_critic_LSWGANtranscoef)) # For spec
+                if self._model.vocoder.noisesize()>0:
+                    if cfg.train_critic_use_WGAN_incnoisefeature:
+                        noisevs = np.arange(self._model.vocoder.noisesize(), dtype=np.float32)
+                        wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(cfg.train_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), cfg.train_critic_LSWGANtranscoef)) # For noise
+                    else:
+                        wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
+                if self._model.vocoder.vuvsize()>0:
+                    wganls_weights_els.append([0.0]) # For vuv
+                wganls_weights_ = np.hstack(wganls_weights_els)
+
+                wganls_weights_ *= (1.0-cfg.train_LScoef)   # TODO TODO TODO change this!
+
+                wganls_weights_ls = (1.0-wganls_weights_)
+
+                generator_model.compile(loss=[wasserstein_loss, partial(specweighted_lse_loss,specweight=wganls_weights_ls)], optimizer=gen_opti, loss_weights=[np.mean(wganls_weights_), 1])
+                # generator_model.compile(loss=partial(weighted_wasserstein_lse_loss,vocoder=self._model.vocoder,cfg=cfg), optimizer=gen_opti)
+
+                # TODO Modify https://github.com/keras-team/keras/blob/1.1.0/keras/engine/training.py:514-540 (or 200-229) in order to deal with many-to-one case
                 #      See https://github.com/keras-team/keras/issues/4093
                 #          https://stackoverflow.com/questions/44172165/keras-multiple-output-custom-loss-function
 
-                def generator_train_validation_fn(x, valid_y):
-                    rets = generator_model.evaluate(x=x, y=valid_y, batch_size=1, verbose=0)
+                def generator_train_validation_fn(x, valid, y):
+                    # rets = generator_model.evaluate(x=x, y=valid_y, batch_size=1, verbose=0)
+                    rets = generator_model.evaluate(x=x, y=[valid,y], batch_size=1, verbose=0)[0]
                     # print('generator_train_validation_fn: rets={}'.format(rets))
                     return rets
 
                 # Pack also the validation data
-                valid_Y_vals = []
-                for Y_val in Y_vals:
-                    valid_Y_vals.append(np.concatenate([np.tile(wgan_valid[0,:,:],[Y_val.shape[0],1]),Y_val],axis=1))
+                # valid_Y_vals = [np.concatenate([np.tile(wgan_valid[0,:,:],[Y_val.shape[0],1]),Y_val],axis=1) for Y_val in Y_vals]
 
         else:
             raise ValueError('Unknown error type "'+self._errtype+'"')    # pragma: no cover
@@ -429,10 +432,9 @@ class Optimizer:
                         # Train the generator
                         if self._errtype=='WGAN':
                             cost_tra = generator_model.train_on_batch(X_trab, wgan_valid)
-                            cost_tra = float(cost_tra)
                         elif self._errtype=='WLSWGAN':
-                            cost_tra = generator_model.train_on_batch(X_trab, np.concatenate([np.tile(wgan_valid,[1,Y_trab.shape[1],1]), Y_trab], axis=2))
-                            cost_tra = float(cost_tra)
+                            # cost_tra = generator_model.train_on_batch(X_trab, np.concatenate([np.tile(wgan_valid,[1,Y_trab.shape[1],1]), Y_trab], axis=2))
+                            cost_tra = generator_model.train_on_batch(X_trab, [wgan_valid, Y_trab])[0]
                         generator_updates += 1
 
                         if 0: log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+'{:07}.png'.format(generator_updates), vocoder=self._model.vocoder, title='E{} I{}'.format(epoch,generator_updates))
@@ -464,7 +466,8 @@ class Optimizer:
             elif self._errtype=='WGAN' or self._errtype=='WLSWGAN':
                 # TODO This often break when changing arguments, loss functions, etc. Try to find a design which is more prototype-friendly
                 if self._errtype=='WGAN':       generator_train_validation_fn_args = [X_vals, Y_vals]
-                elif self._errtype=='WLSWGAN':  generator_train_validation_fn_args = [X_vals, valid_Y_vals]
+                # elif self._errtype=='WLSWGAN':  generator_train_validation_fn_args = [X_vals, valid_Y_vals]
+                elif self._errtype=='WLSWGAN':  generator_train_validation_fn_args = [X_vals, [wgan_valid for _ in xrange(len(Y_vals))], Y_vals]
                 costs['model_validation'].append(data.cost_model_mfn(generator_train_validation_fn, generator_train_validation_fn_args))
                 costs['critic_training'].append(np.mean(costs_tra_critic_batches))
                 critic_train_validation_fn_args = [Y_vals, X_vals]
