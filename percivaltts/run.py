@@ -25,6 +25,11 @@ Author
     Gilles Degottex <gad27@cam.ac.uk>
 '''
 
+# The following select a GPU available, so that only one GPU is used for one training script running
+import os
+import external.GPUtil
+os.environ["CUDA_VISIBLE_DEVICES"]=str(external.GPUtil.getAvailable()[0])
+
 print('')
 
 from percivaltts import *  # Always include this first to setup a few things for percival
@@ -32,6 +37,8 @@ import data
 import vocoders
 import compose
 import models_generic
+import networks_critic
+# import models_cnn # TODO TF
 import optimizer
 print_sysinfo()
 
@@ -39,6 +46,10 @@ from functools import partial
 
 print_log('Global configurations')
 cfg = configuration() # Init configuration structure
+# `cfg` is sort of the dirty global variable that is carried around here and there in percival's code.
+# This is usually very bad practice as it prevent encapsulating functionalities
+# in robust functions and creates extra parameters that do not appear in the functions argument.
+# It is however extremely convenient for prototyping.
 
 # Corpus/Voice(s) options
 cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
@@ -63,16 +74,15 @@ cfg.vocoder_fs = 16000
 cfg.vocoder_shift = 0.005
 cfg.vocoder_f0_min, cfg.vocoder_f0_max = 70, 600
 
-vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _nm_size=33)
-# vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, _spec_size=129, _aper_size=33)
 
-use_WGAN = True # Switch it to False and it will also turn Merlin's post-processing on (see below)
+# mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
+mlpg_wins = None
+vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size=129, nm_size=33, mlpg_wins=mlpg_wins)
+# vocoder = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size=129, aper_size=33, mlpg_wins=mlpg_wins)
 
-do_mlpg = False # Switch it to True and deltas will be added in the input and the MLPG will be used during generation.
+errtype = 'WLSWGAN' # Switch it to 'LSE', 'WGAN', 'WLSWGAN'
 
-mlpg_wins = []
-if do_mlpg: mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
-out_size = vocoder.featuressize()*(len(mlpg_wins)+1)
+out_size = vocoder.featuressize()
 wav_dir = 'wav'
 wav_path = cp+wav_dir+'/*.wav'
 feats_dir = ''
@@ -85,25 +95,25 @@ elif isinstance(vocoder, vocoders.VocoderWORLD):noisetag='fwdbap'   # pragma: no
 noise_path = cp+wav_dir+feats_dir+'_'+noisetag+str(vocoder.noisesize())+'/*.'+noisetag
 vuv_path = cp+wav_dir+feats_dir+'_vuv1/*.vuv'
 
-if do_mlpg: feats_dir+='_mlpg'
+if not mlpg_wins is None: feats_dir+='_mlpg'
 cfg.outpath = cp+wav_dir+feats_dir+'_cmp_lf0_fwlspec'+str(vocoder.specsize())+'_'+noisetag+str(vocoder.noisesize())
 if isinstance(vocoder, vocoders.VocoderPML):     cfg.outpath+='_nmnoscale'
 elif isinstance(vocoder, vocoders.VocoderWORLD): cfg.outpath+='_vuv'    # pragma: no cover
 cfg.outpath+='/*.cmp:(-1,'+str(out_size)+')'
 
 # Model architecture options
-cfg.model_ctx_nblayers = 1
-cfg.model_ctx_nbfilters = 4     # 4 seems enough, more adds noise
-cfg.model_ctx_winlen = 21       # Too big (>41,200ms) seems to bring noise in the synth (might lack data)
-cfg.model_hiddensize = 256      # For all arch 256
-cfg.model_nbcnnlayers = 8       # CNN only 8
-cfg.model_nbfilters = 16        # CNN only 16
-cfg.model_spec_freqlen = 5      # [bins] CNN only 5
-cfg.model_noise_freqlen = 5     # [bins] CNN only 5
-cfg.model_windur = 0.025        # [s] 0.025/0.005=5 frames. CNN only 0.025
+cfg.arch_ctx_nblayers = 1
+cfg.arch_ctx_nbfilters = 4     # 4 seems enough, more adds noise
+cfg.arch_ctx_winlen = 21       # Too big (>41,200ms) seems to bring noise in the synth (might lack data)
+cfg.arch_hiddensize = 256      # For all arch 256
+cfg.arch_nbcnnlayers = 8       # CNN only 8
+cfg.arch_nbfilters = 16        # CNN only 16
+cfg.arch_spec_freqlen = 5      # [bins] CNN only 5
+cfg.arch_noise_freqlen = 5     # [bins] CNN only 5
+cfg.arch_windur = 0.025        # [s] 0.025/0.005=5 frames. CNN only 0.025
 
 # Training options
-cfg.fparams_fullset = 'model.pkl'
+cfg.fparams_fullset = 'model.h5'
 # The ones below will overwrite default options in model.py:train_multipletrials(.)
 cfg.train_batch_size = 5
 cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each batch through time
@@ -113,10 +123,12 @@ cfg.train_LScoef = 0.25         # LS loss weights 0.25 and WGAN for the rest (ev
 cfg.train_min_nbepochs = 200
 cfg.train_max_nbepochs = 300    # (Can stop much earlier for 3 stacked BLSTM or 6 stacked FC)
 cfg.train_cancel_nodecepochs = 50 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)
-if not use_WGAN:
-    cfg.train_min_nbepochs = 20
-    cfg.train_max_nbepochs = 50
-    cfg.train_cancel_nodecepochs = 10
+# cfg.train_LScoef = 0.0  # TODO TODO TODO
+# cfg.train_LScoefflat = 0.75 # TODO TODO TODO
+cfg.train_critic_LSweighting=True
+cfg.train_critic_LSWGANtransfreqcutoff=4000
+cfg.train_critic_LSWGANtranscoef=1.0/8.0
+cfg.train_critic_use_WGAN_incnoisefeature=False
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
 # cfg.train_nbtrials = 12
@@ -164,10 +176,11 @@ def contexts_extraction():
 def build_model():
     # mod = models_cnn.ModelCNN(ctxsize, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'LSTM'], hiddensize=cfg.model_hiddensize)
-    mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], hiddensize=cfg.model_hiddensize)
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, mlpg_wins=mlpg_wins, layertypes=[['CNN',cfg.model_ctx_nbfilters,cfg.model_ctx_winlen], 'FC', 'FC', 'FC', 'FC'], hiddensize=cfg.model_hiddensize)
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, layertypes=['FC', 'LSTM'], hiddensize=cfg.model_hiddensize)
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'])
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=['DO', 'FC', 'DO', 'FC', 'DO', 'FC', 'DO', 'FC', 'DO', 'FC', 'DO', 'FC'])
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=['BLSTM', 'BLSTM', 'BLSTM'])
+    mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=[['CNN',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], 'FC', 'FC', 'FC', 'FC'])
 
     return mod
 
@@ -177,7 +190,10 @@ def training(cont=False):
 
     mod = build_model()
 
-    opti = optimizer.Optimizer(mod, errtype='WGAN' if use_WGAN else 'LSE') # 'WGAN' or 'LSE'
+    if errtype=='LSE': critic=None
+    else:              critic=networks_critic.Critic(vocoder, ctxsize, cfg)
+
+    opti = optimizer.Optimizer(mod, errtype=errtype, critic=critic)
     opti.train(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
 
 
@@ -192,8 +208,8 @@ def generate(fparams=cfg.fparams_fullset):
     fid_lst_test = fids[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
 
     demostart = cfg.id_test_demostart if hasattr(cfg, 'id_test_demostart') else 0
-    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=False)
-    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-pp-snd', vocoder, wins=mlpg_wins, do_objmeas=False, do_resynth=False, pp_mcep=True)
+    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, do_objmeas=True, do_resynth=True, pp_mcep=False)
+    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-pp-snd', vocoder, do_objmeas=False, do_resynth=False, pp_mcep=True)
 
     # And generate all of them for listening tests
     # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=False)

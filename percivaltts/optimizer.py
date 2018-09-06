@@ -74,24 +74,68 @@ def gradient_penalty_loss(y_true, y_pred, averaged_samples):
     # return the mean as loss over all the batch samples
     return K.mean(gradient_penalty)
 
-def wasserstein_loss(y_true, y_pred):
-    return K.mean(y_true * y_pred)
+def wasserstein_loss(valid_true, valid_pred):
+    return K.mean(valid_true * valid_pred)
+
+def lse_loss(y_true, y_pred):   # i.e. mse_loss
+    return K.mean((y_true - y_pred)**2)
+
+# def weighted_wasserstein_lse_loss(valid_y_true, valid_y_pred, vocoder, cfg):
+#     # Unpack the values first
+#     valid_true = keras.layers.Lambda(lambda x: x[:,:,:1])(valid_y_true)
+#     y_true = keras.layers.Lambda(lambda x: x[:,:,1:])(valid_y_true)
+#     valid_pred = keras.layers.Lambda(lambda x: x[:,:,:1])(valid_y_pred)
+#     y_pred = keras.layers.Lambda(lambda x: x[:,:,1:])(valid_y_pred)
+
+def weighted_wasserstein_lse_loss(valid_true, y_true, valid_pred, y_pred, vocoder, cfg):
+
+    _WGAN_incnoisefeature = False # Set it to True to include noise in the WGAN loss
+    train_LScoef = 0.25         # LS loss weights 0.25 and WGAN for the rest (even though LS loss is in [0,oo) whereas WGAN loss is on (-oo,+oo))
+
+    wganls_weights_els = []
+    wganls_weights_els.append([0.0]) # For f0
+    specvs = np.arange(vocoder.specsize(), dtype=np.float32)
+    if train_LScoef==0.0:
+        wganls_weights_els.append(np.ones(vocoder.specsize()))  # No special weighting for spec
+    else:
+        wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(cfg.train_critic_LSWGANtransfreqcutoff, vocoder.fs, vocoder.specsize()), cfg.train_critic_LSWGANtranscoef)) # For spec
+    if vocoder.noisesize()>0:
+        if cfg.train_critic_use_WGAN_incnoisefeature:
+            noisevs = np.arange(vocoder.noisesize(), dtype=np.float32)
+            wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(cfg.train_critic_LSWGANtransfreqcutoff, vocoder.fs, vocoder.noisesize()), cfg.train_critic_LSWGANtranscoef)) # For noise
+        else:
+            wganls_weights_els.append(np.zeros(vocoder.noisesize()))
+    if vocoder.vuvsize()>0:
+        wganls_weights_els.append([0.0]) # For vuv
+    wganls_weights_ = np.hstack(wganls_weights_els)
+
+    wganls_weights_ *= (1.0-train_LScoef)   # TODO TODO TODO change this!
+
+    wganls_weights_ls = (1.0-wganls_weights_)
+
+    lsepart = (y_true - y_pred)**2
+
+    lsepart = lsepart*wganls_weights_ls
+
+    return np.mean(wganls_weights_)*K.mean(valid_true * valid_pred) + K.mean(lsepart)
 
 
 class Optimizer:
 
     # A few hardcoded values
-    _LSWGANtransfreqcutoff = 4000 # [Hz] Params hardcoded
-    _LSWGANtranscoef = 1.0/8.0 # Params hardcoded
-    _WGAN_incnoisefeature = False # Set it to True to include noise in the WGAN loss
+    # _LSWGANtransfreqcutoff = 4000 # [Hz] Params hardcoded
+    # _LSWGANtranscoef = 1.0/8.0 # Params hardcoded
+    # _WGAN_incnoisefeature = False # Set it to True to include noise in the WGAN loss
 
     # Variables
     _errtype = 'WGAN' # or 'LSE'
     _model = None # The model whose parameters will be optimised.
 
-    def __init__(self, model, errtype='WGAN'):
-        self._model = model
+    _critic = None
 
+    def __init__(self, model, errtype='WGAN', critic=None):
+        self._model = model
+        self._critic = critic
         self._errtype = errtype
 
     def saveTrainingState(self, fstate, cfg=None, extras=None, printfn=print):
@@ -185,8 +229,7 @@ class Optimizer:
         for fid in fid_lst_tra:
             X = data.loadfile(outdir, fid)
             nbtrainframes += X.shape[0]
-        frameshift = 0.005 # TODO
-        print('    Training set: {} sentences, #frames={} ({})'.format(len(fid_lst_tra), nbtrainframes, time.strftime('%H:%M:%S', time.gmtime((nbtrainframes*frameshift)))))
+        print('    Training set: {} sentences, #frames={} ({})'.format(len(fid_lst_tra), nbtrainframes, time.strftime('%H:%M:%S', time.gmtime((nbtrainframes*self._model.vocoder.shift)))))
         print('    #parameters/#frames={:.2f}'.format(float(self._model.count_params())/nbtrainframes))
         if cfg.train_nbepochs_scalewdata and not cfg.train_batch_lengthmax is None:
             # During an epoch, the whole data is _not_ seen by the training since cfg.train_batch_lengthmax is limited and smaller to the sentence size.
@@ -200,29 +243,27 @@ class Optimizer:
             print('        train_max_nbepochs={}'.format(cfg.train_max_nbepochs))
 
         if self._errtype=='LSE':
-            print('    LSE Training')
+            print('    Prepare LSE training')
 
             # opti = tf.train.RMSPropOptimizer(float(10**cfg.train_learningrate_log10))  # Saving training states doesn't work with these ones
             # opti = keras.optimizers.RMSprop(lr=float(10**cfg.train_learningrate_log10)) #
             opti = keras.optimizers.Adam(lr=float(10**cfg.train_learningrate_log10), beta_1=float(cfg.train_adam_beta1), beta_2=float(cfg.train_adam_beta2), epsilon=float(10**cfg.train_adam_epsilon_log10), decay=0.0, amsgrad=False)
             print('    optimizer: {}'.format(type(opti).__name__))
 
-            # self._optim_updates.append(updates)
             print("    compiling training function ...")
-            self._model._kerasmodel.compile(loss=['mse'], optimizer=opti)
+            self._model._kerasmodel.compile(loss=lse_loss, optimizer=opti) # Use the explicit lse_loss instead of the built-in 'mse' for comparison purpose with WLSWGAN
             self._model._kerasmodel.summary()
 
-        elif self._errtype=='WGAN':
-            print('Preparing critic for WGAN...')
-
-            critic_in, critic_in_ctx, critic_out = self._model.build_critic(use_LSweighting=(cfg.train_LScoef>0.0), LSWGANtransfreqcutoff=self._LSWGANtransfreqcutoff, LSWGANtranscoef=self._LSWGANtranscoef, use_WGAN_incnoisefeature=self._WGAN_incnoisefeature)
+        elif self._errtype=='WGAN' or self._errtype=='WLSWGAN':
+            print('    Prepare WGAN training...')
 
             generator = self._model._kerasmodel
 
             # Construct Computational Graph for Critic
 
-            critic = keras.Model(inputs=[critic_in, critic_in_ctx], outputs=critic_out)
+            critic = keras.Model(inputs=[self._critic.input_features, self._critic.input_ctx], outputs=self._critic.output)
             critic.summary()
+
             # Create a frozen generator for the critic training
             # Use the Network class to avoid irrelevant warning: https://github.com/keras-team/keras/issues/8585
             frozen_generator = keras.engine.network.Network(self._model._kerasmodel.inputs, self._model._kerasmodel.outputs)
@@ -231,16 +272,16 @@ class Optimizer:
             # Input for a real sample
             real_sample = keras.layers.Input(shape=(None,self._model.vocoder.featuressize()))
             # Generate an artifical (fake) sample
-            fake_sample = frozen_generator(critic_in_ctx)
+            fake_sample = frozen_generator(self._critic.input_ctx)
 
             # Discriminator determines validity of the real and fake images
-            fake = critic([fake_sample, critic_in_ctx])
-            valid = critic([real_sample, critic_in_ctx])
+            fake = critic([fake_sample, self._critic.input_ctx])
+            valid = critic([real_sample, self._critic.input_ctx])
 
             # Construct weighted average between real and fake images
             interpolated_sample = RandomWeightedAverage(cfg.train_batch_size)([real_sample, fake_sample])
             # Determine validity of weighted sample
-            validity_interpolated = critic([interpolated_sample, critic_in_ctx])
+            validity_interpolated = critic([interpolated_sample, self._critic.input_ctx])
 
             # Use Python partial to provide loss function with additional
             # 'averaged_samples' argument
@@ -250,15 +291,24 @@ class Optimizer:
             print('    compiling critic')
             critic_opti = keras.optimizers.Adam(lr=float(10**cfg.train_D_learningrate_log10), beta_1=float(cfg.train_D_adam_beta1), beta_2=float(cfg.train_D_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
             print('        optimizer: {}'.format(type(critic_opti).__name__))
-            critic_model = keras.Model(inputs=[real_sample, critic_in_ctx],
+            critic_model = keras.Model(inputs=[real_sample, self._critic.input_ctx],
                                         outputs=[valid, fake, validity_interpolated])
             critic_model.compile(loss=[wasserstein_loss, wasserstein_loss, partial_gp_loss],
                                         optimizer=critic_opti, loss_weights=[1, 1, cfg.train_pg_lambda])
 
+            wgan_valid = -np.ones((cfg.train_batch_size, 1, 1))
+            wgan_fake =  np.ones((cfg.train_batch_size, 1, 1))
+            wgan_dummy = np.zeros((cfg.train_batch_size, 1, 1)) # Dummy gt for gradient penalty
+
+            def critic_train_validation_fn(y, x):
+                rets = critic_model.evaluate(x=[y, x], y=[wgan_valid[:1,], wgan_fake[:1,], wgan_dummy[:1,]], batch_size=1, verbose=0)
+                return rets[0]
+
+
             # Construct Computational Graph for Generator
 
             # Create a frozen critic for the generator training
-            frozen_critic = keras.engine.network.Network([critic_in,critic_in_ctx], critic_out)
+            frozen_critic = keras.engine.network.Network([self._critic.input_features,self._critic.input_ctx], self._critic.output)
             frozen_critic.trainable = False
 
             # Sampled noise for input to generator
@@ -271,106 +321,39 @@ class Optimizer:
             print('    compiling generator')
             gen_opti = keras.optimizers.Adam(lr=float(10**cfg.train_G_learningrate_log10), beta_1=float(cfg.train_G_adam_beta1), beta_2=float(cfg.train_G_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
             print('        optimizer: {}'.format(type(gen_opti).__name__))
-            generator_model = keras.Model(ctx_gen, valid)
-            generator_model.compile(loss=wasserstein_loss, optimizer=gen_opti)
 
-            wgan_valid = -np.ones((cfg.train_batch_size, 1, 1))
-            wgan_fake =  np.ones((cfg.train_batch_size, 1, 1))
-            wgan_dummy = np.zeros((cfg.train_batch_size, 1, 1)) # Dummy gt for gradient penalty
+            if self._errtype=='WGAN':
+                print('        use WGAN optimization')
+                generator_model = keras.Model(inputs=ctx_gen, outputs=valid)
+                generator_model.compile(loss=wasserstein_loss, optimizer=gen_opti)
 
-            def train_validation_fn(x, y):
-                return generator_model.evaluate(x=x, y=y, batch_size=1, verbose=0)
+                def generator_train_validation_fn(x, _valid):
+                    return generator_model.evaluate(x=x, y=_valid, batch_size=1, verbose=0)
 
-            def critic_train_validation_fn(y, x):
-                rets = critic_model.evaluate(x=[y, x], y=[wgan_valid[:1,], wgan_fake[:1,], wgan_dummy[:1,]], batch_size=1, verbose=0)
-                return rets[0]
+            elif self._errtype=='WLSWGAN':
+                print('        use WLSWGAN optimization')
+                # First pack the outputs, since there is no possibility of doing many(outpouts)-to-one(loss) in Keras ... :_(
+                outputs = keras.layers.Concatenate(axis=-1, name='lo_concatenation')([valid,pred_sample])
+                generator_model = keras.Model(inputs=ctx_gen, outputs=outputs)
+                # generator_model.compile(loss=[wasserstein_loss, lse_loss], optimizer=gen_opti, loss_weights=[1, 1])
+                generator_model.compile(loss=partial(weighted_wasserstein_lse_loss,vocoder=self._model.vocoder,cfg=cfg), optimizer=gen_opti)
 
-        elif self._errtype=='WLSWGAN':
-            raise ValueError('TODO')
+                # TODO Modify https://github.com/keras-team/keras/blob/1.1.0/keras/engine/training.py:514-540 in order to deal with many-to-one case
+                #      See https://github.com/keras-team/keras/issues/4093
+                #          https://stackoverflow.com/questions/44172165/keras-multiple-output-custom-loss-function
 
-            # TODO WLSWGAN
-            # # Create expression for passing real data through the critic
-            # real_out = lasagne.layers.get_output(critic)
-            # # Create expression for passing fake data through the critic
-            # genout = lasagne.layers.get_output(self._model.net_out)
-            # indict = {layer_critic:lasagne.layers.get_output(self._model.net_out), layer_cond:self._model._input_values}
-            # fake_out = lasagne.layers.get_output(critic, indict)
-            #
-            # # Create generator's loss expression
-            # # Force LSE for low frequencies, otherwise the WGAN noise makes the voice hoarse.
-            # print('WGAN Weighted LS - Generator part')
-            #
-            # wganls_weights_els = []
-            # wganls_weights_els.append([0.0]) # For f0
-            # specvs = np.arange(self._model.vocoder.specsize(), dtype=theano.config.floatX)
-            # if cfg.train_LScoef==0.0:
-            #     wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
-            # else:
-            #     wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self._LSWGANtranscoef)) # For spec
-            # if self._model.vocoder.noisesize()>0:
-            #     if self._WGAN_incnoisefeature:
-            #         noisevs = np.arange(self._model.vocoder.noisesize(), dtype=theano.config.floatX)
-            #         wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self._LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self._LSWGANtranscoef)) # For noise
-            #     else:
-            #         wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
-            # if self._model.vocoder.vuvsize()>0:
-            #     wganls_weights_els.append([0.0]) # For vuv
-            # wganls_weights_ = np.hstack(wganls_weights_els)
-            #
-            # # TODO build wganls_weights_ for LSE instead for WGAN, for consistency with the paper
-            #
-            # # wganls_weights_ = np.hstack((wganls_weights_, wganls_weights_, wganls_weights_)) # That would be for MLPG using deltas
-            # wganls_weights_ *= (1.0-cfg.train_LScoef)
-            #
-            # lserr = lasagne.objectives.squared_error(genout, self._target_values)
-            # wganls_weights_ls = theano.shared(value=(1.0-wganls_weights_), name='wganls_weights_ls')
-            #
-            # wganpart = fake_out*np.mean(wganls_weights_)  # That's a way to automatically balance the WGAN and LSE costs wrt the LSE spectral weighting
-            # lsepart = lserr*wganls_weights_ls             # Spectral weighting as complement of the WGAN part spectral weighting
-            #
-            # generator_loss = -wganpart.mean() + lsepart.mean() # A term in [-oo,oo] and one in [0,oo] ... why not, LSE as to be small enough for WGAN to do something.
-            #
-            # generator_lossratio = abs(wganpart.mean())/abs(lsepart.mean())
-            #
-            # critic_loss = fake_out.mean() - real_out.mean()  # For clarity: we want to maximum real-fake -> -(real-fake) -> fake-real
-            #
-            # # Improved training for Wasserstein GAN
-            # epsi = T.TensorType(dtype=theano.config.floatX,broadcastable=(False, True, True))()
-            # mixed_X = (epsi * genout) + (1-epsi) * critic_input_var
-            # indict = {layer_critic:mixed_X, layer_cond:self._model._input_values}
-            # output_D_mixed = lasagne.layers.get_output(critic, inputs=indict)
-            # grad_mixed = T.grad(T.sum(output_D_mixed), mixed_X)
-            # norm_grad_mixed = T.sqrt(T.sum(T.square(grad_mixed),axis=[1,2]))
-            # grad_penalty = T.mean(T.square(norm_grad_mixed -1))
-            # critic_loss = critic_loss + cfg.train_pg_lambda*grad_penalty
-            #
-            # # Create update expressions for training
-            # critic_params = lasagne.layers.get_all_params(critic, trainable=True)
-            # critic_updates = lasagne.updates.adam(critic_loss, critic_params, learning_rate=cfg.train_D_learningrate, beta1=cfg.train_D_adam_beta1, beta2=cfg.train_D_adam_beta2)
-            # print('    Critic architecture')
-            # print_network(critic, critic_params)
-            #
-            # generator_params = lasagne.layers.get_all_params(self._model.net_out, trainable=True)
-            # generator_updates = lasagne.updates.adam(generator_loss, generator_params, learning_rate=cfg.train_G_learningrate, beta1=cfg.train_G_adam_beta1, beta2=cfg.train_G_adam_beta2)
-            # self._optim_updates.extend([generator_updates, critic_updates])
-            # print('    Generator architecture')
-            # print_network(self._model.net_out, generator_params)
-            #
-            # # Compile functions performing a training step on a mini-batch (according
-            # # to the updates dictionary) and returning the corresponding score:
-            # print('Compiling generator training function...')
-            # generator_train_fn_ins = [self._model._input_values]
-            # generator_train_fn_ins.append(self._target_values)
-            # generator_train_fn_outs = [generator_loss, generator_lossratio]
-            # train_fn = theano.function(generator_train_fn_ins, generator_train_fn_outs, updates=generator_updates)
-            # train_validation_fn = theano.function(generator_train_fn_ins, generator_loss, no_default_updates=True)
-            # print('Compiling critic training function...')
-            # critic_train_fn_ins = [self._model._input_values, critic_input_var, epsi]
-            # critic_train_fn = theano.function(critic_train_fn_ins, critic_loss, updates=critic_updates)
-            # critic_train_validation_fn = theano.function(critic_train_fn_ins, critic_loss, no_default_updates=True)
+                def generator_train_validation_fn(x, valid_y):
+                    rets = generator_model.evaluate(x=x, y=valid_y, batch_size=1, verbose=0)
+                    # print('generator_train_validation_fn: rets={}'.format(rets))
+                    return rets
+
+                # Pack also the validation data
+                valid_Y_vals = []
+                for Y_val in Y_vals:
+                    valid_Y_vals.append(np.concatenate([np.tile(wgan_valid[0,:,:],[Y_val.shape[0],1]),Y_val],axis=1))
 
         else:
-            raise ValueError('Unknown err type "'+self._errtype+'"')    # pragma: no cover
+            raise ValueError('Unknown error type "'+self._errtype+'"')    # pragma: no cover
 
         costs = defaultdict(list)
         epochs_modelssaved = []
@@ -425,15 +408,18 @@ class Optimizer:
                 print_tty(' (iter load: {:.6f}s); training '.format(load_times[-1]))
 
                 timetrainstart = time.time()
-                if self._errtype=='WGAN':
+                if self._errtype=='LSE':
+                    train_returns = self._model._kerasmodel.train_on_batch(X_trab, Y_trab)
+                    cost_tra = np.sqrt(float(train_returns))
 
-                    # random_epsilon = np.random.uniform(size=(cfg.train_batch_size, 1,1)).astype('float32')
+                elif self._errtype=='WGAN' or self._errtype=='WLSWGAN':
+
                     critic_returns = critic_model.train_on_batch([Y_trab, X_trab], [wgan_valid, wgan_fake, wgan_dummy])
                     costs_tra_critic_batches.append(float(critic_returns[0]))
 
                     # TODO The params below are supposed to ensure the critic is "almost" fully converged
                     #      when training the generator. How to evaluate this? Is it the case currently?
-                    if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded
+                    if (generator_updates < 25) or (generator_updates % 500 == 0):  # TODO Params hardcoded TODO TODO TODO Try to get rid of it
                         critic_runs = 10 # TODO Params hardcoded 10
                     else:
                         critic_runs = 5 # TODO Params hardcoded 5
@@ -441,18 +427,15 @@ class Optimizer:
                     # if critic_returns>0 and k%critic_runs==0: # Train only if the estimate of the Wasserstein distance makes sense, and, each N critic iteration TODO Doesn't work well though
                     if k%critic_runs==0: # Train each N critic iteration
                         # Train the generator
-                        trainargs = [X_trab]
-                        trainargs.append(Y_trab)
-
-                        cost_tra = generator_model.train_on_batch(X_trab, wgan_valid)
-                        cost_tra = float(cost_tra)
+                        if self._errtype=='WGAN':
+                            cost_tra = generator_model.train_on_batch(X_trab, wgan_valid)
+                            cost_tra = float(cost_tra)
+                        elif self._errtype=='WLSWGAN':
+                            cost_tra = generator_model.train_on_batch(X_trab, np.concatenate([np.tile(wgan_valid,[1,Y_trab.shape[1],1]), Y_trab], axis=2))
+                            cost_tra = float(cost_tra)
                         generator_updates += 1
 
                         if 0: log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+'{:07}.png'.format(generator_updates), vocoder=self._model.vocoder, title='E{} I{}'.format(epoch,generator_updates))
-
-                elif self._errtype=='LSE':
-                    train_returns = self._model._kerasmodel.train_on_batch(X_trab, Y_trab)
-                    cost_tra = np.sqrt(float(train_returns))
 
                 train_times.append(time.time()-timetrainstart)
 
@@ -475,18 +458,19 @@ class Optimizer:
             cost_validation_rmse = data.cost_model_prediction_rmse(self._model, [X_vals], Y_vals)
             costs['model_rmse_validation'].append(cost_validation_rmse)
 
-            if self._errtype=='WGAN':
-                train_validation_fn_args = [X_vals, Y_vals]
-                costs['model_validation'].append(10.0*data.cost_model_mfn(train_validation_fn, train_validation_fn_args))  # TODO TODO TODO
-                costs['critic_training'].append(np.mean(costs_tra_critic_batches))
-                random_epsilon = [np.random.uniform(size=(1,1)).astype('float32')]*len(X_vals)
-                critic_train_validation_fn_args = [Y_vals, X_vals]
-                costs['critic_validation'].append(data.cost_model_mfn(critic_train_validation_fn, critic_train_validation_fn_args))   # TODO TODO TODO
-                costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-cfg.train_validation_ltm_winlen:]))
-
-                cost_val = costs['critic_validation_ltm'][-1]
-            elif self._errtype=='LSE':
+            if self._errtype=='LSE':
                 cost_val = costs['model_rmse_validation'][-1]
+
+            elif self._errtype=='WGAN' or self._errtype=='WLSWGAN':
+                # TODO This often break when changing arguments, loss functions, etc. Try to find a design which is more prototype-friendly
+                if self._errtype=='WGAN':       generator_train_validation_fn_args = [X_vals, Y_vals]
+                elif self._errtype=='WLSWGAN':  generator_train_validation_fn_args = [X_vals, valid_Y_vals]
+                costs['model_validation'].append(data.cost_model_mfn(generator_train_validation_fn, generator_train_validation_fn_args))
+                costs['critic_training'].append(np.mean(costs_tra_critic_batches))
+                critic_train_validation_fn_args = [Y_vals, X_vals]
+                costs['critic_validation'].append(data.cost_model_mfn(critic_train_validation_fn, critic_train_validation_fn_args))
+                costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-cfg.train_validation_ltm_winlen:]))
+                cost_val = costs['critic_validation_ltm'][-1]
 
             print_log("    E{}/{} {}  cost_tra={:.6f} (load:{}s train:{}s)  cost_val={:.6f} ({:.4f}% RMSE)  {} MiB GPU {} MiB RAM".format(epoch, cfg.train_max_nbepochs, trialstr, costs['model_training'][-1], time2str(np.sum(load_times)), time2str(np.sum(train_times)), cost_val, 100*cost_validation_rmse/worst_val, nvidia_smi_gpu_memused(), proc_memresident()))
             sys.stdout.flush()
@@ -573,7 +557,11 @@ class Optimizer:
         cfg.train_pg_lambda = 10                # [potential hyper-parameter]   # TODO TODO TODO Rename
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses (def. 0.25)
         cfg.train_validation_ltm_winlen = 20    # Now that I'm using min and max epochs, I could use the actuall D cost and not the ltm(D cost) TODO
-
+        cfg.train_critic_LSweighting=True
+        cfg.train_critic_LSWGANtransfreqcutoff=4000
+        cfg.train_critic_LSWGANtranscoef=1.0/8.0
+        cfg.train_critic_use_WGAN_incnoisefeature=False
+        # Common
         cfg.train_min_nbepochs = 200
         cfg.train_max_nbepochs = 300
         cfg.train_nbepochs_scalewdata = True
@@ -586,6 +574,7 @@ class Optimizer:
         cfg.train_batch_lengthmax = None        # Maximum duration [frames] of each batch
         cfg.train_nbtrials = 1                  # Just run one training only
         cfg.train_hypers=[]
+
         #cfg.train_hypers = [('learningrate_log10', -6.0, -2.0), ('adam_beta1', 0.8, 1.0)] # For ADAM
         #cfg.train_hyper = [('train_D_learningrate', 0.0001, 0.1), ('train_D_adam_beta1', 0.8, 1.0), ('train_D_adam_beta2', 0.995, 1.0), ('train_batch_size', 1, 200)] # For ADAM
         cfg.train_log_plot=True
