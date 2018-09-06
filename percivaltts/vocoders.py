@@ -34,10 +34,13 @@ class Vocoder:
     shift = None
     fs = None
 
-    def __init__(self, _name, _fs, _shift):
-        self._name = _name
-        self.fs = _fs
-        self.shift = _shift
+    mlpg_wins = None
+
+    def __init__(self, name, fs, shift, mlpg_wins=None):
+        self._name = name
+        self.fs = fs
+        self.shift = shift
+        self.mlpg_wins = mlpg_wins
 
     def preprocwav(self, wav, fs, highpass=None):
         '''
@@ -91,8 +94,11 @@ class Vocoder:
 
     def name(self): return self._name
 
-    def featuressize(self):
+    def featuressizeraw(self):
         raise ValueError('This member function has to be re-implemented in the sub-classes')           # pragma: no cover
+    def featuressize(self):
+        if not self.mlpg_wins is None: return self.featuressizeraw()*(len(self.mlpg_wins)+1)
+        else:                          return self.featuressizeraw()
     def f0size(self): return -1
     def specsize(self): return -1
     def noisesize(self): return -1
@@ -110,11 +116,11 @@ class VocoderF0Spec(Vocoder):
     spec_size = None
     dftlen = 4096
 
-    def __init__(self, name, fs, shift, _spec_size, _spec_type='fwbnd', _dftlen=4096):
-        Vocoder.__init__(self, name, fs, shift)
-        self.spec_size = _spec_size
-        self.spec_type = _spec_type # 'fwbnd' 'mcep'
-        self.dftlen = _dftlen
+    def __init__(self, name, fs, shift, spec_size, spec_type='fwbnd', dftlen=4096, mlpg_wins=None):
+        Vocoder.__init__(self, name, fs, shift, mlpg_wins=mlpg_wins)
+        self.spec_size = spec_size
+        self.spec_type = spec_type # 'fwbnd' 'mcep'
+        self.dftlen = dftlen
 
     def f0size(self): return 1
     def specsize(self): return self.spec_size
@@ -158,11 +164,11 @@ class VocoderF0Spec(Vocoder):
 class VocoderPML(VocoderF0Spec):
     nm_size = None
 
-    def __init__(self, fs, shift, _spec_size, _nm_size, _dftlen=4096):
-        VocoderF0Spec.__init__(self, 'PML', fs, shift, _spec_size, 'fwbnd', _dftlen)
-        self.nm_size = _nm_size
+    def __init__(self, fs, shift, spec_size, nm_size, dftlen=4096, mlpg_wins=None):
+        VocoderF0Spec.__init__(self, 'PML', fs, shift, spec_size, 'fwbnd', dftlen, mlpg_wins=mlpg_wins)
+        self.nm_size = nm_size
 
-    def featuressize(self):
+    def featuressizeraw(self):
         return 1+self.spec_size+self.nm_size
 
     def noisesize(self): return self.nm_size
@@ -207,11 +213,11 @@ class VocoderPML(VocoderF0Spec):
 class VocoderWORLD(VocoderF0Spec):
     aper_size = None
 
-    def __init__(self, fs, shift, _spec_size, _aper_size, _dftlen=4096):
-        VocoderF0Spec.__init__(self, 'WORLD', fs, shift, _spec_size, 'fwbnd', _dftlen)
-        self.aper_size = _aper_size
+    def __init__(self, fs, shift, spec_size, aper_size, dftlen=4096, mlpg_wins=None):
+        VocoderF0Spec.__init__(self, 'WORLD', fs, shift, spec_size, 'fwbnd', dftlen, mlpg_wins=mlpg_wins)
+        self.aper_size = aper_size
 
-    def featuressize(self):
+    def featuressizeraw(self):
         return 1+self.spec_size+self.aper_size+1
 
     def noisesize(self): return self.aper_size
