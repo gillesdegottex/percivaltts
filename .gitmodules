@@ -1,6 +1,3 @@
-[submodule "percivaltts/external/Lasagne"]
-	path = percivaltts/external/Lasagne
-	url = https://github.com/Lasagne/Lasagne.git
 [submodule "percivaltts/external/pfs"]
 	path = percivaltts/external/pfs
 	url = https://gitlab.com/gillesdegottex/pfs.git

@@ -49,6 +49,14 @@ def tf_cuda_available():
     """Returns True if CUDA is available"""
     return tf.test.is_built_with_cuda()
 
+def tf_gpu_memused():
+    """
+        Returns [MiB]
+    """
+    sess = tf.get_default_session()
+    biu = sess.run(tf.contrib.memory_stats.BytesInUse()/(1024*1024))
+    return biu
+
 def nonlin_very_leaky_rectify(x):
     return tf.nn.leaky_relu(x, alpha=1.0/3.0)
 

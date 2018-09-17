@@ -38,18 +38,21 @@ import vocoders
 import compose
 import models_generic
 import networks_critic
-# import models_cnn # TODO TF
-import optimizer
+import optimizertts
+import optimizertts_wgan
 print_sysinfo()
 
 from functools import partial
 
+from tensorflow import keras
+
+
 print_log('Global configurations')
 cfg = configuration() # Init configuration structure
-# `cfg` is sort of the dirty global variable that is carried around here and there in percival's code.
-# This is usually very bad practice as it prevent encapsulating functionalities
+# `cfg` is the dirty global variable that is carried around here and there in percival's code.
+# This is usually very bad practice as it prevents encapsulating functionalities
 # in robust functions and creates extra parameters that do not appear in the functions argument.
-# It is however extremely convenient for prototyping.
+# It is however extremely convenient for prototyping and it can be used to store and vary the hyperparameters.
 
 # Corpus/Voice(s) options
 cp = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'tests/slt_arctic_merlin_full/') # The main directory where the data of the voice is stored
@@ -123,12 +126,11 @@ cfg.train_LScoef = 0.25         # LS loss weights 0.25 and WGAN for the rest (ev
 cfg.train_min_nbepochs = 200
 cfg.train_max_nbepochs = 300    # (Can stop much earlier for 3 stacked BLSTM or 6 stacked FC)
 cfg.train_cancel_nodecepochs = 50 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)
-# cfg.train_LScoef = 0.0  # TODO TODO TODO
-# cfg.train_LScoefflat = 0.75 # TODO TODO TODO
-cfg.train_critic_LSweighting=True
-cfg.train_critic_LSWGANtransfreqcutoff=4000
-cfg.train_critic_LSWGANtranscoef=1.0/8.0
-cfg.train_critic_use_WGAN_incnoisefeature=False
+cfg.train_critic_LSweighting = True
+cfg.train_critic_LSWGANtransfreqcutoff = 4000
+cfg.train_critic_LSWGANtranscoef = 1.0/8.0
+cfg.train_critic_use_WGAN_incnoisefeature = False
+
 
 # cfg.train_hypers = [('train_D_learningrate', 0.01, 0.00001), ('train_D_adam_beta1', 0.0, 0.9), ('train_D_adam_beta2', 0.8, 0.9999), ('train_G_learningrate', 0.01, 0.00001), ('train_G_adam_beta1', 0.0, 0.9), ('train_G_adam_beta2', 0.8, 0.9999)]
 # cfg.train_nbtrials = 12
@@ -173,14 +175,11 @@ def contexts_extraction():
     # The input files are binary labels, as they come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
     compose.compose([labbin_path+':(-1,'+str(ctxsize)+')'], fids, cfg.inpath, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, wins=[], do_finalcheck=False)
 
-def build_model():
-    # mod = models_cnn.ModelCNN(ctxsize, vocoder, hiddensize=cfg.model_hiddensize, ctx_nblayers=cfg.model_ctx_nblayers, ctx_nbfilters=cfg.model_ctx_nbfilters, ctx_winlen=cfg.model_ctx_winlen, nbcnnlayers=cfg.model_nbcnnlayers, nbfilters=cfg.model_nbfilters, spec_freqlen=cfg.model_spec_freqlen, noise_freqlen=cfg.model_noise_freqlen, windur=cfg.model_windur)
 
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, layertypes=['FC', 'LSTM'], hiddensize=cfg.model_hiddensize)
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'])
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=['DO', 'FC', 'DO', 'FC', 'DO', 'FC', 'DO', 'FC', 'DO', 'FC', 'DO', 'FC'])
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=['BLSTM', 'BLSTM', 'BLSTM'])
-    mod = models_generic.ModelGeneric(ctxsize, vocoder, cfg, layertypes=[['CNN',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], 'FC', 'FC', 'FC', 'FC'])
+def build_model():
+    # mod = models_generic.ModelCNNF0SpecNoiseFeatures(ctxsize, vocoder, cfg)
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'])
+    # mod = models_generic.ModelGeneric(ctxsize, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'])
 
     return mod
 
@@ -190,11 +189,10 @@ def training(cont=False):
 
     mod = build_model()
 
-    if errtype=='LSE': critic=None
-    else:              critic=networks_critic.Critic(vocoder, ctxsize, cfg)
+    if errtype=='LSE': opti=optimizertts.OptimizerTTS(cfg, mod)
+    else:              opti=optimizertts_wgan.OptimizerTTSWGAN(cfg, mod, errtype=errtype, critic=networks_critic.Critic(vocoder, ctxsize, cfg))
 
-    opti = optimizer.Optimizer(mod, errtype=errtype, critic=critic)
-    opti.train(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, cfg.fparams_fullset, cfgtomerge=cfg, cont=cont)
+    opti.train(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, cfg.fparams_fullset, cont=cont)
 
 
 def generate(fparams=cfg.fparams_fullset):
@@ -208,12 +206,12 @@ def generate(fparams=cfg.fparams_fullset):
     fid_lst_test = fids[cfg.id_valid_start+cfg.id_valid_nb:cfg.id_valid_start+cfg.id_valid_nb+cfg.id_test_nb]
 
     demostart = cfg.id_test_demostart if hasattr(cfg, 'id_test_demostart') else 0
-    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', vocoder, do_objmeas=True, do_resynth=True, pp_mcep=False)
-    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-pp-snd', vocoder, do_objmeas=False, do_resynth=False, pp_mcep=True)
+    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', do_objmeas=True, do_resynth=True, pp_mcep=False)
+    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-pp-snd', do_objmeas=False, do_resynth=False, pp_mcep=True)
 
     # And generate all of them for listening tests
-    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=False)
-    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-pp-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True, pp_mcep=True)
+    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', do_objmeas=True, do_resynth=True, pp_mcep=False)
+    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-pp-snd', do_objmeas=True, do_resynth=True, pp_mcep=True)
 
 
 if  __name__ == "__main__" :                                 # pragma: no cover

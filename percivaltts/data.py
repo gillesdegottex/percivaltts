@@ -231,19 +231,21 @@ def croplen_weight(xs, w, thresh=0.5, cropmode='begend', cropsize=int(0.750/0.00
     return xs, w
 
 
-def maskify(xs, length=None, lengthmax=None, padtype='randshift'):
+def batching(xs, length=None, lengthmax=None, padtype='randshift', outmask=False):
     """
-    Create a batched composition of multiple matrices in xs (resulting of 3D matrices for each sentence).
+    Create a batched composition of multiple 2D matrices from xs (resulting of 3D a single matrix).
     Various pading types are supported, the most common being 'padright', which add zeros at the end of matrices that are too short.
 
     Returns
     -------
     xbs : list of the batched composition of the elements of xs.
-    MB : A mask with 1 at meaningfull values in elements of xbs and 0 where the matrice was too short.
+    [MB] : A mask with 1 at meaningfull values in elements of xbs and 0 where the matrice was too short. Returns None if outmask=False (default)
     """
 
     if len(set([len(x) for x in xs]))>1:
         raise ValueError('the size of the data sets are not identical ({})'.format([len(x) for x in xs])) # pragma: no cover
+
+    if not outmask: MB=None
 
     if length is None:
         # Consider only the first var
@@ -263,7 +265,7 @@ def maskify(xs, length=None, lengthmax=None, padtype='randshift'):
     for xi in xrange(len(xs)):
         featsize = 1 if len(xs[xi][0].shape)==1 else xs[xi][0].shape[1]
         xbs[xi] = np.zeros((len(xs[xi]), length, featsize), dtype='float32')
-    MB = np.zeros((len(xs[0]), length), dtype='float32')
+    if outmask: MB = np.zeros((len(xs[0]), length), dtype='float32')
 
     shift = 0
     for b in xrange(len(xs[0])):
@@ -277,7 +279,7 @@ def maskify(xs, length=None, lengthmax=None, padtype='randshift'):
         for xi in xrange(len(xs)):
             xbs[xi][b,:minlen,:] = xs[xi][b][shift:shift+minlen,:]
             xbs[xi][b,:minlen,:] = xs[xi][b][shift:shift+minlen,:]
-        MB[b,:minlen] = 1
+        if outmask: MB[b,:minlen] = 1
 
     return xbs, MB
 
@@ -309,15 +311,15 @@ def load_inoutset(indir, outdir, outwdir, fid_lst, inouttimesync=True, length=No
         [Y_val], W_val = croplen_weight([Y_val], W_val, cropmode=cropmode)
         Y_val = addstop(Y_val)
 
-    # Maskify the validation data according to the batchsize
+    # Maskify the validation data according to the batchsize     # TODO rm
     if inouttimesync:
-        [X_val, Y_val, W_val], MX_val = maskify([X_val, Y_val, W_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
+        [X_val, Y_val, W_val], MX_val = batching([X_val, Y_val, W_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
         MY_val = MX_val
-    else:     # TODO rm
-        [X_val], MX_val = maskify([X_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
-        [Y_val], MY_val = maskify([Y_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
+    else:
+        [X_val], MX_val = batching([X_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
+        [Y_val], MY_val = batching([Y_val], length=length, lengthmax=lengthmax, padtype=maskpadtype)
 
-    return X_val, MX_val, Y_val, MY_val, W_val
+    return X_val, Y_val, W_val
 
 
 # Evaluation functions ---------------------------------------------------------

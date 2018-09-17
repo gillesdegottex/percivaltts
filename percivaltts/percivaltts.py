@@ -32,6 +32,11 @@ def numpy_force_random_seed():
     rn.seed(123)
 numpy_force_random_seed()
 
+# Setup a default session
+import tensorflow as tf
+sess = tf.Session()
+sess.__enter__()
+
 import time
 import socket
 import subprocess

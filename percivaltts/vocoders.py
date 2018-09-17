@@ -99,10 +99,12 @@ class Vocoder:
     def featuressize(self):
         if not self.mlpg_wins is None: return self.featuressizeraw()*(len(self.mlpg_wins)+1)
         else:                          return self.featuressizeraw()
+
     def f0size(self): return -1
     def specsize(self): return -1
     def noisesize(self): return -1
     def vuvsize(self): return -1
+    # Please add any other potential feature here, while respecting the expected order
 
     # Objective measures member functions for any vocoder
     features_err = dict()

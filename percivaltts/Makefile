@@ -38,12 +38,15 @@ clean: tests_clean
 # Run targets ------------------------------------------------------------------
 
 run:
-	mkdir -p ../out; cd ../out; bash ${CMDTORUN_CONTINUE}
-
-run_from_scratch:
 	mkdir -p ../out; cd ../out; bash ${CMDTORUN}
 
+run_continue:
+	mkdir -p ../out; cd ../out; bash ${CMDTORUN_CONTINUE}
+
 run_grid:
+	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ${CMDTORUN}
+
+run_grid_continue:
 	mkdir -p ../out; cd ../out; "$(QSUBCMD)" ${CMDTORUN_CONTINUE}
 
 clone:
@@ -52,20 +55,34 @@ clone:
 
 clone_run:
 	@test "$(DEST)"
+	./clone.sh "$(DEST)" bash ${CMDTORUN}
+
+clone_run_continue:
+	@test "$(DEST)"
 	./clone.sh "$(DEST)" bash ${CMDTORUN_CONTINUE}
 
 clone_run_grid:
+	@test "$(DEST)"
+	./clone.sh "$(DEST)" "$(QSUBCMD)" ${CMDTORUN}
+
+clone_run_grid_continue:
 	@test "$(DEST)"
 	./clone.sh "$(DEST)" "$(QSUBCMD)" ${CMDTORUN_CONTINUE}
 
 # Run in background
 run_back:
+	mkdir -p ../out; cd ../out; nohup ${CMDTORUN} </dev/null >> bck.log 2>&1 &
+
+run_back_continue:
 	mkdir -p ../out; cd ../out; nohup ${CMDTORUN_CONTINUE} </dev/null >> bck.log 2>&1 &
 
 # Clone on given path and run in background
 # TODO This works only with ssh cloning (i.e. by specifying a hostname before
 # the path) for obscure nohup-bash-arguments reasons.
 clone_run_back:
+	./clone.sh "$(DEST)" 'nohup ${CMDTORUN} </dev/null >> bck.log 2>&1 &'
+
+clone_run_back_continue:
 	./clone.sh "$(DEST)" 'nohup ${CMDTORUN_CONTINUE} </dev/null >> bck.log 2>&1 &'
 
 

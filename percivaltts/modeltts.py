@@ -39,54 +39,21 @@ import tensorflow as tf
 import data
 import vocoders
 
-def layer_final(l_in, vocoder, mlpg_wins):
-    layers_toconcat = []
-
-    if isinstance(vocoder, vocoders.VocoderPML):
-        l_out_f0spec = keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_f0spec')(l_in)
-        l_out_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.sigmoid, name='lo_nm')(l_in)
-        # l_out_f0spec = keras.layers.TimeDistributed(keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_f0spec'))(l_in) # TODO TODO TODO ???
-        # l_out_nm = keras.layers.TimeDistributed(keras.layers.Dense(vocoder.nm_size, activation=keras.activations.sigmoid, name='lo_nm'))(l_in)
-        layers_toconcat.extend([l_out_f0spec, l_out_nm])
-        if len(mlpg_wins)>0:
-            l_out_delta_f0spec = keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_delta_f0spec')(l_in)
-            l_out_delta_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.tanh, name='lo_delta_nm')(l_in)
-            layers_toconcat.extend([l_out_delta_f0spec, l_out_delta_nm])
-            if len(mlpg_wins)>1:
-                l_out_deltadelta_f0spec = keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_deltadelta_f0spec')(l_in)
-                l_out_deltadelta_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.tanh, name='lo_deltadelta_nm')(l_in) # TODO TODO TODO keras.activations.tanh/partial(nonlin_tanh_saturated, coef=2.0)
-                layers_toconcat.extend([l_out_deltadelta_f0spec, l_out_deltadelta_nm])
-
-    elif isinstance(vocoder, vocoders.VocoderWORLD):
-        l_out = keras.layers.Dense(vocoder.featuressize(), name='lo_f0specaper')(l_in)
-        if len(mlpg_wins)>0:
-            l_out_delta = keras.layers.Dense(vocoder.featuressize(), activation=None, name='lo_delta_f0specaper')(l_in)
-            if len(mlpg_wins)>1:
-                l_out_deltadelta = keras.layers.Dense(vocoder.featuressize(), activation=None, name='lo_deltadelta_f0specaper')(l_in)
-
-    if len(layers_toconcat)==1: l_out = layers_toconcat[0]
-    else:                       l_out = keras.layers.Concatenate(axis=-1, name='lo_concatenation')(layers_toconcat)
-
-    return l_out
-
-
 class ModelTTS:
 
     # Network variables
     ctxsize = -1
     vocoder = None
 
-    cfgarch = None
     _kerasmodel = None
 
-    def __init__(self, ctxsize, vocoder, cfgarch=None, kerasmodel=None):
+    def __init__(self, ctxsize, vocoder, kerasmodel=None):
         # Force additional random inputs is using anyform of GAN
         print("Building the model")
 
         self.ctxsize = ctxsize
 
         self.vocoder = vocoder
-        self.cfgarch = cfgarch
 
         if not kerasmodel is None:
             self._kerasmodel = kerasmodel
@@ -132,7 +99,7 @@ class ModelTTS:
             CMP.astype('float32').tofile(outpath.replace('*',fid_lst[vi]))
 
 
-    def generate_wav(self, inpath, outpath, fid_lst, syndir, vocoder, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]], do_objmeas=True, do_resynth=True
+    def generate_wav(self, inpath, outpath, fid_lst, syndir, do_objmeas=True, do_resynth=True
             , pp_mcep=False
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
@@ -150,18 +117,21 @@ class ModelTTS:
             y_test = data.load(outpath, fid_lst, verbose=1)
             X_test, y_test = data.croplen((X_test, y_test))
 
-        def denormalise(CMP, wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]):
+        def denormalise(CMP, mlpg_ignore=False):
 
             CMP = CMP*np.tile(Ystd, (CMP.shape[0], 1)) + np.tile(Ymean, (CMP.shape[0], 1)) # De-normalise
 
-            if len(wins)>0:
-                # Apply MLPG
-                from external.merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
-                mlpg_algo = MLParameterGeneration(delta_win=wins[0], acc_win=wins[1])
-                var = np.tile(Ystd**2,(CMP.shape[0],1)) # Simplification!
-                CMP = mlpg_algo.generation(CMP, var, len(Ymean)/3)
-            else:
-                CMP = CMP[:,:vocoder.featuressize()]
+            # TODO Should go in the vocoder, but there is Ystd to put as argument ...
+            #      Though, the vocoder is not taking care of the deltas composition in the data either.
+            if (not self.vocoder.mlpg_wins is None) and len(self.vocoder.mlpg_wins)>0:    # If MLPG is used
+                if mlpg_ignore:
+                    CMP = CMP[:,:self.vocoder.featuressizeraw()]
+                else:
+                    # Apply MLPG
+                    from external.merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
+                    mlpg_algo = MLParameterGeneration(delta_win=self.vocoder.mlpg_ignore[0], acc_win=self.vocoder.mlpg_ignore[1])
+                    var = np.tile(Ystd**2,(CMP.shape[0],1)) # Simplification!
+                    CMP = mlpg_algo.generation(CMP, var, len(self.vocoder.featuressizeraw()))
 
             return CMP
 
@@ -174,19 +144,19 @@ class ModelTTS:
             print('    Predict ...')
 
             if do_resynth:
-                CMP = denormalise(y_test[vi], wins=[])
-                resyn = vocoder.synthesis(vocoder.fs, CMP, pp_mcep=False)
-                sp.wavwrite(syndir+'-resynth/'+fid_lst[vi]+'.wav', resyn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+                CMP = denormalise(y_test[vi], mlpg_ignore=True)
+                resyn = self.vocoder.synthesis(self.vocoder.fs, CMP, pp_mcep=False)
+                sp.wavwrite(syndir+'-resynth/'+fid_lst[vi]+'.wav', resyn, self.vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
             CMP = CMP[0,:,:]
 
-            CMP = denormalise(CMP, wins=wins)
-            syn = vocoder.synthesis(vocoder.fs, CMP, pp_mcep=pp_mcep)
-            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+            CMP = denormalise(CMP)
+            syn = self.vocoder.synthesis(self.vocoder.fs, CMP, pp_mcep=pp_mcep)
+            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, self.vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
-            if do_objmeas: vocoder.objmeasures_add(CMP, y_test[vi])
+            if do_objmeas: self.vocoder.objmeasures_add(CMP, y_test[vi])
 
-        if do_objmeas: vocoder.objmeasures_stats()
+        if do_objmeas: self.vocoder.objmeasures_stats()
 
         print_log('Generation finished')
