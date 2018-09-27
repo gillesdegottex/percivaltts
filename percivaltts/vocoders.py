@@ -95,6 +95,9 @@ class Vocoder:
     def name(self): return self._name
 
     def featuressizeraw(self):
+        '''
+        This is the size of the acoustic feature vector, without deltas for MLPG
+        '''
         raise ValueError('This member function has to be re-implemented in the sub-classes')           # pragma: no cover
     def featuressize(self):
         if not self.mlpg_wins is None: return self.featuressizeraw()*(len(self.mlpg_wins)+1)
