@@ -178,9 +178,12 @@ def contexts_extraction():
 
 
 def build_model():
-    # mod = models_generic.ModelCNNF0SpecNoiseFeatures(ctxsize, vocoder, cfg)
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'])
-    # mod = models_generic.ModelGeneric(ctxsize, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'])
+    mod = models.DCNNF0SpecNoiseFeatures(ctxsize, vocoder, cfg)
+
+    # mod = models.Generic(ctxsize, vocoder, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], cfgarch=cfg, mlpg_wins=mlpg_wins)
+    # mod = models.Generic(ctxsize, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], cfgarch=cfg)
+    # mod = models.Generic(ctxsize, vocoder, layertypes=[['CNN1D',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], ['CNN1D',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], ['CNN1D',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], 'BLSTM', 'FC', 'FC'], cfgarch=cfg)
+
 
     return mod
 
