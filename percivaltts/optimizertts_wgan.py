@@ -22,6 +22,8 @@ from __future__ import print_function
 
 from percivaltts import *  # Always include this first to setup a few things
 
+import warnings
+
 from functools import partial
 
 # import cPickle
@@ -236,6 +238,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-self.cfg.train_validation_ltm_winlen:]))
         cost_val = costs['critic_validation_ltm'][-1]
 
+        if np.mean(self.costs_tra_critic_batches)<=0.0: print('Average critic loss is negative: Training is likely to take ages to converge or not converge at all. ')
 
         self.costs_tra_critic_batches = []
 
