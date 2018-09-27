@@ -49,7 +49,7 @@ class ModelTTS:
 
     def __init__(self, ctxsize, vocoder, kerasmodel=None):
         # Force additional random inputs is using anyform of GAN
-        print("Building the model")
+        print("Building the TTS-dedicated model")
 
         self.ctxsize = ctxsize
 
