@@ -37,7 +37,7 @@ from percivaltts import *  # Always include this first to setup a few things for
 import data
 import vocoders
 import compose
-import models_generic
+import modeltts_specific as models
 import networks_critic
 import optimizertts
 import optimizertts_wgan
