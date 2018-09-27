@@ -120,8 +120,8 @@ class OptimizerTTS:
         sys.stdout.flush()
 
         # Save the model parameters
-        # tf.keras.models.save_model(self._model._kerasmodel, fstate+'.model.h5', include_optimizer=True)
-        tf.keras.models.save_model(self._model._kerasmodel, fstate+'.model.h5', include_optimizer=False) # TODO TODO TODO include_optimizer=True: In case of WGAN, this model is actually never compiled with an optimizer
+        # tf.keras.models.save_model(self._model.kerasmodel, fstate+'.model.h5', include_optimizer=True)
+        tf.keras.models.save_model(self._model.kerasmodel, fstate+'.model.h5', include_optimizer=False) # TODO include_optimizer=True: In case of WGAN, this model is actually never compiled with an optimizer
 
         # Save the extra data
         DATA = [self.cfg, extras, np.random.get_state()]
@@ -132,7 +132,7 @@ class OptimizerTTS:
             # save its current parameter values. So save then in a seperate file.
             # Or only necessary when using TF optimizers?
             # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
-            symbolic_weights = getattr(self._model._kerasmodel.optimizer, 'weights')
+            symbolic_weights = getattr(self._model.kerasmodel.optimizer, 'weights')
             weight_values = tf.keras.backend.batch_get_value(symbolic_weights)
             with open(fstate+'.optimizer.pkl', 'wb') as f:
                 cPickle.dump(weight_values, f)
@@ -148,7 +148,7 @@ class OptimizerTTS:
         sys.stdout.flush()
 
         # Load the model parameters
-        self._model._kerasmodel = tf.keras.models.load_model(fstate+'.model.h5', compile=True)
+        self._model.kerasmodel = tf.keras.models.load_model(fstate+'.model.h5', compile=True)
 
         # Reload the extra data
         DATA = cPickle.load(open(fstate+'.cfgextras.pkl', 'rb'))
@@ -158,10 +158,10 @@ class OptimizerTTS:
             # save its current parameter values. So load them from a seperate file.
             # Or only necessary when using TF optimizers?
             # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
-            self._model._kerasmodel._make_train_function()
+            self._model.kerasmodel._make_train_function()
             with open(fstate+'.optimizer.pkl', 'rb') as f:
                 weight_values = cPickle.load(f)
-            self._model._kerasmodel.optimizer.set_weights(weight_values)
+            self._model.kerasmodel.optimizer.set_weights(weight_values)
 
             # TODO Load the Critic too!
 
@@ -427,11 +427,11 @@ class OptimizerTTS:
         print('    optimizer: {}'.format(type(opti).__name__))
 
         print("    compiling training function ...")
-        self._model._kerasmodel.compile(loss=lse_loss, optimizer=opti) # Use the explicit lse_loss instead of the built-in 'mse' for comparison purpose with WLSWGAN
+        self._model.kerasmodel.compile(loss=lse_loss, optimizer=opti) # Use the explicit lse_loss instead of the built-in 'mse' for comparison purpose with WLSWGAN
 
     def train_on_batch(self, batchid, X_trab, Y_trab):
 
-        train_returns = self._model._kerasmodel.train_on_batch(X_trab, Y_trab)
+        train_returns = self._model.kerasmodel.train_on_batch(X_trab, Y_trab)
         cost_tra = np.sqrt(float(train_returns))
 
         return cost_tra # It has to return a cost/error/loss related to the generator/predictor's error, no matter the type of error (e.g. MSE, discri/critic error)
