@@ -91,7 +91,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
 
         print('    Prepare {} training...'.format(self._errtype))      
 
-        generator = self._model._kerasmodel
+        generator = self._model.kerasmodel
 
         # Construct Computational Graph for Critic
 
@@ -101,7 +101,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
 
         # Create a frozen generator for the critic training
         # Use the Network class to avoid irrelevant warning: https://github.com/keras-team/keras/issues/8585
-        frozen_generator = keras.engine.network.Network(self._model._kerasmodel.inputs, self._model._kerasmodel.outputs)
+        frozen_generator = keras.engine.network.Network(self._model.kerasmodel.inputs, self._model.kerasmodel.outputs)
         frozen_generator.trainable = False
 
         # Input for a real sample

@@ -45,7 +45,7 @@ class ModelTTS:
     ctxsize = -1
     vocoder = None
 
-    _kerasmodel = None
+    kerasmodel = None
 
     def __init__(self, ctxsize, vocoder, kerasmodel=None):
         # Force additional random inputs is using anyform of GAN
@@ -56,17 +56,17 @@ class ModelTTS:
         self.vocoder = vocoder
 
         if not kerasmodel is None:
-            self._kerasmodel = kerasmodel
+            self.kerasmodel = kerasmodel
             # self.ctxsize = # TODO
-            self._kerasmodel.summary()
+            self.kerasmodel.summary()
 
 
     def predict(self, x):
-        return self._kerasmodel.predict(x)
+        return self.kerasmodel.predict(x)
 
 
     def count_params(self):
-        return self._kerasmodel.count_params()
+        return self.kerasmodel.count_params()
 
     def save(self, fmodel, cfg=None, extras=None, printfn=print, infostr=''):
         if extras is None: extras=dict()
