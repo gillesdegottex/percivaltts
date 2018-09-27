@@ -87,7 +87,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
 
     def prepare(self):
 
-        print('    Prepare WGAN training...')
+        print('    Prepare {} training...'.format(self._errtype))      
 
         generator = self._model._kerasmodel
 
@@ -220,6 +220,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
             if 0: log_plot_samples(Y_vals, Y_preds, nbsamples=nbsamples, fname=os.path.splitext(params_savefile)[0]+'-fig_samples_'+trialstr+'{:07}.png'.format(self.generator_updates), vocoder=self._model.vocoder, title='E{} I{}'.format(epoch,self.generator_updates))
 
         return cost_tra
+
 
     def update_validation_cost(self, costs, X_vals, Y_vals):
         cost_validation_rmse = data.cost_model_prediction_rmse(self._model, [X_vals], Y_vals)
