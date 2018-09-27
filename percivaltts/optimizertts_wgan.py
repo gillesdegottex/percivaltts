@@ -200,8 +200,8 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
 
         cost_tra = None
 
-        critic_returns = self.critic_model.train_on_batch([Y_trab, X_trab], [self.wgan_valid, self.wgan_fake, self.wgan_dummy])
-        self.costs_tra_critic_batches.append(float(critic_returns[0]))
+        critic_returns = self.critic_model.train_on_batch([Y_trab, X_trab], [self.wgan_valid, self.wgan_fake, self.wgan_dummy])[0]
+        self.costs_tra_critic_batches.append(float(critic_returns))
 
         # TODO The params below are supposed to ensure the critic is "almost" fully converged
         #      when training the generator. How to evaluate this? Is it the case currently?
