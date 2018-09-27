@@ -236,4 +236,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-self.cfg.train_validation_ltm_winlen:]))
         cost_val = costs['critic_validation_ltm'][-1]
 
+
+        self.costs_tra_critic_batches = []
+
         return cost_val
