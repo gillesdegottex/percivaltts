@@ -79,7 +79,7 @@ class OptimizerTTS:
         cfg.train_G_learningrate_log10 = -3     # [potential hyper-parameter]
         cfg.train_G_adam_beta1 = 0.5            # [potential hyper-parameter]
         cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
-        cfg.train_pg_lambda = 10                # [potential hyper-parameter]   # TODO TODO TODO Rename
+        cfg.train_pg_lambda = 10                # [potential hyper-parameter]   # TODO Rename
         cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses (def. 0.25)
         cfg.train_validation_ltm_winlen = 20    # Now that I'm using min and max epochs, I could use the actuall D cost and not the ltm(D cost) TODO
         cfg.train_critic_LSweighting = True
@@ -234,7 +234,7 @@ class OptimizerTTS:
         nbnodecepochs = 0
         generator_updates = 0
         epochstart = 1
-        if cont and os.path.exists(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5.optimizer.pkl'): # TODO TODO TODO .optimizer.pkl
+        if cont and os.path.exists(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5.optimizer.pkl'): # TODO .optimizer.pkl
             print('    reloading previous training state ...')
             savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5', self.cfg)
             np.random.set_state(rngstate)
@@ -292,7 +292,6 @@ class OptimizerTTS:
                         print_log('    E{} Batch {}/{} train cost = {}'.format(epoch, 1+batchid, nbbatches, cost_tra))
                         raise ValueError('ERROR: Training cost is nan!')
                     costs_tra_batches.append(cost_tra)
-                    # if self._errtype=='WGAN': costs_tra_gen_wgan_lse_ratios.append(gen_ratio) # TODO TODO TODO
             print_tty('\r                                                           \r')
             if self._errtype=='WGAN':
                 costs['model_training'].append(np.mean(costs_tra_batches))
@@ -306,7 +305,7 @@ class OptimizerTTS:
             sys.stdout.flush()
 
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
-            # if (self._errtype=='LSE') and (cost_val>=self.cfg.train_cancel_validthresh*worst_val): raise ValueError('ERROR: Validation cost blew up! It is higher than {} times the worst possible values'.format(self.cfg.train_cancel_validthresh)) # TODO TODO TODO
+            # if (self._errtype=='LSE') and (cost_val>=self.cfg.train_cancel_validthresh*worst_val): raise ValueError('ERROR: Validation cost blew up! It is higher than {} times the worst possible values'.format(self.cfg.train_cancel_validthresh)) # TODO
 
             self._model.save(os.path.splitext(params_savefile)[0]+'-last.h5', printfn=print_log, extras={'cost_val':cost_val})
 
