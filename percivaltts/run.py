@@ -195,6 +195,8 @@ def training(cont=False):
 
     opti.train(cfg.inpath, cfg.outpath, cfg.wpath, fid_lst_tra, fid_lst_val, cfg.fparams_fullset, cont=cont)
 
+    del mod
+
 
 def generate(fparams=cfg.fparams_fullset):
 
