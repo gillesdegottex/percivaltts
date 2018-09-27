@@ -36,6 +36,8 @@ print_sysinfo_backend()
 
 import tensorflow as tf
 
+import networks
+
 import data
 import vocoders
 
@@ -72,17 +74,55 @@ class ModelTTS:
         if extras is None: extras=dict()
         printfn('    saving parameters in {} ...'.format(fmodel), end='')
         sys.stdout.flush()
-        tf.keras.models.save_model(self._kerasmodel, fmodel, include_optimizer=False)
+
+        # Do it in two steps, so that the architecture file can be hacked, if need be.
+        # (e.g. can replace CuDNNLSTM layers by LSTM layers
+        # https://machinelearningmastery.com/save-load-keras-deep-learning-models/
+        # Save the architecture
+        try:
+            model_json = self.kerasmodel.to_json()
+            with open(fmodel+'.arch.json', 'w') as json_file:
+                json_file.write(model_json)
+        except TypeError:
+            print('WARNING: CANNOT SAVE ARCHITECTURE FILE in "'+fmodel+'.arch.json". I hope you can recover the architecture directly from the source code.')
+            pass
+
+        # Save the weights, i.e. parameters.
+        self.kerasmodel.save_weights(fmodel+'.weights.h5')
+
+        # Save the parameters
+        # tf.keras.models.save_model(self._kerasmodel, fmodel, include_optimizer=False)
+        # TODO TODO TODO Use Model.save instead ?
+        # https://github.com/keras-team/keras/blob/master/tests/test_model_saving.py#L624
+
+        # Save the extra data
         DATA = [cfg, extras]
         cPickle.dump(DATA, open(fmodel+'.cfgextras.pkl', 'wb'))
+
         print(' done '+infostr)
         sys.stdout.flush()
 
     def load(self, fmodel, printfn=print, compile=True):
         printfn('    reloading parameters from {} ...'.format(fmodel), end='')
         sys.stdout.flush()
-        self._kerasmodel = tf.keras.models.load_model(fmodel, compile=compile)
+
+        if self.kerasmodel==None:
+            # Load the architecture if it has not been be pre-created
+            json_file = open(fmodel+'.arch.json', 'r')
+            loaded_model_json = json_file.read()
+            json_file.close()
+            self.kerasmodel = tf.keras.models.model_from_json(loaded_model_json, custom_objects={'GaussianNoiseInput': networks.GaussianNoiseInput})
+
+        # Load the weights, i.e. parameters.
+        self.kerasmodel.load_weights(fmodel+'.weights.h5')
+
+        # Load the parameters
+        # self._kerasmodel = tf.keras.models.load_model(fmodel, compile=compile)
+        # self._kerasmodel.load_weights(fmodel)
+
+        # Load the extra data
         DATA = cPickle.load(open(fmodel+'.cfgextras.pkl', 'rb'))
+
         print(' done')
         sys.stdout.flush()
         return DATA
