@@ -308,13 +308,13 @@ class OptimizerTTS:
             if np.isnan(cost_val): raise ValueError('ERROR: Validation cost is nan!')
             # if (self._errtype=='LSE') and (cost_val>=self.cfg.train_cancel_validthresh*worst_val): raise ValueError('ERROR: Validation cost blew up! It is higher than {} times the worst possible values'.format(self.cfg.train_cancel_validthresh)) # TODO TODO TODO
 
-            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-last.h5', printfn=print_log, extras={'cost_val':cost_val})
+            self._model.save(os.path.splitext(params_savefile)[0]+'-last.h5', printfn=print_log, extras={'cost_val':cost_val})
 
             # Save model parameters
             if epoch>=self.cfg.train_min_nbepochs: # Assume no model is good enough before self.cfg.train_min_nbepochs
                 if ((best_val is None) or (cost_val<best_val)): # Among all trials of hyper-parameter optimisation
                     best_val = cost_val
-                    self._model.saveAllParams(params_savefile, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f})'.format(epoch, best_val))
+                    self._model.save(params_savefile, printfn=print_log, extras={'cost_val':cost_val}, infostr='(E{} C{:.4f})'.format(epoch, best_val))
                     epochs_modelssaved.append(epoch)
                     nbnodecepochs = 0
                 else:
@@ -368,7 +368,7 @@ class OptimizerTTS:
     def train(self, indir, outdir, wdir, fid_lst_tra, fid_lst_val, params_savefile, cont=None):
 
         if self.cfg.train_nbtrials>1:
-            self._model.saveAllParams(os.path.splitext(params_savefile)[0]+'-init.h5', printfn=print_log)
+            self._model.save(os.path.splitext(params_savefile)[0]+'-init.h5', printfn=print_log)
 
         try:
             trials = []
@@ -383,7 +383,7 @@ class OptimizerTTS:
                         trialstr += ','+hyperstr
                         print('    randomized hyper-parameters: '+trialstr)
                     if self.cfg.train_nbtrials>1:
-                        self._model.loadAllParams(os.path.splitext(params_savefile)[0]+'-init.h5')
+                        self._model.load(os.path.splitext(params_savefile)[0]+'-init.h5')
 
                     timewholetrainstart = time.time()
                     train_rets = self.train_oneparamset(indir, outdir, wdir, fid_lst_tra, fid_lst_val, params_savefile, trialstr=trialstr, cont=cont)

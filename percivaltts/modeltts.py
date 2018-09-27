@@ -68,7 +68,7 @@ class ModelTTS:
     def count_params(self):
         return self._kerasmodel.count_params()
 
-    def saveAllParams(self, fmodel, cfg=None, extras=None, printfn=print, infostr=''):
+    def save(self, fmodel, cfg=None, extras=None, printfn=print, infostr=''):
         if extras is None: extras=dict()
         printfn('    saving parameters in {} ...'.format(fmodel), end='')
         sys.stdout.flush()
@@ -78,7 +78,7 @@ class ModelTTS:
         print(' done '+infostr)
         sys.stdout.flush()
 
-    def loadAllParams(self, fmodel, printfn=print, compile=True):
+    def load(self, fmodel, printfn=print, compile=True):
         printfn('    reloading parameters from {} ...'.format(fmodel), end='')
         sys.stdout.flush()
         self._kerasmodel = tf.keras.models.load_model(fmodel, compile=compile)
