@@ -129,9 +129,9 @@ class ModelTTS:
                 else:
                     # Apply MLPG
                     from external.merlin.mlpg_fast import MLParameterGenerationFast as MLParameterGeneration
-                    mlpg_algo = MLParameterGeneration(delta_win=self.vocoder.mlpg_ignore[0], acc_win=self.vocoder.mlpg_ignore[1])
+                    mlpg_algo = MLParameterGeneration(delta_win=self.vocoder.mlpg_wins[0], acc_win=self.vocoder.mlpg_wins[1])
                     var = np.tile(Ystd**2,(CMP.shape[0],1)) # Simplification!
-                    CMP = mlpg_algo.generation(CMP, var, len(self.vocoder.featuressizeraw()))
+                    CMP = mlpg_algo.generation(CMP, var, self.vocoder.featuressizeraw())
 
             return CMP
 
