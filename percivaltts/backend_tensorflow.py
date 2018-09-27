@@ -53,9 +53,17 @@ def tf_gpu_memused():
     """
         Returns [MiB]
     """
+
     sess = tf.get_default_session()
+
+    if tf.test.gpu_device_name()=='': return 0
+
     biu = sess.run(tf.contrib.memory_stats.BytesInUse()/(1024*1024))
     return biu
+
+def tf_is_running_on_gpu():
+    return tf.test.gpu_device_name()!=''
+
 
 def nonlin_very_leaky_rectify(x):
     return tf.nn.leaky_relu(x, alpha=1.0/3.0)
