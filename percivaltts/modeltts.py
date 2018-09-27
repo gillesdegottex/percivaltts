@@ -122,7 +122,7 @@ class ModelTTS:
             CMP = CMP*np.tile(Ystd, (CMP.shape[0], 1)) + np.tile(Ymean, (CMP.shape[0], 1)) # De-normalise
 
             # TODO Should go in the vocoder, but there is Ystd to put as argument ...
-            #      Though, the vocoder is not taking care of the deltas composition in the data either.
+            #      Though, the vocoder is not taking care of the deltas composition during data composition either.
             if (not self.vocoder.mlpg_wins is None) and len(self.vocoder.mlpg_wins)>0:    # If MLPG is used
                 if mlpg_ignore:
                     CMP = CMP[:,:self.vocoder.featuressizeraw()]
@@ -140,7 +140,7 @@ class ModelTTS:
 
         for vi in xrange(len(X_test)):
 
-            print('Generating {}/{} ...'.format(1+vi, len(X_test)))
+            print('Generating {}/{} fid={} ...'.format(1+vi, len(X_test), fid_lst[vi]))
             print('    Predict ...')
 
             if do_resynth:
