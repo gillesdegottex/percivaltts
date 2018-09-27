@@ -4,7 +4,7 @@ This script coordinates the overall pipeline execution:
 * Context label extraction
 * Training
 * Generation
-If you want to skip a step: comment the lines concerned at the very end.
+If you want to skip a step: comment the corresponding lines at the end of this file.
 
 This file is meant to be savagely modified depending on the experiment you run.
 
@@ -29,6 +29,7 @@ Author
 import os
 import external.GPUtil
 os.environ["CUDA_VISIBLE_DEVICES"]=str(external.GPUtil.getAvailable()[0])
+# os.environ["CUDA_VISIBLE_DEVICES"]=""
 
 print('')
 
