@@ -179,7 +179,7 @@ def contexts_extraction():
 
 
 def build_model():
-    mod = models.DCNNF0SpecNoiseFeatures(ctxsize, vocoder, cfg)
+    mod = modeltts_common.DCNNF0SpecNoiseFeatures(ctxsize, vocoder, cfg)
 
     # mod = models.Generic(ctxsize, vocoder, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], cfgarch=cfg, mlpg_wins=mlpg_wins)
     # mod = models.Generic(ctxsize, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], cfgarch=cfg)
@@ -205,7 +205,7 @@ def training(cont=False):
 def generate(fparams=cfg.fparams_fullset):
 
     mod = build_model()           # Rebuild the model from scratch
-    mod.loadAllParams(fparams)    # Load the model's parameters
+    mod.load(fparams)    # Load the model's parameters
 
     # Generate the network outputs (without any decomposition), for potential re-use for another network's input
     # mod.generate_cmp(cfg.inpath, os.path.splitext(fparams)[0]+'-gen/*.cmp', fids)
