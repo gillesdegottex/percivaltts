@@ -56,7 +56,7 @@ test:
     - tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
     - coverage run --source=. --omit="tests/*","external/*" -m tests.test_base
     - coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke
-    - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke_theano
+    - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_smoke_tensorflowkeras
     - bash setenv_travis.sh coverage run -a --source=. --omit="tests/*","external/*" -m tests.test_run
 
     - coverage report -m
