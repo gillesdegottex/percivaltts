@@ -99,12 +99,6 @@ def nonlin_sigmoidparm(x, c=0.0, f=1.0):
     """Parametrized sigmoid in order to chose its center and smoothness."""
     return 1.0 / (1.0 + np.exp(-(x-c)*f))
 
-def params_count(mod):
-    """
-    Returns the number of parameters in a model.
-    """
-    return mod.count_params()
-
 # def params_keeponly(params, regexp, reverse=False):
 #     paramstotrain = []
 #     for p in params:
