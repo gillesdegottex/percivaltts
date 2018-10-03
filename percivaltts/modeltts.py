@@ -36,7 +36,7 @@ print_sysinfo_backend()
 
 import tensorflow as tf
 
-import networks
+import networktts
 
 import data
 import vocoders
@@ -111,7 +111,7 @@ class ModelTTS:
             json_file = open(fmodel+'.arch.json', 'r')
             loaded_model_json = json_file.read()
             json_file.close()
-            self.kerasmodel = tf.keras.models.model_from_json(loaded_model_json, custom_objects={'GaussianNoiseInput': networks.GaussianNoiseInput})
+            self.kerasmodel = tf.keras.models.model_from_json(loaded_model_json, custom_objects={'GaussianNoiseInput': networktts.GaussianNoiseInput})
 
         # Load the weights, i.e. parameters.
         self.kerasmodel.load_weights(fmodel+'.weights.h5')
