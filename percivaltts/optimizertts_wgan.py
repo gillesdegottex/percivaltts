@@ -222,7 +222,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
 
         # TODO The params below are supposed to ensure the critic is "almost" fully converged
         #      when training the generator. How to evaluate this? Is it the case currently?
-        if (self.generator_updates < 25) or (self.generator_updates % 500 == 0):  # TODO Params hardcoded TODO TODO TODO Try to get rid of it
+        if (self.generator_updates < 25) or (self.generator_updates % 500 == 0):  # TODO Params hardcoded TODO Try to get rid of it, replace with automated #run based on training curve (run more of there is a big jump, continue to train is err is converging bigger than X)
             critic_runs = 10 # TODO Params hardcoded 10
         else:
             critic_runs = 5 # TODO Params hardcoded 5
