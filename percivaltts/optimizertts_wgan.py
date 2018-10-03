@@ -82,8 +82,8 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
     costs_tra_critic_batches = []
     generator_updates = 0
 
-    def __init__(self, cfg, model, errtype='WGAN', critic=None, **kwargs):
-        optimizertts.OptimizerTTS.__init__(self, cfg, model, errtype, *kwargs)
+    def __init__(self, cfgtomerge, model, errtype='WGAN', critic=None, **kwargs):
+        optimizertts.OptimizerTTS.__init__(self, cfgtomerge, model, errtype, *kwargs)
         self.critic = critic
 
     def default_options(self, cfg):
