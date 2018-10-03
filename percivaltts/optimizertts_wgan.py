@@ -86,6 +86,21 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         optimizertts.OptimizerTTS.__init__(self, cfg, model, errtype, *kwargs)
         self.critic = critic
 
+    def default_options(self, cfg):
+        cfg.train_wgan_critic_learningrate_log10 = -4     # [potential hyper-parameter]
+        cfg.train_wgan_critic_adam_beta1 = 0.5            # [potential hyper-parameter]
+        cfg.train_wgan_critic_adam_beta2 = 0.9            # [potential hyper-parameter]
+        cfg.train_wgan_gen_learningrate_log10 = -3     # [potential hyper-parameter]
+        cfg.train_wgan_gen_adam_beta1 = 0.5            # [potential hyper-parameter]
+        cfg.train_wgan_gen_adam_beta2 = 0.9            # [potential hyper-parameter]
+        cfg.train_wgan_pg_lambda = 10                # [potential hyper-parameter]   # TODO Rename
+        cfg.train_wgan_LScoef = 0.25                 # If >0, mix LSE and WGAN losses (def. 0.25)
+        cfg.train_wgan_validation_ltm_winlen = 20    # Now that I'm using min and max epochs, I could use the actuall D cost and not the ltm(D cost) TODO
+        cfg.train_wgan_critic_LSWGANtransfreqcutoff = 4000
+        cfg.train_wgan_critic_LSWGANtranscoef = 1.0/8.0
+        cfg.train_wgan_critic_use_WGAN_incnoisefeature = False
+        return cfg
+
 
     def prepare(self):
 
@@ -124,12 +139,12 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         partial_gp_loss.__name__ = 'gradient_penalty' # Keras requires function names
 
         print('    compiling critic')
-        critic_opti = keras.optimizers.Adam(lr=float(10**self.cfg.train_D_learningrate_log10), beta_1=float(self.cfg.train_D_adam_beta1), beta_2=float(self.cfg.train_D_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
+        critic_opti = keras.optimizers.Adam(lr=float(10**self.cfg.train_wgan_critic_learningrate_log10), beta_1=float(self.cfg.train_wgan_critic_adam_beta1), beta_2=float(self.cfg.train_wgan_critic_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
         print('        optimizer: {}'.format(type(critic_opti).__name__))
         self.critic_model = keras.Model(inputs=[real_sample, self.critic.input_ctx],
                                     outputs=[valid, fake, validity_interpolated])
         self.critic_model.compile(loss=[wasserstein_loss, wasserstein_loss, partial_gp_loss],
-                                    optimizer=critic_opti, loss_weights=[1, 1, self.cfg.train_pg_lambda])
+                                    optimizer=critic_opti, loss_weights=[1, 1, self.cfg.train_wgan_pg_lambda])
 
         self.wgan_valid = -np.ones((self.cfg.train_batch_size, 1, 1))
         self.wgan_fake =  np.ones((self.cfg.train_batch_size, 1, 1))
@@ -150,7 +165,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         valid = frozen_critic([pred_sample,ctx_gen])
         # Defines generator model
         print('    compiling generator')
-        gen_opti = keras.optimizers.Adam(lr=float(10**self.cfg.train_G_learningrate_log10), beta_1=float(self.cfg.train_G_adam_beta1), beta_2=float(self.cfg.train_G_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
+        gen_opti = keras.optimizers.Adam(lr=float(10**self.cfg.train_wgan_gen_learningrate_log10), beta_1=float(self.cfg.train_wgan_gen_adam_beta1), beta_2=float(self.cfg.train_wgan_gen_adam_beta2), epsilon=K.epsilon(), decay=0.0, amsgrad=False)
         print('        optimizer: {}'.format(type(gen_opti).__name__))
 
         if self._errtype=='WGAN':
@@ -172,21 +187,21 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
             wganls_weights_els = []
             wganls_weights_els.append([0.0]) # For f0
             specvs = np.arange(self._model.vocoder.specsize(), dtype=np.float32)
-            if self.cfg.train_LScoef==0.0:
+            if self.cfg.train_wgan_LScoef==0.0:
                 wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
             else:
-                wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self.cfg.train_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self.cfg.train_critic_LSWGANtranscoef)) # For spec
+                wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self.cfg.train_wgan_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self.cfg.train_wgan_critic_LSWGANtranscoef)) # For spec
             if self._model.vocoder.noisesize()>0:
-                if self.cfg.train_critic_use_WGAN_incnoisefeature:
+                if self.cfg.train_wgan_critic_use_WGAN_incnoisefeature:
                     noisevs = np.arange(self._model.vocoder.noisesize(), dtype=np.float32)
-                    wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self.cfg.train_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self.cfg.train_critic_LSWGANtranscoef)) # For noise
+                    wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self.cfg.train_wgan_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self.cfg.train_wgan_critic_LSWGANtranscoef)) # For noise
                 else:
                     wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
             if self._model.vocoder.vuvsize()>0:
                 wganls_weights_els.append([0.0]) # For vuv
             wganls_weights_ = np.hstack(wganls_weights_els)
 
-            wganls_weights_ *= (1.0-self.cfg.train_LScoef)
+            wganls_weights_ *= (1.0-self.cfg.train_wgan_LScoef)
 
             wganls_weights_ls = (1.0-wganls_weights_)
             # TODO TODO TODO Clean this crap
@@ -235,7 +250,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         costs['critic_training'].append(np.mean(self.costs_tra_critic_batches))
         critic_train_validation_fn_args = [Y_vals, X_vals]
         costs['critic_validation'].append(data.cost_model_mfn(lambda y,x: self.critic_model.evaluate(x=[y, x], y=[self.wgan_valid[:1,], self.wgan_fake[:1,], self.wgan_dummy[:1,]], batch_size=1, verbose=0)[0], critic_train_validation_fn_args))
-        costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-self.cfg.train_validation_ltm_winlen:]))
+        costs['critic_validation_ltm'].append(np.mean(costs['critic_validation'][-self.cfg.train_wgan_validation_ltm_winlen:]))
         cost_val = costs['critic_validation_ltm'][-1]
 
         if np.mean(self.costs_tra_critic_batches)<=0.0: print('Average critic loss is negative: Training is likely to take ages to converge or not converge at all. ')

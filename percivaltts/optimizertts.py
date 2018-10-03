@@ -67,26 +67,7 @@ class OptimizerTTS:
         cfg = configuration() # Init structure
 
         # All the default parameters for the optimizer
-        # LSE
-        cfg.train_learningrate_log10 = -3.39794 # [potential hyper-parameter] (10**-3.39794=0.0004)
-        cfg.train_adam_beta1 = 0.9              # [potential hyper-parameter]
-        cfg.train_adam_beta2 = 0.999            # [potential hyper-parameter]
-        cfg.train_adam_epsilon_log10 = -8       # [potential hyper-parameter]
-        # WGAN
-        cfg.train_D_learningrate_log10 = -4     # [potential hyper-parameter]
-        cfg.train_D_adam_beta1 = 0.5            # [potential hyper-parameter]
-        cfg.train_D_adam_beta2 = 0.9            # [potential hyper-parameter]
-        cfg.train_G_learningrate_log10 = -3     # [potential hyper-parameter]
-        cfg.train_G_adam_beta1 = 0.5            # [potential hyper-parameter]
-        cfg.train_G_adam_beta2 = 0.9            # [potential hyper-parameter]
-        cfg.train_pg_lambda = 10                # [potential hyper-parameter]   # TODO Rename
-        cfg.train_LScoef = 0.25                 # If >0, mix LSE and WGAN losses (def. 0.25)
-        cfg.train_validation_ltm_winlen = 20    # Now that I'm using min and max epochs, I could use the actuall D cost and not the ltm(D cost) TODO
-        cfg.train_critic_LSweighting = True
-        cfg.train_critic_LSWGANtransfreqcutoff = 4000
-        cfg.train_critic_LSWGANtranscoef = 1.0/8.0
-        cfg.train_critic_use_WGAN_incnoisefeature = False
-        # Common
+        # Common options to any optimisation schemes
         cfg.train_min_nbepochs = 200
         cfg.train_max_nbepochs = 300
         cfg.train_nbepochs_scalewdata = True
@@ -100,8 +81,10 @@ class OptimizerTTS:
         cfg.train_nbtrials = 1                  # Just run one training only
         cfg.train_hypers=[]
 
-        #cfg.train_hypers = [('learningrate_log10', -6.0, -2.0), ('adam_beta1', 0.8, 1.0)] # For ADAM
-        #cfg.train_hyper = [('train_D_learningrate', 0.0001, 0.1), ('train_D_adam_beta1', 0.8, 1.0), ('train_D_adam_beta2', 0.995, 1.0), ('train_batch_size', 1, 200)] # For ADAM
+        cfg = self.default_options(cfg)
+
+        #cfg.train_hypers = [('train_lse_learningrate_log10', -6.0, -2.0), ('adam_beta1', 0.8, 1.0)] # For ADAM
+        #cfg.train_hyper = [('train_wgan_critic_learningrate', 0.0001, 0.1), ('train_wgan_critic_adam_beta1', 0.8, 1.0), ('train_wgan_critic_adam_beta2', 0.995, 1.0), ('train_batch_size', 1, 200)] # For ADAM
         cfg.train_log_plot=True
         # ... add/overwrite configuration from cfgtomerge ...
         if not cfgtomerge is None: cfg.merge(cfgtomerge)
@@ -112,7 +95,6 @@ class OptimizerTTS:
 
         print('Training configuration')
         self.cfg.print_content()
-
 
     def saveTrainingState(self, fstate, extras=None, printfn=print):
         if extras is None: extras=dict()
@@ -417,12 +399,21 @@ class OptimizerTTS:
 
     # The functions below should be overwritten by any sub-class of OptimizerTTS
     # Default is LSE(MSE) training
+
+    def default_options(self, cfg):
+        # Options for LSE optimisation scheme
+        cfg.train_lse_learningrate_log10 = -3.39794 # [potential hyper-parameter] (10**-3.39794=0.0004)
+        cfg.train_lse_adam_beta1 = 0.9              # [potential hyper-parameter]
+        cfg.train_lse_adam_beta2 = 0.999            # [potential hyper-parameter]
+        cfg.train_lse_adam_epsilon_log10 = -8       # [potential hyper-parameter]
+        return cfg
+
     def prepare(self):
         print('    Prepare LSE training')
 
-        # opti = tf.train.RMSPropOptimizer(float(10**cfg.train_learningrate_log10))  # Saving training states doesn't work with these ones
-        # opti = keras.optimizers.RMSprop(lr=float(10**cfg.train_learningrate_log10)) #
-        opti = keras.optimizers.Adam(lr=float(10**self.cfg.train_learningrate_log10), beta_1=float(self.cfg.train_adam_beta1), beta_2=float(self.cfg.train_adam_beta2), epsilon=float(10**self.cfg.train_adam_epsilon_log10), decay=0.0, amsgrad=False)
+        # opti = tf.train.RMSPropOptimizer(float(10**cfg.train_lse_learningrate_log10))  # Saving training states doesn't work with these ones
+        # opti = keras.optimizers.RMSprop(lr=float(10**cfg.train_lse_learningrate_log10)) #
+        opti = keras.optimizers.Adam(lr=float(10**self.cfg.train_lse_learningrate_log10), beta_1=float(self.cfg.train_lse_adam_beta1), beta_2=float(self.cfg.train_lse_adam_beta2), epsilon=float(10**self.cfg.train_lse_adam_epsilon_log10), decay=0.0, amsgrad=False)
         print('    optimizer: {}'.format(type(opti).__name__))
 
         print("    compiling training function ...")
