@@ -23,6 +23,8 @@ cfg.indir = cptest+'binary_label_'+str(lab_size)+'_norm_minmaxm11/*.lab:(-1,'+st
 cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 cfg.wdir = cptest+'wav_fwlspec65_weights/*.w:(-1,1)'
 
+cfg.arch_hiddenwidth = 4
+
 cfg.train_batch_size = 2
 cfg.train_min_nbepochs = 1
 cfg.train_cancel_nodecepochs = 2
@@ -44,10 +46,10 @@ class TestSmokeTheano(unittest.TestCase):
         import percivaltts.vocoders
         vocoder = percivaltts.vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
 
-        import percivaltts.modeltts_specific
-        model = percivaltts.modeltts_specific.Generic(lab_size, vocoder, layertypes=['FC', 'FC', 'FC'])
-        print("modgan.nbParams={}".format(model.nbParams()))
-        self.assertEqual(model.nbParams(), 2163)
+        import percivaltts.modeltts_common
+        model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['FC', 'FC', 'FC'], cfgarch=cfg)
+        print("model.count_params={}".format(model.count_params()))
+        self.assertEqual(model.count_params(), 2195)
 
         # LSE optimizer
         import percivaltts.optimizertts
