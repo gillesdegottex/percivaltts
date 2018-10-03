@@ -24,16 +24,12 @@ from percivaltts import *  # Always include this first to setup a few things
 numpy_force_random_seed()
 from backend_tensorflow import *
 
-import warnings
-
 from external.pulsemodel import sigproc as sp
 
 from tensorflow import keras
 import tensorflow.keras.layers as kl
 
-import networks
-
-# import gan_normalization2
+from networktts import *
 
 class Critic:
 
@@ -45,74 +41,51 @@ class Critic:
     ctxsize = -1
     cfgarch = None
 
-    def __init__(self, vocoder, ctxsize, cfgarch, use_LSweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=False):
-        nonlinearity=keras.layers.LeakyReLU(alpha=0.3) # TODO Move to cfgarch
+    def __init__(self, vocoder, ctxsize, cfgarch, use_LSspectralweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=False):
 
         self.vocoder = vocoder
         self.ctxsize = ctxsize
         self.cfgarch = cfgarch
 
+        bn = False
+
         self.input_features = keras.layers.Input(shape=(None, vocoder.featuressize()), name='input_features')
 
-        use_bias = True     # TODO , use_bias=False
+        l_toconcat = []
 
+        # Spectrum
         # l_f0 = kl.Lambda(lambda x: x[:,:,:1])(self.input_features)
         l_spec = kl.Lambda(lambda x: x[:,:,1:1+vocoder.specsize()])(self.input_features)
         # l_nm = kl.Lambda(lambda x: x[:,:,1+vocoder.specsize():1+vocoder.specsize()+vocoder.noisesize()])(self.input_features)
 
-        # l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec)
-        #
-        # # l_spec = kl.Conv2D(cfgarch.arch_nbfilters, [cfgarch.arch_winlen,cfgarch.arch_spec_freqlen], strides=(1, 2), padding='same', dilation_rate=(1, 1), use_bias=use_bias, data_format='channels_last')(l_spec)
-        # # l_spec = nonlinearity(l_spec)
-        # #
-        # # l_spec = kl.Conv2D(cfgarch.arch_nbfilters, [cfgarch.arch_winlen,cfgarch.arch_spec_freqlen], strides=(1, 2), padding='same', dilation_rate=(1, 1), use_bias=use_bias, data_format='channels_last')(l_spec)
-        # # l_spec = nonlinearity(l_spec)
-        #
-        # # l_spec = kl.Conv2D(cfgarch.arch_nbfilters, [cfgarch.arch_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=use_bias, data_format='channels_last')(l_spec)
-        # # l_spec = nonlinearity(l_spec)
-        # #
-        # # l_spec = kl.Conv2D(cfgarch.arch_nbfilters, [cfgarch.arch_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=use_bias, data_format='channels_last')(l_spec)
-        # # l_spec = nonlinearity(l_spec)
-        #
-        # l_spec = kl.Conv2D(1, [cfgarch.arch_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=True, data_format='channels_last')(l_spec)
-        # l_spec = nonlinearity(l_spec)
-        # l_spec = kl.Reshape([-1,l_spec.shape[-2]])(l_spec)
+        #TODO Add spectral weighting here
 
-        l_pre = l_spec
+        l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec)
 
-        l_pre = kl.Dense(self.cfgarch.arch_hiddensize, activation=None, use_bias=use_bias)(l_pre)
-        # l_pre = gan_normalization2.GANBatchNormalization(axis=-1)(l_pre)  # TODO find a proper normalisation for the critic
-        l_pre = nonlinearity(l_pre)
+        for _ in xrange(cfgarch.arch_gen_nbcnnlayers):
+            l_spec = kl.Conv2D(cfgarch.arch_gen_nbfilters, [cfgarch.arch_critic_ctx_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), data_format='channels_last')(l_spec)
+            l_spec = keras.layers.LeakyReLU(alpha=0.3)(l_spec)
 
-        l_pre = kl.Dense(self.cfgarch.arch_hiddensize, activation=None, use_bias=use_bias)(l_pre)
-        # l_pre = gan_normalization2.GANBatchNormalization(axis=-1)(l_pre)
-        l_pre = nonlinearity(l_pre)
+        l_spec = kl.Reshape([-1,l_spec.shape[-2]*l_spec.shape[-1]])(l_spec)
 
-        l_pre = kl.Dense(self.cfgarch.arch_hiddensize, activation=None, use_bias=use_bias)(l_pre)
-        # l_pre = gan_normalization2.GANBatchNormalization(axis=-1)(l_pre)
-        l_pre = nonlinearity(l_pre)
+        l_toconcat.append(l_spec)
 
         self.input_ctx = keras.layers.Input(shape=(None, self.ctxsize), name='input_ctx')
+        l_ctx = self.input_ctx
+        for _ in xrange(cfgarch.arch_ctx_nbcnnlayers):
+            l_ctx = pCNN1D(l_ctx, cfgarch.arch_ctx_nbfilters, cfgarch.arch_critic_ctx_winlen, bn=bn)
+        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
 
-        l_ctx = networks.network_context_preproc(self.input_ctx, cfgarch, use_bn=False)
+        l_toconcat.append(l_ctx)
 
-        l_post = kl.Concatenate(axis=-1, name='lo_concatenation')([l_pre, l_ctx])
+        l_post = kl.Concatenate(axis=-1, name='lo_concatenation')(l_toconcat)
 
-        l_post = kl.Dense(self.cfgarch.arch_hiddensize, activation=None, use_bias=use_bias)(l_post)
-        # l_post = gan_normalization2.GANBatchNormalization(axis=-1)(l_post)    # TODO Crashes
-        l_post = nonlinearity(l_post)
+        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
 
-        l_post = kl.Dense(self.cfgarch.arch_hiddensize, activation=None, use_bias=use_bias)(l_post)
-        # l_post = gan_normalization2.GANBatchNormalization(axis=-1)(l_post)
-        l_post = nonlinearity(l_post)
-
-        l_post = kl.Dense(self.cfgarch.arch_hiddensize, activation=None, use_bias=use_bias)(l_post)
-        # l_post = gan_normalization2.GANBatchNormalization(axis=-1)(l_post)
-        l_post = nonlinearity(l_post)
-
-        # l_post = kl.Dense(self.cfgarch.arch_hiddensize, activation=None, use_bias=use_bias)(l_post)
-        # # l_post = gan_normalization2.GANBatchNormalization(axis=-1)(l_post)
-        # l_post = nonlinearity(l_post)
-
-        l_post = kl.Dense(1, activation=None)(l_post)
-        self.output = nonlinearity(l_post)
+        self.output = kl.Dense(1, activation=None)(l_post)
