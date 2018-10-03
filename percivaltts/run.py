@@ -148,7 +148,7 @@ def features_extraction():
     from external import pfs
     pfs.map(pfs_map_vocoder, fids)
 
-    # ... or uncomment these line to extract them file by file.
+    # ... or uncomment this line below to extract them file by file.
     # for fid in fids: pfs_map_vocoder(fid)
 
     # Create time weights (column vector in [0,1]). The frames at begining or end of
