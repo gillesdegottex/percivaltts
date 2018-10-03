@@ -120,7 +120,8 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         frozen_generator.trainable = False
 
         # Input for a real sample
-        real_sample = keras.layers.Input(shape=(None,self._model.vocoder.featuressize()))
+        # real_sample = keras.layers.Input(shape=(None,self._model.vocoder.featuressize()))
+        real_sample = self.critic.input_features    # TODO Be sure it doesn't break anything.
         # Generate an artifical (fake) sample
         fake_sample = frozen_generator(self.critic.input_ctx)
 
@@ -157,9 +158,10 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         frozen_critic = keras.engine.network.Network([self.critic.input_features,self.critic.input_ctx], self.critic.output)
         frozen_critic.trainable = False
 
-        # Sampled noise for input to generator
-        ctx_gen = keras.layers.Input(shape=(None, self._model.ctxsize))
-        # Generate images based of noise
+        # Context input for input to generator
+        # ctx_gen = keras.layers.Input(shape=(None, self._model.ctxsize))
+        ctx_gen = self.critic.input_ctx     # TODO Be sure it doesn't break anything.
+        # Generate images based of ctx input
         pred_sample = generator(ctx_gen)
         # Discriminator determines validity
         valid = frozen_critic([pred_sample,ctx_gen])
