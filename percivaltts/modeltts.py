@@ -1,5 +1,7 @@
 '''
 The base model class to derive the others from.
+This model encapsulate a Keras model (not inheritance).
+It is meant to be dedicated to TTS.
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
