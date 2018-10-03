@@ -41,7 +41,7 @@ class Critic:
     ctxsize = -1
     cfgarch = None
 
-    def __init__(self, vocoder, ctxsize, cfgarch, use_LSspectralweighting=True, LSWGANtransfreqcutoff=4000, LSWGANtranscoef=1.0/8.0, use_WGAN_incnoisefeature=False):
+    def __init__(self, vocoder, ctxsize, cfgarch):
 
         self.vocoder = vocoder
         self.ctxsize = ctxsize
