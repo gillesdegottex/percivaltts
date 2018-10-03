@@ -34,6 +34,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]=str(external.GPUtil.getAvailable()[0])
 print('')
 
 from percivaltts import *  # Always include this first to setup a few things for percival
+import backend_tensorflow
 import data
 import vocoders
 import compose
