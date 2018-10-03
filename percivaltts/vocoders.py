@@ -20,6 +20,8 @@ Author
     Gilles Degottex <gad27@cam.ac.uk>
 '''
 
+import os
+
 import numpy as np
 
 from external.pulsemodel import sigproc as sp
@@ -331,3 +333,12 @@ class VocoderWORLD(VocoderF0Spec):
         apergen = CMP[:,1+self.spec_size:1+self.spec_size+self.aper_size]
         self.features_err.setdefault('APER[dB]', []).append(np.sqrt(np.mean((apertrg-apergen)**2, 0)))
         # TODO Add VUV
+
+def makedirs(path):
+    """Create a directory."""
+    import errno
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise                                           # pragma: no cover
