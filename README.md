@@ -114,17 +114,17 @@ $ cd percivaltts
 $ make build
 ```
 
-Go into the Python module directory:
+Download the demo data:
+```
+$ make tests/slt_arctic_merlin_full
+```
+
+Go into the `percivaltts` python module directory:
 ```
 $ cd percivaltts
 ```
 
 Edit `setenv.sh` according to your TensorFlow/Keras installation (see above).
-
-Download the demo data:
-```
-$ make tests/slt_arctic_merlin_full
-```
 
 And finally run the demo!
 ```
