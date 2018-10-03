@@ -1,5 +1,6 @@
 '''
-Functions returning some outpout(s) given input(s), without object
+Functions returning some outpout(s) given input(s), without extra objects created.
+It is meant to be dedicated to TTS.
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
@@ -133,6 +134,8 @@ def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None)
                 l_out = pDilCNN1D(l_out, layertypes[layi][1], layertypes[layi][2], layertypes[layi][3], bn=bn)
             elif layertypes[layi][0]=='RND':
                 l_out = GaussianNoiseInput(width=layertypes[layi][1])(l_out)
+            else:
+                raise ValueError('Unknown layer type '+str(layertypes[layi]))
 
         elif callable(layertypes[layi]):
             l_out = layertypes[layi](l_out)

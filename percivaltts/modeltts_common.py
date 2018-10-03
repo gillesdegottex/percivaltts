@@ -27,14 +27,14 @@ from backend_tensorflow import *
 from external.pulsemodel import sigproc as sp
 
 import modeltts
-import networks
+import networktts
 
 from tensorflow import keras
 import tensorflow.keras.layers as kl
 
 
 class Generic(modeltts.ModelTTS):
-    def __init__(self, ctxsize, vocoder, fmodel=None, layertypes=['FC', 'FC', 'FC'], nameprefix=None, cfgarch=None, mlpg_wins=None):
+    def __init__(self, ctxsize, vocoder, fmodel=None, layertypes=['FC', 'FC', 'FC'], nameprefix=None, cfgarch=None):
         modeltts.ModelTTS.__init__(self, ctxsize, vocoder)
 
         if not fmodel is None:
@@ -47,9 +47,9 @@ class Generic(modeltts.ModelTTS):
 
         l_in = kl.Input(shape=(None, ctxsize), name=nameprefix+'input.conditional')
 
-        l_out = networks.network_generic(l_in, layertypes=layertypes, cfgarch=cfgarch)
+        l_out = networktts.network_generic(l_in, layertypes=layertypes, cfgarch=cfgarch)
 
-        l_out = networks.network_final(l_out, vocoder, mlpg_wins=mlpg_wins)
+        l_out = networktts.network_final(l_out, vocoder, mlpg_wins=vocoder.mlpg_wins)
 
         self.kerasmodel = keras.Model(inputs=l_in, outputs=l_out)
         self.kerasmodel.summary()
@@ -67,8 +67,8 @@ class DCNNF0SpecNoiseFeatures(modeltts.ModelTTS):
 
         l_in = kl.Input(shape=(None, ctxsize), name=nameprefix+'input.conditional')
 
-        l_ctx = networks.network_context_preproc(l_in, cfgarch.arch_ctx_winlen, cfgarch, bn=True)
-        # l_ctx = networks.GaussianNoiseInput(width=100)(l_ctx)
+        l_ctx = networktts.network_context_preproc(l_in, cfgarch.arch_ctx_winlen, cfgarch, bn=True)
+        # l_ctx = networktts.GaussianNoiseInput(width=100)(l_ctx)
 
         # F0
         l_f0 = l_ctx
