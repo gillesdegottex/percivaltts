@@ -104,7 +104,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
 
     def prepare(self):
 
-        print('    Prepare {} training...'.format(self._errtype))      
+        print('    Prepare {} training...'.format(self._errtype))
 
         generator = self._model.kerasmodel
 

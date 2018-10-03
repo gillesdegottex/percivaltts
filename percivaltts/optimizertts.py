@@ -275,11 +275,7 @@ class OptimizerTTS:
                         raise ValueError('ERROR: Training cost is nan!')
                     costs_tra_batches.append(cost_tra)
             print_tty('\r                                                           \r')
-            if self._errtype=='WGAN':
-                costs['model_training'].append(np.mean(costs_tra_batches))
-                if self.cfg.train_LScoef>0: costs['model_training_wgan_lse_ratio'].append(0.1*np.mean(costs_tra_gen_wgan_lse_ratios))
-            else:
-                costs['model_training'].append(np.mean(costs_tra_batches))
+            costs['model_training'].append(np.mean(costs_tra_batches))
 
             cost_val = self.update_validation_cost(costs, X_vals, Y_vals)  # This has to be overwritten by sub-classes
 
