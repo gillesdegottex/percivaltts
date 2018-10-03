@@ -31,6 +31,11 @@ from tensorflow import keras
 
 import numpy as np
 
+# Setup a default session
+import tensorflow as tf
+sess = tf.Session()
+sess.__enter__()
+
 def print_sysinfo_backend():
     """Print some information about Theano installation"""
     print('    TensorFlow: {} {}'.format(tf.__version__, tf.__file__))
