@@ -64,10 +64,10 @@ tests/slt_arctic_merlin_test: tests/slt_arctic_merlin_test.tar.gz
 	tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
 
 tests: tests/slt_arctic_merlin_test
-	# python -m tests.test_base
-	# python -m tests.test_smoke
+	python -m tests.test_base
+	python -m tests.test_smoke
 	bash "$(SETENVSCRIPT)" python -m tests.test_smoke_tensorflowkeras
-	# bash "$(SETENVSCRIPT)" python -m tests.test_run
+	bash "$(SETENVSCRIPT)" python -m tests.test_run
 
 tests_clean:
 	rm -fr tests/slt_arctic_merlin_test
