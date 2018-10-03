@@ -1,7 +1,7 @@
 '''
-Vocoder classes.
-This is fully independent on the machine learning toolbox used.
-(independent of the ML backend)
+Vocoder classes to parametrize/deparametrize a waveform.
+This should be seen and developped as a completely independent module.
+(e.g independent of PercivalTTS and any ML backend)
 
 Copyright(C) 2017 Engineering Department, University of Cambridge, UK.
 
@@ -19,8 +19,6 @@ License
 Author
     Gilles Degottex <gad27@cam.ac.uk>
 '''
-
-from percivaltts import *  # Always include this first to setup a few things
 
 import numpy as np
 
