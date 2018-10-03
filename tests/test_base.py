@@ -1,6 +1,7 @@
 # http://pymbook.readthedocs.io/en/latest/testing.html
 
 import os
+
 from percivaltts import *
 
 import unittest
@@ -46,8 +47,8 @@ class TestBase(unittest.TestCase):
 
     def test_contexts_features_extractions_and_composition(self):
 
-        from external.merlin.label_normalisation import HTSLabelNormalisation
-        label_normaliser = HTSLabelNormalisation(question_file_name='external/merlin/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full')
+        from percivaltts.external.merlin.label_normalisation import HTSLabelNormalisation
+        label_normaliser = HTSLabelNormalisation(question_file_name='percivaltts/external/merlin/questions-radio_dnn_416.hed', add_frame_features=True, subphone_feats='full')
 
         fids = readids(cfg.fileids)
 
@@ -55,10 +56,10 @@ class TestBase(unittest.TestCase):
         for fid in fids:
             label_normaliser.perform_normalisation([label_state_align_path.replace('*',fid)], [label_path.replace('*',fid)])
 
-        import vocoders
-        vocoder_pml = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
+        import percivaltts.vocoders
+        vocoder_pml = percivaltts.vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
         print('vocoder_pml={} featuressize={}'.format(vocoder_pml, vocoder_pml.featuressize()))
-        vocoder_world = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, aper_size=nm_size)
+        vocoder_world = percivaltts.vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, aper_size=nm_size)
         print('vocoder_world={} featuressize={}'.format(vocoder_world, vocoder_world.featuressize()))
 
         for fid in fids:
@@ -69,30 +70,30 @@ class TestBase(unittest.TestCase):
             # fspec=spec_fw_path.replace('*',fid), spec_nbfwbnds=spec_size, fnm=nm_path.replace('*',fid), nm_nbfwbnds=nm_size, verbose=1)
 
 
-        import compose
+        import percivaltts.compose
 
         # Compose the inputs
         # The input files are binary labels, as the come from the NORMLAB Process of Merlin TTS pipeline https://github.com/CSTR-Edinburgh/merlin
-        compose.compose([label_path+':(-1,'+str(in_size)+')'], fids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_minmax, do_finalcheck=True, wins=[])
+        percivaltts.compose.compose([label_path+':(-1,'+str(in_size)+')'], fids, cfg.indir, id_valid_start=cfg.id_valid_start, normfn=percivaltts.compose.normalise_minmax, do_finalcheck=True, wins=[])
 
         # Compose the outputs
-        compose.compose([f0_path, spec_fw_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=compose.normalise_meanstd_nmnoscale)
+        percivaltts.compose.compose([f0_path, spec_fw_path+':(-1,'+str(spec_size)+')', nm_path+':(-1,'+str(nm_size)+')'], fids, cfg.outdir, id_valid_start=cfg.id_valid_start, normfn=percivaltts.compose.normalise_meanstd_nmnoscale)
 
         # Create time weights (column vector in [0,1]). The frames at begining or end of
         # each file whose weights are smaller than 0.5 will be ignored by the training
-        compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
-        compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
-        compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwlspec')  # Overwrite with the good one
+        percivaltts.compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='mcep')    # Wrong data, just to smoke it
+        percivaltts.compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwcep')   # Wrong data, just to smoke it
+        percivaltts.compose.create_weights_spec(spec_fw_path+':(-1,'+str(spec_size)+')', fids, cfg.wdir, spec_type='fwlspec')  # Overwrite with the good one
 
-        import data
+        import percivaltts.data
         fid_lst_val = fids[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
-        X_vals = data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
-        worst_val = data.cost_0pred_rmse(X_vals) # RMSE
+        X_vals = percivaltts.data.load(cfg.indir, fid_lst_val, verbose=1, label='Context labels: ')
+        worst_val = percivaltts.data.cost_0pred_rmse(X_vals) # RMSE
         print("    X 0-pred validation RMSE = {} (100%)".format(worst_val))
 
-        Y_vals = data.load(cfg.outdir, fid_lst_val, verbose=1, label='Output features: ')
+        Y_vals = percivaltts.data.load(cfg.outdir, fid_lst_val, verbose=1, label='Output features: ')
         # X_vals, Y_vals = data.croplen([X_vals, Y_vals])
-        worst_val = data.cost_0pred_rmse(Y_vals) # RMSE
+        worst_val = percivaltts.data.cost_0pred_rmse(Y_vals) # RMSE
         print("    Y 0-pred validation RMSE = {} (100%)".format(worst_val))
 
     # def test_vocoder_pulsemodel_features_extraction_and_composition_fwcep(self):

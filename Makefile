@@ -17,7 +17,7 @@
 
 # Maintenance targets ----------------------------------------------------------
 
-.PHONY: test tests_clean
+.PHONY: tests tests_clean
 
 all: build
 
@@ -43,3 +43,32 @@ distclean: clean
 	# TODO Clean WORLD
 	# TODO Clean sigproc
 	find . -name '*.pyc' -delete
+
+
+# Testing ----------------------------------------------------------------------
+
+SETENVSCRIPT=percivaltts/setenv.sh
+
+# Download the full demo data (~1000 sentences)
+tests/slt_arctic_merlin_full.tar.gz:
+	git clone git@github.com:gillesdegottex/percivaltts_demodata.git
+	mv percivaltts_demodata/* tests/
+	rm -fr percivaltts_demodata
+
+# Decompress the full demo data (~1000 sentences)
+tests/slt_arctic_merlin_full: tests/slt_arctic_merlin_full.tar.gz
+	tar xvzf tests/slt_arctic_merlin_full.tar.gz -C tests/
+
+# Decompress the test data (10 sentences)
+tests/slt_arctic_merlin_test: tests/slt_arctic_merlin_test.tar.gz
+	tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
+
+tests: tests/slt_arctic_merlin_test
+	# python -m tests.test_base
+	# python -m tests.test_smoke
+	bash "$(SETENVSCRIPT)" python -m tests.test_smoke_tensorflowkeras
+	# bash "$(SETENVSCRIPT)" python -m tests.test_run
+
+tests_clean:
+	rm -fr tests/slt_arctic_merlin_test
+	rm -fr tests/test_made__*

@@ -84,30 +84,3 @@ clone_run_back:
 
 clone_run_back_continue:
 	./clone.sh "$(DEST)" 'nohup ${CMDTORUN_CONTINUE} </dev/null >> bck.log 2>&1 &'
-
-
-# Testing ----------------------------------------------------------------------
-
-# Download the full demo data (~1000 sentences)
-tests/slt_arctic_merlin_full.tar.gz:
-	git clone git@github.com:gillesdegottex/percivaltts_demodata.git
-	mv percivaltts_demodata/* tests/
-	rm -fr percivaltts_demodata
-
-# Decompress the full demo data (~1000 sentences)
-tests/slt_arctic_merlin_full: tests/slt_arctic_merlin_full.tar.gz
-	tar xvzf tests/slt_arctic_merlin_full.tar.gz -C tests/
-
-# Decompress the test data (10 sentences)
-tests/slt_arctic_merlin_test: tests/slt_arctic_merlin_test.tar.gz
-	tar xvf tests/slt_arctic_merlin_test.tar.gz -C tests/
-
-tests: tests/slt_arctic_merlin_test
-	python -m tests.test_base
-	python -m tests.test_smoke
-	bash "$(SETENVSCRIPT)" python -m tests.test_smoke_theano
-	bash "$(SETENVSCRIPT)" python -m tests.test_run
-
-tests_clean:
-	rm -fr tests/slt_arctic_merlin_test
-	rm -fr tests/test_made__*

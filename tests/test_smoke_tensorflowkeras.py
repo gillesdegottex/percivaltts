@@ -4,8 +4,6 @@ from percivaltts import *
 
 import unittest
 
-import data
-
 global cfg
 cfg = configuration() # Init configuration structure
 
@@ -17,7 +15,7 @@ cfg.vocoder_shift = 0.005   # Time shift between 2 frames
 cfg.vocoder_fs = 16000      # Sampling frequency of the samples used for testing
 
 cfg.fileids = cptest+'/file_id_list.scp'
-fid_lst = readids(cfg.fileids)
+fid_lst = percivaltts.readids(cfg.fileids)
 cfg.id_valid_start = 8
 cfg.id_valid_nb = 1
 cfg.id_test_nb = 1
@@ -43,24 +41,21 @@ class TestSmokeTheano(unittest.TestCase):
 
         fid_lst = readids(cfg.fileids)
 
-        import vocoders
-        vocoder = vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
+        import percivaltts.vocoders
+        vocoder = percivaltts.vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
 
-        # Most basic model
-        import models_basic
-        model = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=2)
+        import percivaltts.modeltts_specific
+        model = percivaltts.modeltts_specific.Generic(lab_size, vocoder, layertypes=['FC', 'FC', 'FC'])
         print("modgan.nbParams={}".format(model.nbParams()))
         self.assertEqual(model.nbParams(), 2163)
 
-        import models_generic
-
         # LSE optimizer
-        import optimizer
+        import percivaltts.optimizertts
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
         cfg.cropmode = 'begend'
-        optigan = optimizer.Optimizer(model, errtype='LSE')
+        optigan = percivaltts.optimizertts.OptimizerTTS(cfg,model)
         optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_theano_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
         model.save('tests/test_made__smoke_theano_model/smokymodelparams.pkl')
 
@@ -143,10 +138,10 @@ class TestSmokeTheano(unittest.TestCase):
 
 
         # Test WORLD vocoder
-        import vocoders
+        import percivaltts.vocoders
         vocoder_world = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
-        import models_basic
-        model = models_basic.ModelFC(lab_size, vocoder_world, mlpg_wins=[], hiddensize=4, nblayers=2)
+        import percivaltts.models_specific
+        model = percivaltts.models_specific.Generic(lab_size, vocoder_world, layertypes=['FC', 'FC', 'FC'])
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
@@ -205,25 +200,23 @@ class TestSmokeTheano(unittest.TestCase):
 
 
     def test_backend_theano(self):
-        import backend_theano
+        import percivaltts.backend_tensorflow
 
         import theano.tensor as T
 
         # Test the following if CUDA is available: (won't be tested on travis anyway since no GPU are available on travis)
-        if backend_theano.th_cuda_available():
+        if percivaltts.backend_tensorflow.tf_cuda_available():
             print('nvidia_smi_current_gpu={}'.format(nvidia_smi_current_gpu()))  # Can't test it because needs CUDA
             print('nvidia_smi_gpu_memused={}'.format(nvidia_smi_gpu_memused())) # Can't test it because needs CUDA
 
         x = T.ftensor3('x')
 
-        y = backend_theano.th_print('smoky debug message', x)
-
-        y = backend_theano.nonlin_tanh_saturated(x, coef=1.01)
-        y = backend_theano.nonlin_tanh_bysigmoid(x)
-        y = backend_theano.nonlin_tanhcm11(x)
-        y = backend_theano.nonlin_saturatedsigmoid(x, coef=1.01)
-        y = backend_theano.nonlin_softsign(x)
-        y = backend_theano.nonlin_sigmoidparm(x, c=0.0, f=1.0)
+        # y = backend_tensorflow.nonlin_tanh_saturated(x, coef=1.01)
+        # y = backend_tensorflow.nonlin_tanh_bysigmoid(x)
+        # y = backend_tensorflow.nonlin_tanhcm11(x)
+        # y = backend_tensorflow.nonlin_saturatedsigmoid(x, coef=1.01)
+        y = percivaltts.backend_tensorflow.nonlin_softsign(x)
+        y = percivaltts.backend_tensorflow.nonlin_sigmoidparm(x, c=0.0, f=1.0)
 
 
 if __name__ == '__main__':
