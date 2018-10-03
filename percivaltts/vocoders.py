@@ -186,7 +186,7 @@ class VocoderPML(VocoderF0Spec):
     def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, preproc_hp=None):   # pragma: no cover  coverage not detected
         return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), preproc_hp=preproc_hp)
 
-    def synthesis(self, fs, CMP, pp_mcep=False):
+    def synthesis(self, CMP, pp_mcep=False):
 
         f0 = CMP[:,0]
         f0 = np.exp(f0)
@@ -194,9 +194,9 @@ class VocoderPML(VocoderF0Spec):
         SPEC = self.decompress_spectrum(CMP[:,1:1+self.spec_size], self.spec_type, pp_mcep=pp_mcep)
 
         NM = CMP[:,1+self.spec_size:1+self.spec_size+self.nm_size]
-        NM = sp.fwbnd2linbnd(NM, fs, self.dftlen)
+        NM = sp.fwbnd2linbnd(NM, self.fs, self.dftlen)
 
-        syn = pulsemodel.synthesis.synthesize(fs, np.vstack((self.shift*np.arange(len(f0)), f0)).T, SPEC, NM=NM, nm_cont=False, pp_atten1stharminsilences=-25)
+        syn = pulsemodel.synthesis.synthesize(self.fs, np.vstack((self.shift*np.arange(len(f0)), f0)).T, SPEC, NM=NM, nm_cont=False, pp_atten1stharminsilences=-25)
 
         return syn
 
