@@ -202,6 +202,8 @@ def compose(featurepaths, fids, outfilepath, wins=None, id_valid_start=-1, normf
     """
     print('Compose data (id_valid_start={})'.format(id_valid_start))
 
+    if id_valid_start==0: raise ValueError('id_valid_start has to be greater than zero, i.e. training set has to contain at least one sample, otherwise data statistics cannot be estimated.')
+
     if wins is None: wins=[]
 
     outfilepath = re.sub(r':[^:]+$', "", outfilepath)   # ignore any shape suffix in the output path
