@@ -145,6 +145,7 @@ class ModelTTS:
             , pp_mcep=False
             , pp_spec_pf_coef=-1 # Common value is 1.2
             , pp_spec_extrapfreq=-1
+            , pp_f0_smooth=None
             ):
         from external.pulsemodel import sigproc as sp
 
@@ -194,7 +195,7 @@ class ModelTTS:
             CMP = CMP[0,:,:]
 
             CMP = denormalise(CMP)
-            syn = self.vocoder.synthesis(CMP, pp_mcep=pp_mcep)
+            syn = self.vocoder.synthesis(CMP, pp_mcep=pp_mcep, pp_f0_smooth=pp_f0_smooth)
             sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, self.vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
 
             if do_objmeas: self.vocoder.objmeasures_add(CMP, y_test[vi])
