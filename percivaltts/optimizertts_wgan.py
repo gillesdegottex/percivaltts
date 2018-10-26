@@ -247,8 +247,9 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
 
         # TODO The following often breaks when loss functions, etc. Try to find a design which is more prototype-friendly
         if self._errtype=='WGAN':       generator_train_validation_fn_args = [X_vals, Y_vals]
-        elif self._errtype=='WLSWGAN':  generator_train_validation_fn_args = [X_vals, [self.wgan_valid for _ in xrange(len(Y_vals))], Y_vals]
-        costs['model_validation'].append(data.cost_model_mfn(lambda x, valid, y: self.generator_model.evaluate(x=x, y=[valid,y], batch_size=1, verbose=0)[0], generator_train_validation_fn_args))
+        elif self._errtype=='WLSWGAN':  generator_train_validation_fn_args = [X_vals, [self.wgan_valid[0,] for _ in xrange(len(Y_vals))], Y_vals]
+        vvv = data.cost_model_mfn(lambda x, valid, y: self.generator_model.evaluate(x=x, y=[valid,y], batch_size=1, verbose=0)[0], generator_train_validation_fn_args)
+        costs['model_validation'].append(vvv)
         costs['critic_training'].append(np.mean(self.costs_tra_critic_batches))
         critic_train_validation_fn_args = [Y_vals, X_vals]
         costs['critic_validation'].append(data.cost_model_mfn(lambda y,x: self.critic_model.evaluate(x=[y, x], y=[self.wgan_valid[:1,], self.wgan_fake[:1,], self.wgan_dummy[:1,]], batch_size=1, verbose=0)[0], critic_train_validation_fn_args))
