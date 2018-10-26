@@ -240,17 +240,6 @@ A batch has a shape: [size, length, features_dim], that represent the number of 
 
 The implementation of the models assume the following features order: f0, amplitude spectrum (spec), noise (e.g. aperiodicity noise mask), vuv.
 
-### Results repeatability
-
-The seed of the random number generator is forced by default.
-In order to have non-deterministic runs, replace the content of the function `numpy_force_random_seed` in utils.py by `pass`
-https://keras.io/getting-started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development
-
-When the seed is forced, and while using the CPU, all training runs are supposed to output the exact same numerical results, no matter the model.
-
-When using the GPU, the runs are usually NOT repeatable and thus output different results.
-
-
 ### Training optimisation
 
 Even though WGAN is more robust than the original GAN, there are still a few elements to verify to be sure a training went well.
