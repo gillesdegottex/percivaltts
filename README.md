@@ -82,64 +82,19 @@ directory in Merlin).
 Dealing with the numerous dependencies between the libraries and tools can also
 be a nightmare. We strongly suggest to use a package manager
 [conda](https://conda.io/docs/) or [miniconda](https://conda.io/miniconda.html)
-on top of the OS package manager. Here are versions that are known to work using
-miniconda:
+on top of the OS package manager. The following `conda` commands have been found
+to give a working environment for PercivalTTS:
 ```
-# Name                    Version                   Build  Channel
-_tflow_190_select         0.0.1                       gpu
-bandmat                   0.6                       <pip>
-blas                      1.0                         mkl
-cudatoolkit               9.0                  h13b8566_0
-cudnn                     7.1.2                 cuda9.0_0
-cupti                     9.0.176                       0
-cython                    0.28.2           py27h14c3975_0
-defusedxml                0.5.0                     <pip>
-gcc_impl_linux-64         7.2.0                habb00fd_3
-gcc_linux-64              7.2.0                        26
-gxx_impl_linux-64         7.2.0                hdf63c60_3
-gxx_linux-64              7.2.0                        26
-intel-openmp              2018.0.0                      8
-keras                     2.2.2                         0
-keras-applications        1.0.4                    py27_1
-keras-base                2.2.2                    py27_0
-keras-preprocessing       1.0.2                    py27_1
-kiwisolver                1.0.1            py27hc15e7b5_0
-libffi                    3.2.1                hd88cf55_4
-libgcc-ng                 7.2.0                h7cc24e2_2
-libgfortran-ng            7.2.0                hdf63c60_3
-libgpuarray               0.7.5                h14c3975_0
-libopenblas               0.2.20               h9ac9557_7
-libstdcxx-ng              7.2.0                h7a57d05_2
-matplotlib                2.2.2            py27h0e671d2_1
-mkl                       2018.0.2                      1
-mkl-service               1.1.2            py27hb2d42c5_4
-mkl_fft                   1.0.1            py27h3010b51_0
-mkl_random                1.0.1            py27h629b387_0
-numpy                     1.14.3           py27h28100ab_1
-numpy-base                1.14.3           py27h0ea5e3f_1
-py-cpuinfo                4.0.0                     <pip>
-pygpu                     0.7.5            py27h14c3975_0
-python                    2.7.14              h1571d57_29
-scipy                     1.1.0            py27hfc37229_0
-sip                       4.19.8           py27hf484d3e_0
-subprocess32              3.2.7            py27h373dbce_0
-tensorboard               1.9.0            py27hf484d3e_0
-tensorflow                1.9.0           gpu_py27hd3a791e_1
-tensorflow-base           1.9.0           gpu_py27h6ecc378_0
-tensorflow-gpu            1.9.0                hf154084_0
-tensorflow-gpu-base       1.7.0            py27h8a131e3_0
-termcolor                 1.1.0                    py27_1
-theano                    1.0.1            py27h6bb024c_0
+conda install tensorflow-gpu cython ipython matplotlib
+conda install pip
+pip install --upgrade pip
+pip install py-cpuinfo defusedxml bandmat
 ```
-Some packages are not available in conda directly, so install pip in your
-conda, activate the environment and then install also:
+This has been tested with Nvidia Drivers 390.77 with cudatoolkit=9.0
+Depending in your driver, you might need to downgrade to a compatible CUDA toolkit.
+E.g.:
 ```
-pip install defusedxml bandmat
-```
-And other version numbers
-```
-CUDA                      9.0
-NVidia Drivers            384.111
+conda install cudatoolkit=9.0
 ```
 
 To apply post-processing for formant enhancement, you need to have `mcep` command line from [SPTK](http://sp-tk.sourceforge.net/)
