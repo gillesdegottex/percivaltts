@@ -30,7 +30,7 @@ from functools import partial
 # from collections import defaultdict
 
 from backend_tensorflow import *
-from tensorflow import keras
+from tensorflow.python import keras
 import tensorflow.keras.backend as K
 
 from external.pulsemodel import sigproc as sp
