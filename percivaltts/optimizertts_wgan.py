@@ -184,8 +184,6 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
             self.generator_model = keras.Model(inputs=ctx_gen, outputs=[valid,pred_sample])
 
             # TODO TODO TODO Clean this crap
-            # TODO TODO TODO Clean this crap
-            # TODO TODO TODO Clean this crap
             wganls_weights_els = []
             wganls_weights_els.append([0.0]) # For f0
             specvs = np.arange(self._model.vocoder.specsize(), dtype=np.float32)
@@ -193,6 +191,7 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
                 wganls_weights_els.append(np.ones(self._model.vocoder.specsize()))  # No special weighting for spec
             else:
                 wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self.cfg.train_wgan_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self.cfg.train_wgan_critic_LSWGANtranscoef)) # For spec
+                # wganls_weights_els.append(specvs/(len(specvs)-1)) # For spec # TODO
             if self._model.vocoder.noisesize()>0:
                 if self.cfg.train_wgan_critic_use_WGAN_incnoisefeature:
                     noisevs = np.arange(self._model.vocoder.noisesize(), dtype=np.float32)
@@ -206,8 +205,6 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
             wganls_weights_ *= (1.0-self.cfg.train_wgan_LScoef)
 
             wganls_weights_ls = (1.0-wganls_weights_)
-            # TODO TODO TODO Clean this crap
-            # TODO TODO TODO Clean this crap
             # TODO TODO TODO Clean this crap
 
             self.generator_model.compile(loss=[wasserstein_loss, partial(specweighted_lse_loss,specweight=wganls_weights_ls)], optimizer=gen_opti, loss_weights=[np.mean(wganls_weights_), 1])
