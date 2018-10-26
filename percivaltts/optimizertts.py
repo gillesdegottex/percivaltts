@@ -97,6 +97,7 @@ class OptimizerTTS:
         self.cfg.print_content()
 
     def saveTrainingState(self, fstate, extras=None, printfn=print):
+        # TODO TODO TODO FIX
         if extras is None: extras=dict()
         printfn('    saving training state in {} ...'.format(fstate), end='')
         sys.stdout.flush()
@@ -126,6 +127,7 @@ class OptimizerTTS:
         sys.stdout.flush()
 
     def loadTrainingState(self, fstate, printfn=print):
+        # TODO TODO TODO FIX
         printfn('    reloading parameters from {} ...'.format(fstate), end='')
         sys.stdout.flush()
 
