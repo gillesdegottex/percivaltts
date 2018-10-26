@@ -76,8 +76,8 @@ OR ALGORITHMS (E.G. CONSEQUENCES OF BUGS OR ERRONEOUS IMPLEMENTATIONS).
 
 Percival is _not_ a standalone pipeline for TTS. It only trains an acoustic
 model. Technically, it is dependent on a text-to-audio alignment system, which
-usually provides context input labels (e.g. in HTS format; as label_state_align
-in Merlin).
+usually provides context input labels (e.g. in HTS format; as `label_state_align`
+directory in Merlin).
 
 Dealing with the numerous dependencies between the libraries and tools can also
 be a nightmare. We strongly suggest to use a package manager
@@ -143,7 +143,8 @@ NVidia Drivers            384.111
 ```
 
 To apply post-processing for formant enhancement, you need to have `mcep` command line from [SPTK](http://sp-tk.sourceforge.net/)
-By default, this post-processing is disabled since WGAN optimisation solves oversmoothing issues.
+By default, un-post-processed and post-processed samples are generated in the `out` directory.
+
 
 ### Install and run the demo
 
@@ -221,7 +222,7 @@ The `id_valid_start-1` last files right before `id_valid_start` might thus be co
 A last set exists, the demo set, which is a subset of the test set. This is convenient for generating and listening quickly to a few known sentences after a training. By default it is the first 10 sentences of the test set.
 `id_test_demostart` can be used to select the starting index (relative to the test set) in order to chose where the demo set starts within the test set.
 
-During training percival uses batches that have a small time window (2sec by default). Thus, when a sentences is picked for training, only this time window is used.
+During training, percival uses batches that have a small time window (2sec by default). Thus, when a sentences is picked for training, only this time window is used.
 There is two main advantage of this data formating: i) the memory size on the GPU is dependent on the duration of this time window and not on the random selection of the sentences; ii) each batch is full, in the sense that it doesn't need any zero padding at the end of short sentences, which means that masks are neither necessary.
 However, an epoch is not a full epoch in the sense that it does _not_ see all of the training data. This explains why the number of "epoch" is quite huge (300) by default in order to compensate for the unseen data.
 
