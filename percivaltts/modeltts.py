@@ -156,7 +156,7 @@ class ModelTTS:
 
         print('\nLoading generation data at once ...')
         X_test = data.load(inpath, fid_lst, verbose=1)
-        if do_objmeas:
+        if do_objmeas or do_resynth:
             y_test = data.load(outpath, fid_lst, verbose=1)
             X_test, y_test = data.croplen((X_test, y_test))
 
