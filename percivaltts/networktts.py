@@ -148,15 +148,15 @@ def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None)
     return l_out
 
 
-def network_context_preproc(input, winlen, cfgarch, bn=True):
-
-    output = input
-    for _ in xrange(cfgarch.arch_ctx_nbcnnlayers):
-        output = pCNN1D(output, cfgarch.arch_ctx_nbfilters, cfgarch.arch_ctx_winlen, bn=bn)
-
-    output = pBLSTM(output, cfgarch.arch_hiddenwidth, bn=bn)
-
-    return output
+# def network_context_preproc(input, winlen, cfgarch, bn=True):
+#
+#     output = input
+#     for _ in xrange(cfgarch.arch_ctx_nbcnnlayers):
+#         output = pCNN1D(output, cfgarch.arch_hiddenwidth, cfgarch.arch_ctx_winlen, bn=bn)
+#
+#     output = pBLSTM(output, cfgarch.arch_hiddenwidth, bn=bn)
+#
+#     return output
 
 def network_final(l_in, vocoder, mlpg_wins=None):
     layers_toconcat = []
