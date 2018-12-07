@@ -24,7 +24,7 @@ from __future__ import print_function
 import numpy as np
 
 from tensorflow import keras
-import tensorflow.python.keras.layers as kl
+import tensorflow.keras.layers as kl
 from tensorflow.keras import backend as K
 
 import vocoders
