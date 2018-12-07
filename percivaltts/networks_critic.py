@@ -63,19 +63,24 @@ class Critic:
         l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec)
 
         for _ in xrange(cfgarch.arch_gen_nbcnnlayers):
-            l_spec = kl.Conv2D(cfgarch.arch_gen_nbfilters, [cfgarch.arch_critic_ctx_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), data_format='channels_last')(l_spec)
+            l_spec = kl.Conv2D(cfgarch.arch_gen_nbfilters, [cfgarch.arch_gen_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), data_format='channels_last')(l_spec)
             l_spec = keras.layers.LeakyReLU(alpha=0.3)(l_spec)
 
         l_spec = kl.Reshape([-1,l_spec.shape[-2]*l_spec.shape[-1]])(l_spec)
+
+        # TODO TODO TODO Use symmetric model
+        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
 
         l_toconcat.append(l_spec)
 
         self.input_ctx = keras.layers.Input(shape=(None, self.ctxsize), name='input_ctx')
         l_ctx = self.input_ctx
         for _ in xrange(cfgarch.arch_ctx_nbcnnlayers):
-            l_ctx = pCNN1D(l_ctx, cfgarch.arch_ctx_nbfilters, cfgarch.arch_critic_ctx_winlen, bn=bn)
-        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
-        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
+            l_ctx = pCNN1D(l_ctx, cfgarch.arch_hiddenwidth, cfgarch.arch_ctx_winlen, bn=bn)
+        l_ctx = pFC(l_ctx, self.cfgarch.arch_hiddenwidth, bn=bn)
+        l_ctx = pFC(l_ctx, self.cfgarch.arch_hiddenwidth, bn=bn)
 
         l_toconcat.append(l_ctx)
 
