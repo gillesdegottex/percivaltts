@@ -10,10 +10,10 @@ export LD_LIBRARY_PATH=$CONDAPATH/lib:$LD_LIBRARY_PATH
 export LIBRARY_PATH=$CONDAPATH/lib:$LIBRARY_PATH
 export CPATH="$CONDAPATH/include:$CPATH"
 
-export THEANO_FLAGS="floatX=float32,on_unused_input=ignore,"
+# export THEANO_FLAGS="floatX=float32,on_unused_input=ignore,"
 
 # Enable all possible verbosity options to ease debuging if tests fail.
-export THEANO_FLAGS="device=cpu,exception_verbosity=high,optimizer=None,"$THEANO_FLAGS
+# export THEANO_FLAGS="device=cpu,exception_verbosity=high,optimizer=None,"$THEANO_FLAGS
 
 unset LD_PRELOAD
 
