@@ -94,7 +94,7 @@ class ModelTTS:
 
         # Save the parameters
         # tf.keras.models.save_model(self._kerasmodel, fmodel, include_optimizer=False)
-        # TODO TODO TODO Use Model.save instead ?
+        # Use Model.save instead ?
         # https://github.com/keras-team/keras/blob/master/tests/test_model_saving.py#L624
 
         # Save the extra data
