@@ -178,15 +178,18 @@ class VocoderPML(VocoderF0Spec):
 
     def noisesize(self): return self.nm_size
 
-    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, fnm, preproc_hp=None):  # This extra option can be usefull to remove blobs in recordings: preproc_hp=f0_min
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, fnm, **kwargs):
         print('Extracting PML features from: '+fwav)
 
-        if preproc_hp=='auto': preproc_hp=f0_min
+        if ('preproc_hp' in kwargs) and (kwargs['preproc_hp']=='auto'):
+            kwargs['preproc_hp']=f0_min
 
-        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, preproc_fs=self.fs, preproc_hp=preproc_hp, verbose=1)
 
-    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, preproc_hp=None):   # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), preproc_hp=preproc_hp)
+        pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, preproc_fs=self.fs, **kwargs)
+        # pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, preproc_fs=self.fs)
+
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, **kwargs):   # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), **kwargs)
 
     def synthesis(self, CMP, pp_mcep=False, pp_f0_smooth=None):
 
@@ -228,13 +231,13 @@ class VocoderWORLD(VocoderF0Spec):
     def noisesize(self): return self.aper_size
     def vuvsize(self): return 1
 
-    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv, preproc_hp=None):
+    def analysisf(self, fwav, ff0, f0_min, f0_max, fspec, faper, fvuv, **kwargs):
         print('Extracting WORLD features from: '+fwav)
 
         wav, fs, _ = sp.wavread(fwav)
 
-        if preproc_hp=='auto': preproc_hp=f0_min
-        self.preprocwav(wav, fs, highpass=preproc_hp)
+        if kwargs['preproc_hp']=='auto': kwargs['preproc_hp']=f0_min
+        self.preprocwav(wav, fs, highpass=kwargs['preproc_hp'])
 
         import pyworld as pw
 
@@ -288,8 +291,8 @@ class VocoderWORLD(VocoderF0Spec):
 
         # return CMP
 
-    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, preproc_hp=None):              # pragma: no cover  coverage not detected
-        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid), preproc_hp=preproc_hp)
+    def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, **kwargs):              # pragma: no cover  coverage not detected
+        return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid), **kwargs)
 
     def synthesis(self, fs, CMP, pp_mcep=False):
         import pyworld as pw
