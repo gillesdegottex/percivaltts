@@ -44,7 +44,7 @@ class Vocoder:
 
     def preprocwav(self, wav, fs, highpass=None):
         '''
-        Should always be called at the beginning of the analysis function accessing the waveform.
+        Should always be called at the beginning of the analysis function accessing the waveform. TODO TODO TODO
         '''
 
         if fs!=self.fs:
@@ -236,8 +236,11 @@ class VocoderWORLD(VocoderF0Spec):
 
         wav, fs, _ = sp.wavread(fwav)
 
-        if kwargs['preproc_hp']=='auto': kwargs['preproc_hp']=f0_min
-        self.preprocwav(wav, fs, highpass=kwargs['preproc_hp'])
+        if ('preproc_hp' in kwargs):
+            if kwargs['preproc_hp']=='auto': kwargs['preproc_hp']=f0_min
+            self.preprocwav(wav, fs, highpass=kwargs['preproc_hp'])
+        else:
+            self.preprocwav(wav, fs)
 
         import pyworld as pw
 
@@ -285,7 +288,7 @@ class VocoderWORLD(VocoderF0Spec):
         if 0:
             import matplotlib.pyplot as plt
             plt.ion()
-            resyn = self.synthesis(fs, CMP)
+            resyn = self.synthesis(CMP)
             sp.wavwrite('resynth.wav', resyn, fs, norm_abs=True, force_norm_abs=True, verbose=1)
             from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
@@ -294,7 +297,9 @@ class VocoderWORLD(VocoderF0Spec):
     def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, **kwargs):              # pragma: no cover  coverage not detected
         return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), outputpathdicts['vuv'].replace('*',fid), **kwargs)
 
-    def synthesis(self, fs, CMP, pp_mcep=False):
+    def synthesis(self, CMP, pp_mcep=False, pp_f0_smooth=None):
+        if not pp_f0_smooth is None: raise ValueError('VocoderWORLD synthesis does not include an f0 smoother, please use `pp_f0_smooth=None`')
+
         import pyworld as pw
 
         f0 = CMP[:,0]
@@ -306,7 +311,7 @@ class VocoderWORLD(VocoderF0Spec):
 
         APER = CMP[:,1+self.spec_size:1+self.spec_size+self.aper_size]
         APER = sp.db2mag(APER)
-        APER = sp.fwbnd2linbnd(APER, fs, self.dftlen)
+        APER = sp.fwbnd2linbnd(APER, self.fs, self.dftlen)
 
         if 0:
             import matplotlib.pyplot as plt
@@ -320,7 +325,7 @@ class VocoderWORLD(VocoderF0Spec):
             plt.imshow(APER.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', vmin=0, vmax=1)
             from IPython.core.debugger import  Pdb; Pdb().set_trace()
 
-        syn = pw.synthesize(f0.astype('float64'), SPEC.astype('float64'), APER.astype('float64'), fs, self.shift*1000.0)
+        syn = pw.synthesize(f0.astype('float64'), SPEC.astype('float64'), APER.astype('float64'), self.fs, self.shift*1000.0)
 
         return syn
 
