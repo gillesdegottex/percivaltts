@@ -44,7 +44,36 @@
 import sys, os, subprocess, commands
 import numpy as np
 
-import external.pulsemodel.sigproc as sp
+def bark_alpha(fs):
+    '''
+    Returns the alpha parameter corresponding to a Bark scale.
+    '''
+    return 0.8517*np.sqrt(np.arctan(0.06583*fs/1000.0))-0.1916
+
+import getpass
+import uuid
+import errno
+
+if os.path.exists('/scratch') and os.path.isdir('/scratch'):
+    TMPPATH='/scratch'
+elif os.path.exists('/dev/shm') and os.path.isdir('/dev/shm'):
+    TMPPATH='/dev/shm'
+else:
+    TMPPATH='/tmp'
+
+def makedirs(path):
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
+
+def gentmpfile(name):
+    tmpdir = os.path.join(TMPPATH,getpass.getuser())
+    makedirs(tmpdir)
+    tmpfile = os.path.join(tmpdir,'sigproc.pid%s.%s.%s' % (os.getpid(), str(uuid.uuid4()), name))
+    return tmpfile
+
 
 def run_process(args,log=True):
 
@@ -104,17 +133,17 @@ def run_process(args,log=True):
 
 def mcep_postproc_sptk(mcep, fs, dftlen=4096):
 
-    fmgcori = sp.gentmpfile('mgcori')
+    fmgcori = gentmpfile('mgcori')
     mcep.astype('float32').tofile(fmgcori)
 
     mgc_dim = mcep.shape[1]
 
-    fw_coef = sp.bark_alpha(fs)
+    fw_coef = bark_alpha(fs)
     co_coef = dftlen/2+1
 
     pf_coef = 1.4
 
-    fweight = sp.gentmpfile('fweight')
+    fweight = gentmpfile('fweight')
 
     line = "echo 1 1 "
     for i in range(2, mgc_dim):
