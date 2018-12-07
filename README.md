@@ -203,7 +203,7 @@ Even though WGAN is more robust than the original GAN, there are still a few ele
 3) if `discri_validation` doesn't decrease overall over the end of your training, it might be that you should run your training longer.
 
 
-### Cloning
+### Running experiments / Code cloning
 
 Managing multiple experiments in parallel, fixing bugs and try new ideas while keeping track of all the changes this can imply can become quite problematic. In Percival, there is a simple script `clone.sh` that allows you to clone the whole code source and place it in an experiment directory:
 ```
