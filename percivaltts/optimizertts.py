@@ -211,6 +211,7 @@ class OptimizerTTS:
                 nbnodecepochs = extras['nbnodecepochs']
 
         print_log("    start training ...")
+        epoch = -1
         for epoch in range(epochstart,1+self.cfg.train_max_nbepochs):
             timeepochstart = time.time()
             rndidx = np.arange(int(nbbatches*self.cfg.train_batch_size))    # Need to restart from ordered state to make the shuffling repeatable after reloading training state, the shuffling will be different anyway
