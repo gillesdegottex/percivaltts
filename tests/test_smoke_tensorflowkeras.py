@@ -42,6 +42,7 @@ class TestSmokeTheano(unittest.TestCase):
         makedirs('tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD_mlpg')
 
         fid_lst = readids(cfg.fileids)
+        fid_lst = fid_lst[:3]   ## Just synthesize the first 3
 
         import percivaltts.vocoders
         vocoder = percivaltts.vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
@@ -77,16 +78,14 @@ class TestSmokeTheano(unittest.TestCase):
         self.assertEqual(cfg, cfg_loaded)
         self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
-        # Save training state
-        # import optimizertts
-        optigan.saveTrainingState('tests/test_made__smoke_tfkeras_model/smokytrainingstate.pkl', extras={'cost_val':cost_val})
-
-        # TODO TODO TODO Below
-
-        # Load training state
-        cfg_loaded, extras_loaded, rngstate = optigan.loadTrainingState('tests/test_made__smoke_tfkeras_model/smokytrainingstate.pkl')
-        self.assertEqual(cfg, cfg_loaded)
-        self.assertEqual({'cost_val':cost_val}, extras_loaded)
+        # # Save training state TODO Doesn't work anymore for GAN-based training, should use TensorFlow checkpoints instead
+        # # import optimizertts
+        # optigan.saveTrainingState('tests/test_made__smoke_tfkeras_model/smokytrainingstate.pkl', extras={'cost_val':cost_val})
+        #
+        # # Load training state
+        # cfg_loaded, extras_loaded, rngstate = optigan.loadTrainingState('tests/test_made__smoke_tfkeras_model/smokytrainingstate.pkl')
+        # self.assertEqual(cfg, cfg_loaded)
+        # self.assertEqual({'cost_val':cost_val}, extras_loaded)
 
         # Test empty hyper parameters
         cfg, hyperstr = optigan.randomize_hyper(cfg)
@@ -106,8 +105,7 @@ class TestSmokeTheano(unittest.TestCase):
         # Train on multiple trials
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 5        # Just run one training only
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
-
+        optigan.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
         # Go back to single trial for the next tests
         cfg.train_nbtrials = 1
@@ -119,108 +117,109 @@ class TestSmokeTheano(unittest.TestCase):
         delattr(cfg, 'dummyattribute')
 
         # Try to continue the last training
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=True)
+        optigan.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=True)
         model.save('tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl')
 
         model.generate_cmp(cfg.indir, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams-cmp', fid_lst_val)
 
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams-snd', vocoder, wins=[], do_objmeas=True, do_resynth=True)
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams-snd-pp_spec_extrapfreq', vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_extrapfreq=8000)
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams-snd-pp_spec_pf_coef', vocoder, wins=[], do_objmeas=True, do_resynth=True, pp_spec_pf_coef=1.2)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams-snd', do_objmeas=True, do_resynth=True)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams-snd-pp_spec_extrapfreq', do_objmeas=True, do_resynth=True, pp_spec_extrapfreq=8000)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams-snd-pp_spec_pf_coef', do_objmeas=True, do_resynth=True, pp_spec_pf_coef=1.2)
 
         # Test MLPG
-        mlpg_wins = [[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]]
-        modelwdeltas = models_basic.ModelFC(lab_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=2)
+        vocoder = percivaltts.vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size, mlpg_wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
+        modelwdeltas = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['FC', 'FC'], cfgarch=cfg)
         # Use the MLPG features
         cfg.outdir = 'tests/test_made__smoke_compose_compose2_cmp_deltas/*.cmp:(-1,249)'
-        optiganwdeltas = optimizer.Optimizer(modelwdeltas, errtype='LSE')
-        optiganwdeltas.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modelwdeltas.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams_wdeltas.pkl', cfgtomerge=cfg, cont=False)
+        optiganwdeltas = percivaltts.optimizertts.OptimizerTTS(cfg, modelwdeltas)
+        optiganwdeltas.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams_wdeltas.pkl', cont=False)
         modelwdeltas.save('tests/test_made__smoke_tfkeras_model_train/smokymodelparams_wdeltas.pkl')
-        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams_wdeltas-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True)
+        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams_wdeltas-snd', do_objmeas=True, do_resynth=True)
         # Restore the non-MLPG features
         cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 
-
         # Test WORLD vocoder
-        import percivaltts.vocoders
-        vocoder_world = vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, _aper_size=nm_size)
-        import percivaltts.models_specific
-        model = percivaltts.models_specific.Generic(lab_size, vocoder_world, layertypes=['FC', 'FC', 'FC'])
+        vocoder_world = percivaltts.vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, aper_size=nm_size)
+        model = percivaltts.modeltts_common.Generic(lab_size, vocoder_world, layertypes=['FC', 'FC', 'FC'], cfgarch=cfg)
         cfg.train_max_nbepochs = 5
         cfg.train_nbtrials = 1        # Just run one training only
         cfg.train_hypers = []
         cfg.cropmode = 'begend'
         cfg.outdir = 'tests/test_made__smoke_compose_compose2_cmp_WORLD/*.cmp:(-1,84)'
-        optilse = optimizer.Optimizer(model, errtype='LSE')
-        optilse.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
+        optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD/smokymodelparams.pkl', cont=False)
         model.save('tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD/smokymodelparams.pkl')
-        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD/smokymodelparams-snd', vocoder_world, wins=[], do_objmeas=True, do_resynth=True)
+        model.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD/smokymodelparams-snd', do_objmeas=True, do_resynth=True)
         # Test MLPG
-        modelwdeltas = models_basic.ModelFC(lab_size, vocoder_world, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=2)
+        vocoder_world = percivaltts.vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, aper_size=nm_size, mlpg_wins=[[-0.5, 0.0, 0.5], [1.0, -2.0, 1.0]])
+        modelwdeltas = percivaltts.modeltts_common.Generic(lab_size, vocoder_world, layertypes=['FC', 'FC', 'FC'], cfgarch=cfg)
         # Use the MLPG features
         cfg.outdir = 'tests/test_made__smoke_compose_compose2_cmp_WORLD_mlpg/*.cmp:(-1,252)'
-        optiganwdeltas = optimizer.Optimizer(modelwdeltas, errtype='LSE')
-        optiganwdeltas.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, modelwdeltas.params_trainable, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas.pkl', cfgtomerge=cfg, cont=False)
+        optiganwdeltas = percivaltts.optimizertts.OptimizerTTS(cfg, modelwdeltas)
+        optiganwdeltas.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas.pkl', cont=False)
         modelwdeltas.save('tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas.pkl')
-        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas-snd', vocoder, wins=mlpg_wins, do_objmeas=True, do_resynth=True)
+        modelwdeltas.generate_wav(cfg.indir, cfg.outdir, fid_lst, 'tests/test_made__smoke_tfkeras_model_train_vocoder_WORLD_mlpg/smokymodelparams_wdeltas-snd', do_objmeas=True, do_resynth=True)
 
         # Restore PML and non-MLPG features
         cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 
 
+        # Now test the various combinations of layers
+        vocoder = percivaltts.vocoders.VocoderPML(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, nm_size)
 
+        model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['GRU', 'BGRU'], cfgarch=cfg)
+        optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
+        optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
-        # Now test the various models available
+        model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], cfgarch=cfg)
+        optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
+        optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
-        model = models_basic.ModelBGRU(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=1)
-        modelwdeltas = models_basic.ModelBGRU(lab_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=1)
-        optigan = optimizer.Optimizer(model, errtype='LSE')
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['FC', 'BLSTM'], cfgarch=cfg)
+        optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
+        optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
+
+        # The DCNN model of the paper
+        cfg.arch_hiddenwidth = 2
+        cfg.arch_ctx_nbcnnlayers = 2
+        cfg.arch_ctx_winlen = 3
+        cfg.arch_gen_nbcnnlayers = 2
+        cfg.arch_gen_nbfilters = 2
+        cfg.arch_gen_winlen = 3
+        cfg.arch_spec_freqlen = 3
+        model = percivaltts.modeltts_common.DCNNF0SpecNoiseFeatures(lab_size, vocoder, cfg)
+        optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
+        optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
         # model.generate_wav('test/test_made__smoke_tfkeras_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
 
-        model = models_basic.ModelBLSTM(lab_size, vocoder, mlpg_wins=[], hiddensize=4, nblayers=1)
-        modelwdeltas = models_basic.ModelBLSTM(lab_size, vocoder, mlpg_wins=mlpg_wins, hiddensize=4, nblayers=1)
-        optigan = optimizer.Optimizer(model, errtype='LSE')
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
-        # model.generate_wav('test/test_made__smoke_tfkeras_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
+        import percivaltts.optimizertts_wgan
+        import percivaltts.networks_critic
 
-        model = models_generic.ModelGeneric(lab_size, vocoder, mlpg_wins=[], layertypes=['FC', 'BLSTM'], hiddensize=4)
-        optigan = optimizer.Optimizer(model, errtype='LSE')
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
+        optilse = percivaltts.optimizertts_wgan.OptimizerTTSWGAN(cfg, model, errtype='WLSWGAN', critic=percivaltts.networks_critic.Critic(vocoder, lab_size, cfg))
+        optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
-        import models_cnn
-        model = models_cnn.ModelCNN(lab_size, vocoder, hiddensize=4, nbcnnlayers=1, nbfilters=2, spec_freqlen=3, noise_freqlen=3, windur=0.020)
-        optigan = optimizer.Optimizer(model, errtype='LSE')
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
-        # # model.generate_wav('test/test_made__smoke_tfkeras_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
-
-        optigan = optimizer.Optimizer(model, errtype='WGAN')
-        cfg.train_LScoef = 0.0
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
-        cfg.train_LScoef = 0.25
-        optigan.train_multipletrials(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, model.params_trainable, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cfgtomerge=cfg, cont=False)
-        # model.generate_wav('test/test_made__smoke_tfkeras_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
+        optilse = percivaltts.optimizertts_wgan.OptimizerTTSWGAN(cfg, model, errtype='WGAN', critic=percivaltts.networks_critic.Critic(vocoder, lab_size, cfg))
+        optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
 
-
-    def test_backend_theano(self):
-        import percivaltts.backend_tensorflow
-
-        import theano.tensor as T
-
-        # Test the following if CUDA is available: (won't be tested on travis anyway since no GPU are available on travis)
-        if percivaltts.backend_tensorflow.tf_cuda_available():
-            print('nvidia_smi_current_gpu={}'.format(nvidia_smi_current_gpu()))  # Can't test it because needs CUDA
-            print('nvidia_smi_gpu_memused={}'.format(nvidia_smi_gpu_memused())) # Can't test it because needs CUDA
-
-        x = T.ftensor3('x')
-
-        # y = backend_tensorflow.nonlin_tanh_saturated(x, coef=1.01)
-        # y = backend_tensorflow.nonlin_tanh_bysigmoid(x)
-        # y = backend_tensorflow.nonlin_tanhcm11(x)
-        # y = backend_tensorflow.nonlin_saturatedsigmoid(x, coef=1.01)
-        y = percivaltts.backend_tensorflow.nonlin_softsign(x)
-        y = percivaltts.backend_tensorflow.nonlin_sigmoidparm(x, c=0.0, f=1.0)
+    # def test_backend_tensorflowkeras(self): # TODO TODO TODO 
+    #     import percivaltts.backend_tensorflow
+    #
+    #     import theano.tensor as T
+    #
+    #     # Test the following if CUDA is available: (won't be tested on travis anyway since no GPU are available on travis)
+    #     if percivaltts.backend_tensorflow.tf_cuda_available():
+    #         print('nvidia_smi_current_gpu={}'.format(nvidia_smi_current_gpu()))  # Can't test it because needs CUDA
+    #         print('nvidia_smi_gpu_memused={}'.format(nvidia_smi_gpu_memused())) # Can't test it because needs CUDA
+    #
+    #     x = T.ftensor3('x')
+    #
+    #     # y = backend_tensorflow.nonlin_tanh_saturated(x, coef=1.01)
+    #     # y = backend_tensorflow.nonlin_tanh_bysigmoid(x)
+    #     # y = backend_tensorflow.nonlin_tanhcm11(x)
+    #     # y = backend_tensorflow.nonlin_saturatedsigmoid(x, coef=1.01)
+    #     y = percivaltts.backend_tensorflow.nonlin_softsign(x)
+    #     y = percivaltts.backend_tensorflow.nonlin_sigmoidparm(x, c=0.0, f=1.0)
 
 
 if __name__ == '__main__':
