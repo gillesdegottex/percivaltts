@@ -33,8 +33,8 @@ before_script:
 
     - echo "Install conda packages..."
     # - conda install --yes cython=0.26.1 libffi=3.2.1 libgcc-ng=7.2.0 libstdcxx-ng=7.2.0 numpy=1.12.1 scipy=0.19.1 mako=1.0.6 theano=0.9.0 # TODO Really need mako ?
-    - conda install --yes cython=0.26.1 libffi=3.2.1 libgcc-ng=7.2.0 libstdcxx-ng=7.2.0 numpy=1.12.1 scipy=0.19.1 tensorflow=1.9.0 tensorflow-base=1.9.0 tensorboard=1.9.0 keras-base=2.2.2 keras-applications=1.0.4 keras-preprocessing=1.0.2 # TODO Really need mako ?
-    - conda install --yes matplotlib=2.0.2 # Has to be done separately otherwise conda crashes
+    - conda install --yes cython=0.28.2 libffi=3.2.1 libgcc-ng=7.2.0 libstdcxx-ng=7.2.0 numpy=1.14.3 scipy=1.1.0 tensorflow=1.9.0 tensorflow-base=1.9.0 tensorboard=1.9.0 keras-base=2.2.2 keras-applications=1.0.4 keras-preprocessing=1.0.2 # TODO Really need mako ?
+    - conda install --yes matplotlib=2.2.2 # Has to be done separately otherwise conda crashes
     - conda list
 
     - echo "Install pip packages..."
