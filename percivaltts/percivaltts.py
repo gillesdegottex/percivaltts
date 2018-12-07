@@ -345,13 +345,14 @@ def log_plot_samples(Y_vals, Y_preds, nbsamples, fname, vocoder, title=''):
     for sidx in xrange(nbsamples):
         # maxidx = np.max(np.where(M[sidx,:]>0))
 
-        ts = np.arange(Y_vals[sidx].shape[0])*vocoder.shift
+        ts_val = np.arange(Y_vals[sidx].shape[0])*vocoder.shift
+        ts_pred = np.arange(Y_preds[sidx].shape[0])*vocoder.shift   # It is supposed to be the same as ts_val, but when playing with input's shape, they might end up different.
 
         plt.subplot(5,nbsamples,1+sidx)
         f0_val = Y_vals[sidx][:,0]
         f0_pred = Y_preds[sidx][:,0]
-        plt.plot(ts, f0_val, 'k')
-        plt.plot(ts, f0_pred, 'b')
+        plt.plot(ts_val, f0_val, 'k')
+        plt.plot(ts_pred, f0_pred, 'b')
         plt.axis('off')
 
         SPEC_val = Y_vals[sidx][:,1:1+vocoder.spec_size]
@@ -360,19 +361,19 @@ def log_plot_samples(Y_vals, Y_preds, nbsamples, fname, vocoder, title=''):
         plt.subplot(5,nbsamples,nbsamples+1+sidx)
         spec_max = np.max(SPEC_val)
         spec_min = np.min(SPEC_val)
-        plt.imshow(SPEC_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=spec_min, vmax=spec_max)
+        plt.imshow(SPEC_val.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts_val[-1], 0.0, vocoder.fs/2], vmin=spec_min, vmax=spec_max)
         plt.axis('off')
         plt.subplot(5,nbsamples,2*nbsamples+1+sidx)
-        plt.imshow(SPEC_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=spec_min, vmax=spec_max)
+        plt.imshow(SPEC_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='jet', extent=[0.0, ts_pred[-1], 0.0, vocoder.fs/2], vmin=spec_min, vmax=spec_max)
         plt.axis('off')
 
         NM_val = Y_vals[sidx][:,1+vocoder.spec_size:]
         NM_pred = Y_preds[sidx][:,1+vocoder.spec_size:]
         plt.subplot(5,nbsamples,3*nbsamples+1+sidx)
-        plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='gray', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)  # TODO grey ?
+        plt.imshow(NM_val.T, origin='lower', aspect='auto', interpolation='none', cmap='gray', extent=[0.0, ts_val[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)  # TODO grey ?
         plt.axis('off')
         plt.subplot(5,nbsamples,4*nbsamples+1+sidx)
-        plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='gray', extent=[0.0, ts[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)
+        plt.imshow(NM_pred.T, origin='lower', aspect='auto', interpolation='none', cmap='gray', extent=[0.0, ts_pred[-1], 0.0, vocoder.fs/2], vmin=0.0, vmax=1.0)
         plt.axis('off')
 
     if not title is None: plt.suptitle(title)
