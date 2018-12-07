@@ -189,14 +189,14 @@ class ModelTTS:
             if do_resynth:
                 CMP = denormalise(y_test[vi], mlpg_ignore=True)
                 resyn = self.vocoder.synthesis(CMP, pp_mcep=False)
-                sp.wavwrite(syndir+'-resynth/'+fid_lst[vi]+'.wav', resyn, self.vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+                sp.wavwrite(syndir+'-resynth/'+fid_lst[vi]+'.wav', resyn, self.vocoder.fs, norm_max=True, verbose=1)
 
             CMP = self.predict(np.reshape(X_test[vi],[1]+[s for s in X_test[vi].shape]))
             CMP = CMP[0,:,:]
 
             CMP = denormalise(CMP)
             syn = self.vocoder.synthesis(CMP, pp_mcep=pp_mcep, pp_f0_smooth=pp_f0_smooth)
-            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, self.vocoder.fs, norm_abs=True, force_norm_abs=True, verbose=1)
+            sp.wavwrite(syndir+'/'+fid_lst[vi]+'.wav', syn, self.vocoder.fs, norm_max=True, verbose=1)
 
             if do_objmeas: self.vocoder.objmeasures_add(CMP, y_test[vi])
 
