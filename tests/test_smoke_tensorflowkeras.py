@@ -34,7 +34,7 @@ fid_lst_val = fid_lst[cfg.id_valid_start:cfg.id_valid_start+cfg.id_valid_nb]
 
 cfg.dummyattribute = -1
 
-class TestSmokeTheano(unittest.TestCase):
+class TestSmokeTensorflowKeras(unittest.TestCase):
     def test_model(self):
         makedirs('tests/test_made__smoke_tfkeras_model')
         makedirs('tests/test_made__smoke_tfkeras_model_train')
@@ -171,7 +171,6 @@ class TestSmokeTheano(unittest.TestCase):
         optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
         optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
-        model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], cfgarch=cfg)
         optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
         optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
@@ -202,7 +201,7 @@ class TestSmokeTheano(unittest.TestCase):
         optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
 
-    # def test_backend_tensorflowkeras(self): # TODO TODO TODO 
+    # def test_backend_tensorflowkeras(self): # TODO TODO TODO
     #     import percivaltts.backend_tensorflow
     #
     #     import theano.tensor as T
