@@ -26,11 +26,13 @@ import warnings
 
 from functools import partial
 
-# import cPickle
+import cPickle
 # from collections import defaultdict
+import h5py
 
 from backend_tensorflow import *
 from tensorflow.python import keras
+from tensorflow.keras.models import load_model
 import tensorflow.keras.backend as K
 
 from external.pulsemodel import sigproc as sp
@@ -175,9 +177,6 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
             self.generator_model = keras.Model(inputs=ctx_gen, outputs=valid)
             self.generator_model.compile(loss=wasserstein_loss, optimizer=gen_opti)
 
-            def generator_train_validation_fn(x, _valid):
-                return self.generator_model.evaluate(x=x, y=_valid, batch_size=1, verbose=0)
-
         elif self._errtype=='WLSWGAN':
             print('        use WLSWGAN optimization')
             # First pack the outputs, since there is no possibility of doing many(outputs)-to-one(loss) in Keras ... :_(
@@ -192,12 +191,16 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
             else:
                 wganls_weights_els.append(nonlin_sigmoidparm(specvs,  sp.freq2fwspecidx(self.cfg.train_wgan_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.specsize()), self.cfg.train_wgan_critic_LSWGANtranscoef)) # For spec
                 # wganls_weights_els.append(specvs/(len(specvs)-1)) # For spec # TODO
-            if self._model.vocoder.noisesize()>0:
-                if self.cfg.train_wgan_critic_use_WGAN_incnoisefeature:
+
+            if self._model.vocoder.noisesize()>0 and self.cfg.train_wgan_critic_use_WGAN_incnoisefeature:
+                if self.cfg.train_wgan_LScoef==0.0:
+                    wganls_weights_els.append(np.ones(self._model.vocoder.noisesize()))  # No special weighting for spec
+                else:
                     noisevs = np.arange(self._model.vocoder.noisesize(), dtype=np.float32)
                     wganls_weights_els.append(nonlin_sigmoidparm(noisevs,  sp.freq2fwspecidx(self.cfg.train_wgan_critic_LSWGANtransfreqcutoff, self._model.vocoder.fs, self._model.vocoder.noisesize()), self.cfg.train_wgan_critic_LSWGANtranscoef)) # For noise
-                else:
-                    wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
+            else:
+                wganls_weights_els.append(np.zeros(self._model.vocoder.noisesize()))
+
             if self._model.vocoder.vuvsize()>0:
                 wganls_weights_els.append([0.0]) # For vuv
             wganls_weights_ = np.hstack(wganls_weights_els)
@@ -242,10 +245,15 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         cost_validation_rmse = data.cost_model_prediction_rmse(self._model, [X_vals], Y_vals)
         costs['model_rmse_validation'].append(cost_validation_rmse)
 
+
         # TODO The following often breaks when loss functions, etc. Try to find a design which is more prototype-friendly
-        if self._errtype=='WGAN':       generator_train_validation_fn_args = [X_vals, Y_vals]
-        elif self._errtype=='WLSWGAN':  generator_train_validation_fn_args = [X_vals, [self.wgan_valid[0,] for _ in xrange(len(Y_vals))], Y_vals]
-        vvv = data.cost_model_mfn(lambda x, valid, y: self.generator_model.evaluate(x=x, y=[valid,y], batch_size=1, verbose=0)[0], generator_train_validation_fn_args)
+        if self._errtype=='WGAN':
+            generator_train_validation_fn_args = [X_vals, [self.wgan_valid[0,] for _ in xrange(len(Y_vals))]]
+            fn = lambda x, valid: self.generator_model.evaluate(x=x, y=[valid], batch_size=1, verbose=0)
+        elif self._errtype=='WLSWGAN':
+            generator_train_validation_fn_args = [X_vals, [self.wgan_valid[0,] for _ in xrange(len(Y_vals))], Y_vals]
+            fn = lambda x, valid, y: self.generator_model.evaluate(x=x, y=[valid,y], batch_size=1, verbose=0)[0]
+        vvv = data.cost_model_mfn(fn, generator_train_validation_fn_args)
         costs['model_validation'].append(vvv)
         costs['critic_training'].append(np.mean(self.costs_tra_critic_batches))
         critic_train_validation_fn_args = [Y_vals, X_vals]
@@ -258,3 +266,63 @@ class OptimizerTTSWGAN(optimizertts.OptimizerTTS):
         self.costs_tra_critic_batches = []
 
         return cost_val
+
+    def saveOptimizer(self, optimizer, fname):
+        f = h5py.File(fname, mode='w')
+        optimizer_weights_group = f.create_group('optimizer_weights')
+        symbolic_weights = getattr(optimizer, 'weights')
+        weight_values = K.batch_get_value(symbolic_weights)
+        weight_names = []
+        for w, val in zip(symbolic_weights, weight_values):
+            name = str(w.name)
+            weight_names.append(name.encode('utf8'))
+        optimizer_weights_group.attrs['weight_names'] = weight_names
+        for name, val in zip(weight_names, weight_values):
+            param_dset = optimizer_weights_group.create_dataset(
+                name, val.shape, dtype=val.dtype)
+            if not val.shape:
+                # scalar
+                param_dset[()] = val
+            else:
+                param_dset[:] = val
+        f.flush()
+        f.close()
+
+    def loadOptimizer(self, optimizer, fname):
+        f = h5py.File(fname, mode='r')
+        optimizer_weights_group = f['optimizer_weights']
+        optimizer_weight_names = [
+            n.decode('utf8')
+            for n in optimizer_weights_group.attrs['weight_names']
+        ]
+        optimizer_weight_values = [
+            optimizer_weights_group[n] for n in optimizer_weight_names
+        ]
+        try:
+            optimizer.set_weights(optimizer_weight_values)
+        except ValueError:
+            print('Restoring optimizer failed from '+fname+'. Fresh optimizer used instead (i.e. momentums, etc., might be wrong)')
+
+        f.close()
+
+    def saveTrainingStateLossSpecific(self, fstate):
+
+        # TODO That's not enough
+
+        self.saveOptimizer(self.generator_model.optimizer, fstate+'.generator.optimizer.h5')
+
+        self.saveOptimizer(self.critic_model.optimizer, fstate+'.critic.optimizer.h5')
+
+        self._model.kerasmodel.save_weights(fstate+'.model.weights.h5')
+
+    def loadTrainingStateLossSpecific(self, fstate):
+
+        # TODO That's not enough
+
+        self.generator_model._make_train_function()
+        self.loadOptimizer(self.generator_model.optimizer, fstate+'.generator.optimizer.h5')
+
+        self.critic_model._make_train_function()
+        self.loadOptimizer(self.critic_model.optimizer, fstate+'.critic.optimizer.h5')
+
+        self._model.kerasmodel.load_weights(fstate+'.model.weights.h5')

@@ -27,6 +27,7 @@ import sys
 import os
 import copy
 import time
+import glob
 from functools import partial
 
 import cPickle
@@ -37,11 +38,14 @@ numpy_force_random_seed()
 
 from backend_tensorflow import *
 from tensorflow import keras
+from tensorflow.keras.models import load_model
 import tensorflow.keras.backend as K
 
 from external.pulsemodel import sigproc as sp
 
 import data
+
+import networktts
 
 # if tf_cuda_available():
 #     from pygpu.gpuarray import GpuArrayException   # pragma: no cover
@@ -102,26 +106,11 @@ class OptimizerTTS:
         printfn('    saving training state in {} ...'.format(fstate), end='')
         sys.stdout.flush()
 
-        # Save the model parameters
-        # tf.keras.models.save_model(self._model.kerasmodel, fstate+'.model.h5', include_optimizer=True)
-        tf.keras.models.save_model(self._model.kerasmodel, fstate+'.model.h5', include_optimizer=False) # TODO include_optimizer=True: In case of WGAN, this model is actually never compiled with an optimizer
+        self.saveTrainingStateLossSpecific(fstate)
 
         # Save the extra data
         DATA = [self.cfg, extras, np.random.get_state()]
-        cPickle.dump(DATA, open(fstate+'.cfgextras.pkl', 'wb'))
-
-        if self._errtype=='LSE':
-            # Apparently the tf.keras.models.save_model saves the optimizer setup, but doesn't
-            # save its current parameter values. So save then in a seperate file.
-            # Or only necessary when using TF optimizers?
-            # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
-            symbolic_weights = getattr(self._model.kerasmodel.optimizer, 'weights')
-            weight_values = tf.keras.backend.batch_get_value(symbolic_weights)
-            with open(fstate+'.optimizer.pkl', 'wb') as f:
-                cPickle.dump(weight_values, f)
-
-        # elif self._errtype=='WGAN':
-            # TODO Save the Critic
+        cPickle.dump(DATA, open(fstate+'.model.cfgextras.pkl', 'wb'))
 
         print(' done')
         sys.stdout.flush()
@@ -131,23 +120,10 @@ class OptimizerTTS:
         printfn('    reloading parameters from {} ...'.format(fstate), end='')
         sys.stdout.flush()
 
-        # Load the model parameters
-        self._model.kerasmodel = tf.keras.models.load_model(fstate+'.model.h5', compile=True)
+        self.loadTrainingStateLossSpecific(fstate)
 
-        # Reload the extra data
-        DATA = cPickle.load(open(fstate+'.cfgextras.pkl', 'rb'))
-
-        if self._errtype=='LSE':
-            # Apparently the tf.keras.models.save_model saves the optimizer setup, but doesn't
-            # save its current parameter values. So load them from a seperate file.
-            # Or only necessary when using TF optimizers?
-            # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
-            self._model.kerasmodel._make_train_function()
-            with open(fstate+'.optimizer.pkl', 'rb') as f:
-                weight_values = cPickle.load(f)
-            self._model.kerasmodel.optimizer.set_weights(weight_values)
-
-            # TODO Load the Critic too!
+        # Load the extra data
+        DATA = cPickle.load(open(fstate+'.model.cfgextras.pkl', 'rb'))
 
         print(' done')
         sys.stdout.flush()
@@ -218,9 +194,9 @@ class OptimizerTTS:
         nbnodecepochs = 0
         generator_updates = 0
         epochstart = 1
-        if cont and os.path.exists(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5.optimizer.pkl'): # TODO .optimizer.pkl
+        if cont and len(glob.glob(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5*'))>0:
             print('    reloading previous training state ...')
-            savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5', self.cfg)
+            savedcfg, extras, rngstate = self.loadTrainingState(os.path.splitext(params_savefile)[0]+'-trainingstate-last.h5')
             np.random.set_state(rngstate)
             cost_val = extras['cost_val']
             # Restoring some local variables
@@ -431,3 +407,29 @@ class OptimizerTTS:
         cost_val = costs['model_rmse_validation'][-1]
 
         return cost_val # It should return a cost value that is used for validation purpose. This cost_val will be used for saving the model if smaller than previous cost_val.
+
+    def saveTrainingStateLossSpecific(self, fstate):
+        # # Apparently the tf.keras.models.save_model saves the optimizer setup, but doesn't
+        # # save its current parameter values. So save them in a seperate file.
+        # # Or only necessary when using TF optimizers?
+        # # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
+        # symbolic_weights = getattr(self._model.kerasmodel.optimizer, 'weights')
+        # weight_values = tf.keras.backend.batch_get_value(symbolic_weights)
+        # with open(fstate+'.optimizer.pkl', 'wb') as f:
+        #     cPickle.dump(weight_values, f)
+
+        self._model.kerasmodel.save(fstate+'.model', include_optimizer=True)
+        # self._model.kerasmodel.save_weights(fstate+'.model.weights.h5')
+
+    def loadTrainingStateLossSpecific(self, fstate):
+        # # Apparently the tf.keras.models.save_model saves the optimizer setup, but doesn't
+        # # save its current parameter values. So load them from a seperate file.
+        # # Or only necessary when using TF optimizers?
+        # # https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state
+        # self._model.kerasmodel._make_train_function()
+        # with open(fstate+'.optimizer.pkl', 'rb') as f:
+        #     weight_values = cPickle.load(f)
+        # self._model.kerasmodel.optimizer.set_weights(weight_values)
+
+        self._model.kerasmodel = load_model(fstate+'.model', custom_objects={'GaussianNoiseInput':networktts.GaussianNoiseInput, 'lse_loss':lse_loss}, compile=True)
+        # self._model.kerasmodel.load_weights(fstate+'.model.weights.h5')
