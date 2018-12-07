@@ -181,14 +181,11 @@ def contexts_extraction():
 
 
 def build_model():
+    # mod = modeltts_common.Generic(ctxsize, vocoder, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], cfgarch=cfg) # 6 stacked FC
+    # mod = modeltts_common.Generic(ctxsize, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], cfgarch=cfg)          # 3 stacked BLSTM
+
     # mod = modeltts_common.Generic(ctxsize, vocoder, layertypes=[['RNDUNI', 100], ['CNN1D',cfg.arch_hiddenwidth,cfg.arch_ctx_winlen], 'FC', 'FC', 'FC', 'FC', 'FC'], cfgarch=cfg)    # CNNFC in the paper
-    # mod = modeltts_common.Generic(ctxsize, vocoder, layertypes=[['RNDUNI', 100], ['CNN1D',cfg.arch_hiddenwidth,cfg.arch_ctx_winlen], ['CNN1D',cfg.arch_hiddenwidth,cfg.arch_ctx_winlen], ['CNN1D',cfg.arch_hiddenwidth,cfg.arch_ctx_winlen], 'FC', 'FC', 'FC', 'FC'], cfgarch=cfg)    # A bit better than CNNFC
-    mod = modeltts_common.DCNNF0SpecNoiseFeatures(ctxsize, vocoder, cfg)
-
-    # mod = modeltts_common.Generic(ctxsize, vocoder, layertypes=['FC', 'FC', 'FC', 'FC', 'FC', 'FC'], cfgarch=cfg)
-    # mod = modeltts_common.Generic(ctxsize, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], cfgarch=cfg)
-
-    # mod = modeltts_common.Generic(ctxsize, vocoder, layertypes=[['RND', 100], ['CNN1D',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], ['CNN1D',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], ['CNN1D',cfg.arch_ctx_nbfilters,cfg.arch_ctx_winlen], 'FC', 'FC'], cfgarch=cfg)
+    mod = modeltts_common.DCNNF0SpecNoiseFeatures(ctxsize, vocoder, cfg)    # DCNN in the paper
 
     return mod
 
@@ -219,7 +216,7 @@ def generate(fparams=cfg.fparams_fullset):
 
     demostart = cfg.id_test_demostart if hasattr(cfg, 'id_test_demostart') else 0
     mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-snd', do_objmeas=True, do_resynth=True, pp_mcep=False)
-    mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-pp-snd', do_objmeas=False, do_resynth=False, pp_mcep=True) # Need SPTK
+    # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test[demostart:demostart+10], os.path.splitext(fparams)[0]+'-demo-pp-snd', do_objmeas=False, do_resynth=False, pp_mcep=True) # Need SPTK
 
     # And generate all of them for listening tests
     # mod.generate_wav(cfg.inpath, cfg.outpath, fid_lst_test, os.path.splitext(fparams)[0]+'-snd', do_objmeas=True, do_resynth=True, pp_mcep=False)
