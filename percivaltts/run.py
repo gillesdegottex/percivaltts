@@ -28,7 +28,7 @@ Author
 # The following select a GPU available, so that only one GPU is used for one training script running
 import os
 import external.GPUtil
-os.environ["CUDA_VISIBLE_DEVICES"]=str(external.GPUtil.getAvailable()[0])
+if len(external.GPUtil.getAvailable())>0: os.environ["CUDA_VISIBLE_DEVICES"]=str(external.GPUtil.getAvailable()[0])
 # os.environ["CUDA_VISIBLE_DEVICES"]=""
 
 print('')
