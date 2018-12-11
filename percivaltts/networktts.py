@@ -65,31 +65,39 @@ def pDO(input, rate=0.2, batch_size=5):
     output = kl.Dropout(rate=rate, noise_shape=noise_shape)(input)
     return output
 
-def pLSTM(input, width, bn=True, **kwargs):
-    # l_lstm = kl.LSTM(width, activation='tanh', recurrent_activation='sigmoid', return_sequences=True, **kwargs)(input)   # For compatibility with CuDNNLSTM
-    output = kl.CuDNNLSTM(width, return_sequences=True, **kwargs)(input)
-    # TODO Test batch normalisation: Not able to make it work
+def pLSTM(input, width, bn=False, cudnn=True, **kwargs):
+    if bn: raise ValueError('Batch normalisation can be unstable with LSTM layers')
+    # TODO Test batch normalisation: Does not always work
+    if cudnn:
+        output = kl.CuDNNLSTM(width, return_sequences=True, **kwargs)(input)
+    else:
+        output = kl.LSTM(width, activation='tanh', recurrent_activation='sigmoid', return_sequences=True, **kwargs)(input)   # For compatibility with CuDNNLSTM
     # l_out = kl.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works though
     return output
 
-def pBLSTM(input, width, bn=True, **kwargs):
-    # l_lstm = kl.LSTM(width, activation='tanh', recurrent_activation='sigmoid', return_sequences=True, **kwargs)   # For compatibility with CuDNNLSTM
-    l_lstm = kl.CuDNNLSTM(width, return_sequences=True, **kwargs)
+def pBLSTM(input, width, bn=False, **kwargs):
+    if bn: raise ValueError('Batch normalisation can be unstable with BLSTM layers')
+    # TODO Test batch normalisation: Does not always work
+    if cudnn:
+        l_lstm = kl.CuDNNLSTM(width, return_sequences=True, **kwargs)
+    else:
+        l_lstm = kl.LSTM(width, activation='tanh', recurrent_activation='sigmoid', return_sequences=True, **kwargs)   # For compatibility with CuDNNLSTM
     output = kl.Bidirectional(l_lstm)(input)
-    # TODO Test batch normalisation: Not able to make it work
     # l_out = kl.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works though
     return output
 
-def pGRU(input, width, bn=True, **kwargs):
+def pGRU(input, width, bn=False, **kwargs):
+    if bn: raise ValueError('Batch normalisation is not working for GRU layers (bug?)')
+    # TODO Test batch normalisation: Not able to make it work
     output = kl.GRU(width, activation='tanh', use_bias=True, dropout=0.0, recurrent_dropout=0.0, implementation=1, return_sequences=True, reset_after=False)(input)
-    # TODO Test batch normalisation: Not able to make it work
     # l_out = kl.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works though
     return output
 
-def pBGRU(input, width, bn=True, **kwargs):
+def pBGRU(input, width, bn=False, **kwargs):
+    if bn: raise ValueError('Batch normalisation is not working for BGRU layers (bug?)')
+    # TODO Test batch normalisation: Not able to make it work
     l_gru = kl.GRU(width, activation='tanh', use_bias=True, dropout=0.0, recurrent_dropout=0.0, implementation=1, return_sequences=True, reset_after=False)
     output = kl.Bidirectional(l_gru)(input)
-    # TODO Test batch normalisation: Not able to make it work
     # l_out = kl.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works though
     return output
 
@@ -130,6 +138,8 @@ def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None)
         elif isinstance(layertypes[layi], list):
             if layertypes[layi][0]=='FC':
                 l_out = pFC(l_out, layertypes[layi][1], bn=bn)
+            elif layertypes[layi][0]=='BLSTM':
+                l_out = pBLSTM(l_out, width=cfgarch.arch_hiddenwidth, bn=layertypes[layi][1])
             elif layertypes[layi][0]=='CNN1D':
                 l_out = pCNN1D(l_out, layertypes[layi][1], layertypes[layi][2], bn=bn)
             elif layertypes[layi][0]=='DilCNN1D':
