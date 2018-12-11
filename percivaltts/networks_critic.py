@@ -58,20 +58,22 @@ class Critic:
         l_spec = kl.Lambda(lambda x: x[:,:,1:1+vocoder.specsize()])(self.input_features)
         # l_nm = kl.Lambda(lambda x: x[:,:,1+vocoder.specsize():1+vocoder.specsize()+vocoder.noisesize()])(self.input_features)
 
-        #TODO Add spectral weighting here
+        # TODO Add spectral weighting here?
 
-        l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec)
+        if cfgarch.arch_gen_nbcnnlayers>0:
+            l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec)
 
-        for _ in xrange(cfgarch.arch_gen_nbcnnlayers):
-            l_spec = kl.Conv2D(cfgarch.arch_gen_nbfilters, [cfgarch.arch_gen_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), data_format='channels_last')(l_spec)
-            l_spec = keras.layers.LeakyReLU(alpha=0.3)(l_spec)
+            for _ in xrange(cfgarch.arch_gen_nbcnnlayers):
+                l_spec = kl.Conv2D(cfgarch.arch_gen_nbfilters, [cfgarch.arch_gen_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), data_format='channels_last')(l_spec)
+                l_spec = keras.layers.LeakyReLU(alpha=0.3)(l_spec)
 
-        l_spec = kl.Reshape([-1,l_spec.shape[-2]*l_spec.shape[-1]])(l_spec)
+            l_spec = kl.Reshape([-1,l_spec.shape[-2]*l_spec.shape[-1]])(l_spec)
 
-        # TODO TODO TODO Use symmetric model
-        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
-        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
-        l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
+        else:
+            # Default critic spec pre-proc
+            l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
+            l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
+            l_spec = pFC(l_spec, self.cfgarch.arch_hiddenwidth, bn=bn)
 
         l_toconcat.append(l_spec)
 
@@ -86,9 +88,6 @@ class Critic:
 
         l_post = kl.Concatenate(axis=-1, name='lo_concatenation')(l_toconcat)
 
-        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
-        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
-        l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
         l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
         l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
         l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
