@@ -202,7 +202,7 @@ class TestSmokeTensorflowKeras(unittest.TestCase):
         optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
 
-    # def test_backend_tensorflowkeras(self): # TODO TODO TODO
+    # def test_backend_tensorflowkeras(self): # TODO
     #     import percivaltts.backend_tensorflow
     #
     #     import theano.tensor as T

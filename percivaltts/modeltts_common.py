@@ -58,7 +58,6 @@ class Generic(modeltts.ModelTTS):
         # plot_model(self._kerasmodel, to_file='model.png')
 
 
-# TODO TODO TODO Replace blocks by block functions
 class DCNNF0SpecNoiseFeatures(modeltts.ModelTTS):
     def __init__(self, ctxsize, vocoder, cfgarch, nameprefix=None):
         bn_axis=-1
