@@ -28,6 +28,8 @@ percivaltts.numpy_force_random_seed()
 import tensorflow as tf
 tf.set_random_seed(123)
 from tensorflow import keras
+from keras.layers import Activation
+from keras.utils.generic_utils import get_custom_objects
 
 import numpy as np
 
@@ -73,10 +75,17 @@ def tf_is_running_on_gpu():
 def nonlin_very_leaky_rectify(x):
     return tf.nn.leaky_relu(x, alpha=1.0/3.0)
 
-# def nonlin_tanh_saturated(x, coef=1.01):
-#     """Hyperbolic tangent which spans slightly below and above -1 and +1, in order to avoid unreachable -1 and +1 values."""
-#     return coef*T.tanh(x)
-#
+def nonlin_tanh_saturated(x, coef=1.01):
+    """Hyperbolic tangent which spans slightly below and above -1 and +1, in order to avoid unreachable -1 and +1 values."""
+    return coef*keras.activations.tanh(x)
+
+class NonLin_Tanh_Saturated(Activation):
+    def __init__(self, activation, **kwargs):
+        super(NonLin_Tanh_Saturated, self).__init__(activation, **kwargs)
+        self.__name__ = 'NonLin_Tanh_Saturated'
+
+get_custom_objects().update({'NonLin_Tanh_Saturated': NonLin_Tanh_Saturated(nonlin_tanh_saturated)})
+
 # def nonlin_saturatedsigmoid(x, coef=1.01):
 #     """Sigmoid which spans slightly above +1, in order to avoid unreachable +1 values."""
 #     return coef*theano.tensor.nnet.sigmoid(x)

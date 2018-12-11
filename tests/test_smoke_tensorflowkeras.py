@@ -171,11 +171,11 @@ class TestSmokeTensorflowKeras(unittest.TestCase):
         optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
         optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
-        model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['FC', 'BLSTM'], cfgarch=cfg)
+        model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['FC', 'RawBLSTM'], cfgarch=cfg)
         optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
         optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 
-        # model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['BLSTM', 'BLSTM', 'BLSTM'], cfgarch=cfg)
+        # model = percivaltts.modeltts_common.Generic(lab_size, vocoder, layertypes=['RawBLSTM', 'RawBLSTM', 'RawBLSTM'], cfgarch=cfg)
         # optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
         # optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
 

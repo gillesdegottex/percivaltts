@@ -22,10 +22,14 @@ Author
 from __future__ import print_function
 
 import numpy as np
+from functools import partial
 
 from tensorflow import keras
 import tensorflow.keras.layers as kl
 from tensorflow.keras import backend as K
+from keras.layers import Activation
+
+from backend_tensorflow import nonlin_tanh_saturated, NonLin_Tanh_Saturated
 
 import vocoders
 
@@ -75,7 +79,10 @@ def pLSTM(input, width, bn=False, cudnn=True, **kwargs):
     # l_out = kl.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works though
     return output
 
-def pBLSTM(input, width, bn=False, **kwargs):
+def pRawLSTM(input, width, bn=False, **kwargs):
+    return pLSTM(input, width, bn=bn, cudnn=False, **kwargs)
+
+def pBLSTM(input, width, bn=False, cudnn=True, **kwargs):
     if bn: print('WARNING: Batch normalisation can be unstable with BLSTM layers')
     # TODO Test batch normalisation: Does not always work
     if cudnn:
@@ -85,6 +92,9 @@ def pBLSTM(input, width, bn=False, **kwargs):
     output = kl.Bidirectional(l_lstm)(input)
     # l_out = kl.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works though
     return output
+
+def pRawBLSTM(input, width, bn=False, **kwargs):
+    return pBLSTM(input, width, bn=bn, cudnn=False, **kwargs)
 
 def pGRU(input, width, bn=False, **kwargs):
     if bn: print('WARNING: Batch normalisation is not working for GRU layers (bug?)')
@@ -126,8 +136,12 @@ def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None)
             l_out = pDO(l_out, 0.2, batch_size=cfgarch.train_batch_size)
         elif layertypes[layi]=='LSTM':
             l_out = pLSTM(l_out, width=cfgarch.arch_hiddenwidth, bn=bn)
+        elif layertypes[layi]=='RawLSTM':
+            l_out = pRawLSTM(l_out, width=cfgarch.arch_hiddenwidth, bn=bn)
         elif layertypes[layi]=='BLSTM':
             l_out = pBLSTM(l_out, width=cfgarch.arch_hiddenwidth, bn=bn)
+        elif layertypes[layi]=='RawBLSTM':
+            l_out = pRawBLSTM(l_out, width=cfgarch.arch_hiddenwidth, bn=bn)
         elif layertypes[layi]=='GRU':
             l_out = pGRU(l_out, width=cfgarch.arch_hiddenwidth, bn=bn)
         elif layertypes[layi]=='BGRU':
@@ -181,7 +195,9 @@ def network_final(l_in, vocoder, mlpg_wins=None):
             layers_toconcat.extend([l_out_delta_f0spec, l_out_delta_nm])
             if (not mlpg_wins is None) and len(mlpg_wins)>1:
                 l_out_deltadelta_f0spec = keras.layers.Dense(1+vocoder.spec_size, activation=None, name='lo_deltadelta_f0spec')(l_in)
-                l_out_deltadelta_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.tanh, name='lo_deltadelta_nm')(l_in) # TODO TODO TODO keras.activations.tanh/partial(nonlin_tanh_saturated, coef=2.0)
+                # l_out_deltadelta_nm = keras.layers.Dense(vocoder.nm_size, activation=keras.activations.tanh, name='lo_deltadelta_nm')(l_in)
+                l_out_deltadelta_nm = keras.layers.Dense(vocoder.nm_size, activation= NonLin_Tanh_Saturated(partial(nonlin_tanh_saturated, coef=2.0)), name='lo_deltadelta_nm')(l_in)
+                # l_out_deltadelta_nm = keras.layers.Dense(vocoder.nm_size, activation= NonLin_Tanh_Saturated(nonlin_tanh_saturated), name='lo_deltadelta_nm')(l_in)
                 layers_toconcat.extend([l_out_deltadelta_f0spec, l_out_deltadelta_nm])
 
     elif isinstance(vocoder, vocoders.VocoderWORLD):
