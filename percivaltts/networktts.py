@@ -117,13 +117,6 @@ def pCNN1D(input, nbfilters, winlen, bn=True, **kwargs):
     output = kl.LeakyReLU(alpha=0.3)(output)
     return output
 
-def pDilCNN1D(input, nbfilters, winlen, dil, bn=True, **kwargs):
-    output = kl.Conv1D(nbfilters, winlen, strides=1, padding='same', dilation_rate=dil, activation=None, use_bias=not bn, **kwargs)(input)
-    if bn: output=kl.BatchNormalization(axis=-1)(output)
-    output = kl.LeakyReLU(alpha=0.3)(output)
-    return output
-
-
 def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None):
     bn_axis=-1
 
@@ -154,8 +147,6 @@ def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None)
                 l_out = pFC(l_out, layertypes[layi][1], bn=bn)
             elif layertypes[layi][0]=='CNN1D':
                 l_out = pCNN1D(l_out, layertypes[layi][1], layertypes[layi][2], bn=bn)
-            elif layertypes[layi][0]=='DilCNN1D':
-                l_out = pDilCNN1D(l_out, layertypes[layi][1], layertypes[layi][2], layertypes[layi][3], bn=bn)
             elif layertypes[layi][0]=='RND':
                 l_out = GaussianNoiseInput(width=layertypes[layi][1])(l_out)
             else:
