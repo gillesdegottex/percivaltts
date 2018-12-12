@@ -117,6 +117,23 @@ def pCNN1D(input, nbfilters, winlen, bn=True, **kwargs):
     output = kl.LeakyReLU(alpha=0.3)(output)
     return output
 
+def pCNN2D(input, nbfilters, winlen, freqlen, bn=True, **kwargs):
+    output = kl.Conv2D(nbfilters, [winlen,freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=not bn, data_format='channels_last')(input)
+    if bn: output = kl.BatchNormalization(axis=-1)(output)
+    output = kl.LeakyReLU(alpha=0.3)(output)
+    return output
+
+def pGCNN2D(input, nbfilters, winlen, freqlen, bn=True, **kwargs):
+    output = kl.Conv2D(nbfilters, [winlen,freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=not bn, data_format='channels_last')(input)
+
+    gate = kl.Conv2D(nbfilters, [winlen,freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=not bn, data_format='channels_last', activation=keras.activations.sigmoid)(input)
+
+    output = kl.Multiply()([output, gate])
+
+    if bn: output = kl.BatchNormalization(axis=-1)(output)
+    output = kl.LeakyReLU(alpha=0.3)(output)
+    return output
+
 def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None):
     bn_axis=-1
 
