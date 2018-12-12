@@ -93,9 +93,8 @@ class DCNNF0SpecNoiseFeatures(modeltts.ModelTTS):
         l_spec = kl.Dense(vocoder.specsize(), use_bias=True)(l_spec)   # Projection
         l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec) # Add the channels after the spectral dimension
         for _ in xrange(cfgarch.arch_gen_nbcnnlayers):
-            l_spec = kl.Conv2D(cfgarch.arch_gen_nbfilters, [cfgarch.arch_gen_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=False, data_format='channels_last')(l_spec)
-            l_spec = kl.BatchNormalization(axis=bn_axis)(l_spec)
-            l_spec = kl.LeakyReLU(alpha=0.3)(l_spec)
+            l_spec = networktts.pCNN2D(l_spec, cfgarch.arch_gen_nbfilters, cfgarch.arch_gen_winlen, cfgarch.arch_spec_freqlen)
+            # l_spec = networktts.pGCNN2D(l_spec, cfgarch.arch_gen_nbfilters, cfgarch.arch_gen_winlen, cfgarch.arch_spec_freqlen)
         l_spec = kl.Conv2D(1, [cfgarch.arch_gen_winlen,cfgarch.arch_spec_freqlen], strides=(1, 1), padding='same', dilation_rate=(1, 1), use_bias=True, activation=None, data_format='channels_last')(l_spec)
         l_spec = kl.Reshape([-1,l_spec.shape[-2]])(l_spec)
 
