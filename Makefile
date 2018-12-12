@@ -33,9 +33,9 @@ describe:
 	@git describe
 
 clean:
-	rm -fr percivaltts/tests/slt_arctic_merlin_test
-	rm -fr percivaltts/tests/test_made__*
-	rm -fr percivaltts/tests/slt_arctic_merlin_full/wav_* percivaltts/tests/slt_arctic_merlin_full/label_state_align_*
+	rm -fr tests/slt_arctic_merlin_test
+	rm -fr tests/test_made__*
+	rm -fr tests/slt_arctic_merlin_full/wav_* tests/slt_arctic_merlin_full/label_state_align_*
 
 distclean: clean
 	cd percivaltts/external/pulsemodel; $(MAKE) distclean
