@@ -44,7 +44,7 @@ class Vocoder:
 
     def preprocwav(self, wav, fs, highpass=None):
         '''
-        Should always be called at the beginning of the analysis function accessing the waveform. TODO TODO TODO
+        Should always be called at the beginning of the analysis function accessing the waveform.
         '''
 
         if fs!=self.fs:
@@ -184,9 +184,9 @@ class VocoderPML(VocoderF0Spec):
         if ('preproc_hp' in kwargs) and (kwargs['preproc_hp']=='auto'):
             kwargs['preproc_hp']=f0_min
 
+        # through args `preproc_fs` and `preproc_hp` pulsemodel.analysisf takes care of self.preprocwav
 
         pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, fspec=fspec, spec_nbfwbnds=self.spec_size, fnm=fnm, nm_nbfwbnds=self.nm_size, preproc_fs=self.fs, **kwargs)
-        # pulsemodel.analysisf(fwav, shift=self.shift, f0estimator='REAPER', f0_min=f0_min, f0_max=f0_max, ff0=ff0, f0_log=True, preproc_fs=self.fs)
 
     def analysisfid(self, fid, wav_path, f0_min, f0_max, outputpathdicts, **kwargs):   # pragma: no cover  coverage not detected
         return self.analysisf(wav_path.replace('*',fid), outputpathdicts['f0'].replace('*',fid), f0_min, f0_max, outputpathdicts['spec'].replace('*',fid), outputpathdicts['noise'].replace('*',fid), **kwargs)
