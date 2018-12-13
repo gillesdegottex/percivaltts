@@ -29,7 +29,7 @@ import tensorflow.keras.layers as kl
 from tensorflow.keras import backend as K
 from keras.layers import Activation
 
-from backend_tensorflow import nonlin_tanh_saturated, NonLin_Tanh_Saturated
+from backend_tensorflow import nonlin_tanh_saturated, NonLin_Tanh_Saturated, tf_cuda_available
 
 import vocoders
 
@@ -69,7 +69,7 @@ def pDO(input, rate=0.2, batch_size=5):
     output = kl.Dropout(rate=rate, noise_shape=noise_shape)(input)
     return output
 
-def pLSTM(input, width, bn=False, cudnn=True, **kwargs):
+def pLSTM(input, width, bn=False, cudnn=tf_cuda_available(), **kwargs):
     if bn: print('WARNING: Batch normalisation can be unstable with LSTM layers')
     # TODO Test batch normalisation: Does not always work
     if cudnn:
@@ -82,7 +82,7 @@ def pLSTM(input, width, bn=False, cudnn=True, **kwargs):
 def pRawLSTM(input, width, bn=False, **kwargs):
     return pLSTM(input, width, bn=bn, cudnn=False, **kwargs)
 
-def pBLSTM(input, width, bn=False, cudnn=True, **kwargs):
+def pBLSTM(input, width, bn=False, cudnn=tf_cuda_available(), **kwargs):
     if bn: print('WARNING: Batch normalisation can be unstable with BLSTM layers')
     # TODO Test batch normalisation: Does not always work
     if cudnn:
