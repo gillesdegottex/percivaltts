@@ -188,7 +188,7 @@ class TestSmokeTensorflowKeras(unittest.TestCase):
         cfg.arch_gen_nbfilters = 2
         cfg.arch_gen_winlen = 3
         cfg.arch_spec_freqlen = 3
-        model = percivaltts.modeltts_common.DCNNF0SpecNoiseFeatures(lab_size, vocoder, cfg, cudnn=False)
+        model = percivaltts.modeltts_common.DCNNF0SpecNoiseFeatures(lab_size, vocoder, cfg)
         optilse = percivaltts.optimizertts.OptimizerTTS(cfg, model)
         optilse.train(cfg.indir, cfg.outdir, cfg.wdir, fid_lst_tra, fid_lst_val, 'tests/test_made__smoke_tfkeras_model_train/smokymodelparams.pkl', cont=False)
         # model.generate_wav('test/test_made__smoke_tfkeras_model_train/smokymodelparams-snd', fid_lst, cfg, do_objmeas=True, do_resynth=True, indicestosynth=None, spec_comp='fwlspec', spec_size=spec_size, nm_size=nm_size)
