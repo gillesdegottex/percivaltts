@@ -89,7 +89,6 @@ class DCNNF0SpecNoiseFeatures(modeltts.ModelTTS):
         # l_spec = kl.BatchNormalization(axis=bn_axis)(l_spec)
         # l_spec = kl.LeakyReLU(alpha=0.3)(l_spec)
 
-        # TODO TODO TODO Use Gated CNN !
         l_spec = kl.Dense(vocoder.specsize(), use_bias=True)(l_spec)   # Projection
         l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec) # Add the channels after the spectral dimension
         for _ in xrange(cfgarch.arch_gen_nbcnnlayers):
