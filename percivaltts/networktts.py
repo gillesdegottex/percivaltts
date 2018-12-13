@@ -86,8 +86,10 @@ def pBLSTM(input, width, bn=False, cudnn=tf_cuda_available(), **kwargs):
     if bn: print('WARNING: Batch normalisation can be unstable with BLSTM layers')
     # TODO Test batch normalisation: Does not always work
     if cudnn:
+        print('pBLSTM:build CuDNNLSTM')
         l_lstm = kl.CuDNNLSTM(width, return_sequences=True, **kwargs)
     else:
+        print('pBLSTM:build LSTM')
         l_lstm = kl.LSTM(width, activation='tanh', recurrent_activation='sigmoid', return_sequences=True, **kwargs)   # For compatibility with CuDNNLSTM
     output = kl.Bidirectional(l_lstm)(input)
     # l_out = kl.LeakyReLU(alpha=0.3)(l_out) # TODO Makes it unstable. tanh works though

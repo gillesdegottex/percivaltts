@@ -80,8 +80,9 @@ class DCNNF0SpecNoiseFeatures(modeltts.ModelTTS):
 
         # F0
         l_f0 = l_ctx
-        # l_f0 = networktts.pCNN1D(l_f0, cfgarch.arch_hiddenwidth, int(0.5*0.200/vocoder.shift)*2+1) # TODO TODO TODO hardcoded 0.200s
-        l_f0 = networktts.pBLSTM(l_f0, width=cfgarch.arch_hiddenwidth, cudnn=cudnn) # TODO TODO TODO Use BLSTM as in the paper
+        print('cudnn='+str(cudnn))
+        print('tf_cuda_available()='+str(tf_cuda_available()))
+        l_f0 = networktts.pBLSTM(l_f0, width=cfgarch.arch_hiddenwidth, cudnn=cudnn)
         l_f0 = kl.Dense(1, activation=None, use_bias=True)(l_f0)
 
         # Spec
