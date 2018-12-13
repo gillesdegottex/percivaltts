@@ -164,6 +164,8 @@ def network_generic(input, layertypes=['FC', 'FC', 'FC'], bn=True, cfgarch=None)
                 l_out = pFC(l_out, layertypes[layi][1], bn=bn)
             elif layertypes[layi][0]=='CNN1D':
                 l_out = pCNN1D(l_out, layertypes[layi][1], layertypes[layi][2], bn=bn)
+            elif layertypes[layi][0]=='CNN2D':
+                l_out = pCNN2D(l_out, layertypes[layi][1], layertypes[layi][2], layertypes[layi][3], bn=bn)
             elif layertypes[layi][0]=='RND':
                 l_out = GaussianNoiseInput(width=layertypes[layi][1])(l_out)
             else:
