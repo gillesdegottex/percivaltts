@@ -62,7 +62,7 @@ class DCNNF0SpecNoiseFeatures(modeltts.ModelTTS):
     '''
     That's the model used in PercivalTTS paper presented at SLT
     '''
-    def __init__(self, ctxsize, vocoder, cfgarch, cudnn=True, nameprefix=None):
+    def __init__(self, ctxsize, vocoder, cfgarch, nameprefix=None):
         bn_axis=-1
         modeltts.ModelTTS.__init__(self, ctxsize, vocoder)
 
@@ -82,7 +82,7 @@ class DCNNF0SpecNoiseFeatures(modeltts.ModelTTS):
         l_f0 = l_ctx
         print('cudnn='+str(cudnn))
         print('tf_cuda_available()='+str(tf_cuda_available()))
-        l_f0 = networktts.pBLSTM(l_f0, width=cfgarch.arch_hiddenwidth, cudnn=cudnn)
+        l_f0 = networktts.pBLSTM(l_f0, width=cfgarch.arch_hiddenwidth)
         l_f0 = kl.Dense(1, activation=None, use_bias=True)(l_f0)
 
         # Spec
