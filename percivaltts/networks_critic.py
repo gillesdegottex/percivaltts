@@ -58,7 +58,7 @@ class Critic:
         l_spec = kl.Lambda(lambda x: x[:,:,1:1+vocoder.specsize()])(self.input_features)
         # l_nm = kl.Lambda(lambda x: x[:,:,1+vocoder.specsize():1+vocoder.specsize()+vocoder.noisesize()])(self.input_features)
 
-        # TODO Add spectral weighting here?
+        #TODO Add spectral weighting here
 
         if cfgarch.arch_gen_nbcnnlayers>0:
             l_spec = kl.Reshape([-1,vocoder.specsize(), 1])(l_spec)
@@ -88,6 +88,7 @@ class Critic:
 
         l_post = kl.Concatenate(axis=-1, name='lo_concatenation')(l_toconcat)
 
+        # TODO Use only 3 otherwise it adds noise
         l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
         l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
         l_post = pFC(l_post, self.cfgarch.arch_hiddenwidth, bn=bn)
