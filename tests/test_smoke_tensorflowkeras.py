@@ -138,6 +138,7 @@ class TestSmokeTensorflowKeras(unittest.TestCase):
         # Restore the non-MLPG features
         cfg.outdir = cptest+'wav_cmp_lf0_fwlspec65_fwnm17_bndnmnoscale/*.cmp:(-1,83)'
 
+
         # Test WORLD vocoder
         vocoder_world = percivaltts.vocoders.VocoderWORLD(cfg.vocoder_fs, cfg.vocoder_shift, spec_size, aper_size=nm_size)
         model = percivaltts.modeltts_common.Generic(lab_size, vocoder_world, layertypes=['FC', 'FC', 'FC'], cfgarch=cfg)
