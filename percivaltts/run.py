@@ -125,15 +125,15 @@ cfg.fparams_fullset = 'model.h5'
 cfg.train_batch_size = 10 # Faster than 5, and not muffled as with 20 This seems good for avoiding local overfitting and remove whistlings/musical sounds.
 cfg.train_batch_lengthmax = int(2.0/0.005) # [frames] Maximum duration of each batch through time
                                            # Has to be short enough to avoid plowing up the GPU's memory and long enough to allow modelling of LT dependences by LSTM layers.
-cfg.wpath = labs_wpath # TODO TODO TODO labs_wpath or feats_wpath. By def. ignore silences according to input labels.
+cfg.wpath = labs_wpath # labs_wpath or feats_wpath. By def. ignore silences according to input labels.
 cfg.train_wgan_LScoef = 0.25         # LS loss weights 0.25 and WGAN for the rest (even though LS loss is in [0,oo) whereas WGAN loss is on (-oo,+oo)). Increasing it can help reducing spurious artefacts (e.g. musical sounds)
-cfg.train_min_nbepochs = 250  # TODO TODO TODO
-cfg.train_max_nbepochs = 300  # TODO TODO TODO
-cfg.train_cancel_nodecepochs = 25 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)  # TODO TODO TODO
+cfg.train_min_nbepochs = 250
+cfg.train_max_nbepochs = 300
+cfg.train_cancel_nodecepochs = 25 # (Can reduce it for 3 stacked BLSTM or 6 stacked FC)
 # cfg.train_wgan_critic_LSweighting = True
 cfg.train_wgan_critic_LSWGANtransfreqcutoff = 4000
 cfg.train_wgan_critic_LSWGANtranscoef = 1.0/8.0
-cfg.train_wgan_critic_use_WGAN_incnoisefeature = False   # TODO TODO TODO
+cfg.train_wgan_critic_use_WGAN_incnoisefeature = False
 
 
 # cfg.train_hypers = [('train_wgan_critic_learningrate_log10', -5.0, -1.0), ('train_wgan_critic_adam_beta1', 0.0, 0.9), ('train_wgan_critic_adam_beta2', 0.8, 0.9999), ('train_wgan_gen_learningrate_log10', -5.0, -1.0), ('train_wgan_gen_adam_beta1', 0.0, 0.9), ('train_wgan_gen_adam_beta2', 0.8, 0.9999), ('train_wgan_gen_adam_beta2', 0.8, 0.9999)]
